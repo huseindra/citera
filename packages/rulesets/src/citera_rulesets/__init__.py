@@ -1,7 +1,11 @@
 """Citera rule sets.
 
-Rule content lives in YAML directories next to this package; the loader
-(M1) validates them into citera_schemas.Rule at startup.
+Rule content lives in YAML under data/; the loader validates it into
+citera_schemas.Rule at startup. Adding a regulation is content work.
 """
+
+from citera_rulesets.loader import RulesetError, available_rulesets, load_ruleset
+
+__all__ = ["RulesetError", "available_rulesets", "load_ruleset"]
 
 __version__ = "0.1.0"
