@@ -134,11 +134,8 @@ async def test_grounding_gate_rejects_fabricated_quote(client, monkeypatch):
     from citera_pipeline.findings import ScriptedEvaluator
 
     from app.services import review as review_service
-    from app.services.llm import DEMO_EXPECTATIONS
 
-    fabricating = ScriptedEvaluator(
-        DEMO_EXPECTATIONS, fabricate={"fda-50.25-a3-benefits"}
-    )
+    fabricating = ScriptedEvaluator(fabricate={"fda-50.25-a3-benefits"})
     monkeypatch.setattr(review_service, "get_evaluator", lambda: fabricating)
 
     protocol_id = await _ingest(client, "protocol.md", "protocol")
@@ -154,19 +151,16 @@ async def test_grounding_gate_rejects_fabricated_quote(client, monkeypatch):
     assert by_rule["fda-50.25-a2-risks"]["status"] == "conflicting"
 
 
-async def test_icf_a_passes_cleanly(client, monkeypatch):
-    from citera_pipeline.findings import ScriptedEvaluator
-
-    from app.services import review as review_service
-
-    # clean document → scripted evaluator with no planted expectations
-    monkeypatch.setattr(
-        review_service, "get_evaluator", lambda: ScriptedEvaluator({})
-    )
+async def test_icf_a_passes_cleanly(client):
+    # No monkeypatch: the DEFAULT evaluator must clear the clean document.
+    # (A lookup-table evaluator once passed this only because the test
+    # injected a blank one — the seed script caught it. Never mask this.)
     protocol_id = await _ingest(client, "protocol.md", "protocol")
     icf_a_id = await _ingest(client, "icf-a.md", "icf")
     review = await _run_review(client, icf_a_id, protocol_id)
-    assert all(f["status"] == "satisfied" for f in review["findings"])
+    assert all(f["status"] == "satisfied" for f in review["findings"]), [
+        (f["rule_id"], f["status"]) for f in review["findings"]
+    ]
 
 
 async def test_audit_chain_complete_per_finding(client):
