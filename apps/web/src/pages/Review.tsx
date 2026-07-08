@@ -5,9 +5,10 @@ import { Link, useParams, useSearchParams } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut, RuleSetOut } from "../api/types";
 import { CoverageMatrix } from "../components/matrix/CoverageMatrix";
+import { VerdictStrip } from "../components/matrix/VerdictStrip";
 import { DocumentViewer } from "../components/document/DocumentViewer";
 import { SemanticMap } from "../components/document/SemanticMap";
-import { FindingDrawer } from "../components/finding/FindingDrawer";
+import { Inspector } from "../components/inspector/Inspector";
 import { displayName, rulesetName } from "../lib/format";
 
 export function ReviewPage() {
@@ -126,10 +127,16 @@ export function ReviewPage() {
         </div>
       </div>
       <div className="min-h-0 flex-1">
-        <Allotment vertical>
-          <Allotment.Pane>
-            <Allotment defaultSizes={[1, 2]}>
-              <Allotment.Pane minSize={320}>
+        <Allotment defaultSizes={[1, 2, 1.2]}>
+          <Allotment.Pane minSize={280} preferredSize={330}>
+            <div className="flex h-full flex-col">
+              {data.status === "complete" && (
+                <VerdictStrip
+                  findings={data.findings}
+                  ruleCount={data.rule_count}
+                />
+              )}
+              <div className="min-h-0 flex-1">
                 <CoverageMatrix
                   rules={ruleset.data?.rules ?? []}
                   findings={data.findings}
@@ -137,37 +144,37 @@ export function ReviewPage() {
                   selectedId={selectedId}
                   onSelect={select}
                 />
-              </Allotment.Pane>
-              <Allotment.Pane minSize={400}>
-                <div className="relative h-full">
-                  {showMap && (
-                    <SemanticMap
-                      documentId={data.document_id}
-                      findings={data.findings}
-                      selectedId={selectedId}
-                      onScrollToOffset={scrollTo}
-                      onClose={() => setShowMap(false)}
-                    />
-                  )}
-                  <DocumentViewer
-                    text={documentText.data.canonical_text}
-                    findings={data.findings}
-                    selectedId={selectedId}
-                    onSelect={select}
-                    scrollOffset={scrollOffset}
-                  />
-                </div>
-              </Allotment.Pane>
-            </Allotment>
+              </div>
+            </div>
+          </Allotment.Pane>
+          <Allotment.Pane minSize={380}>
+            <div className="relative h-full">
+              {showMap && (
+                <SemanticMap
+                  documentId={data.document_id}
+                  findings={data.findings}
+                  selectedId={selectedId}
+                  onScrollToOffset={scrollTo}
+                  onClose={() => setShowMap(false)}
+                />
+              )}
+              <DocumentViewer
+                text={documentText.data.canonical_text}
+                findings={data.findings}
+                selectedId={selectedId}
+                onSelect={select}
+                scrollOffset={scrollOffset}
+              />
+            </div>
           </Allotment.Pane>
           <Allotment.Pane
             visible={!!selectedFinding}
-            preferredSize={300}
-            minSize={200}
+            preferredSize={380}
+            minSize={300}
             snap
           >
             {selectedFinding ? (
-              <FindingDrawer
+              <Inspector
                 reviewId={data.id}
                 finding={selectedFinding}
                 evaluatorModel={data.evaluator_model}

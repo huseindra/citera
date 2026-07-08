@@ -84,9 +84,6 @@ export function CoverageMatrix({
             <th scope="col" className="px-2 py-2 font-medium">
               Requirement
             </th>
-            <th scope="col" className="px-3 py-2 font-medium">
-              Evidence
-            </th>
           </tr>
         </thead>
         <tbody ref={bodyRef}>
@@ -165,14 +162,6 @@ function FindingRow({
             evidence found.
           </div>
         )}
-        {isSelected && (
-          <p className="mt-2 text-xs leading-5 text-stone-600">
-            {finding.reasoning}
-          </p>
-        )}
-      </td>
-      <td className="px-3 py-3 text-xs text-stone-400">
-        {finding.evidence_strength ?? "—"}
       </td>
     </tr>
   );
@@ -210,7 +199,6 @@ function PendingRow({ row }: { row: Extract<Row, { kind: "evaluating" | "queued"
           </div>
         )}
       </td>
-      <td className="px-3 py-3 text-xs text-stone-300">—</td>
     </tr>
   );
 }
