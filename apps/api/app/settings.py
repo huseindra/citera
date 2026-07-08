@@ -12,6 +12,8 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     voyage_api_key: str = ""
+    # auto → voyage when a key is present, else fake (offline dev/tests)
+    embeddings_provider: str = "auto"
 
 
 settings = Settings()

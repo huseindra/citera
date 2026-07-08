@@ -2,8 +2,8 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DDL, ForeignKey, Index, Text, event, func
-from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy import DDL, Computed, ForeignKey, Index, Text, event, func
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.db import Base
@@ -47,6 +47,12 @@ class Chunk(Base):
     )
     embedding_model: Mapped[str | None]
     embedding_version: Mapped[str | None]
+    # sparse index maintained by Postgres itself — no sync code to forget
+    tsv = mapped_column(
+        TSVECTOR,
+        Computed("to_tsvector('english', text)", persisted=True),
+        nullable=True,
+    )
 
 
 class Review(Base):
@@ -110,6 +116,7 @@ class AuditRecord(Base):
 
 
 Index("ix_chunks_doc_span", Chunk.document_id, Chunk.char_start)
+Index("ix_chunks_tsv", Chunk.tsv, postgresql_using="gin")
 
 # Auditability is enforced by the database, not by convention: any UPDATE or
 # DELETE on audit_records raises. Dropping the table (seed reset) still works.

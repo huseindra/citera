@@ -303,12 +303,14 @@ version = "0.1.0"
 source = { editable = "packages/pipeline" }
 dependencies = [
     { name = "citera-schemas" },
+    { name = "httpx" },
     { name = "pdfplumber" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "citera-schemas", editable = "packages/schemas" },
+    { name = "httpx", specifier = ">=0.27" },
     { name = "pdfplumber", specifier = ">=0.11" },
 ]
 
