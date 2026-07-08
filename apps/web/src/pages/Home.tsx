@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { apiGet, apiPost, apiUpload } from "../api/client";
+import { apiGet, apiPost, apiUploadWithProgress } from "../api/client";
 import type { DocumentOut, ReviewOut, ReviewSummary } from "../api/types";
 import { displayName, rulesetName, timeAgo } from "../lib/format";
 import { STATUS_META } from "../lib/status";
@@ -12,6 +12,8 @@ interface Slot {
   documentId: string | null;
   filename: string | null;
   state: "empty" | "uploading" | "processing" | "ready" | "failed";
+  progress?: number;
+  sizeKb?: number;
   error?: string;
 }
 
@@ -59,21 +61,37 @@ export function HomePage() {
   });
 
   const upload = useCallback(async (kind: SlotKind, file: File) => {
+    const sizeKb = Math.max(1, Math.round(file.size / 1024));
     setSlots((prev) => ({
       ...prev,
-      [kind]: { documentId: null, filename: file.name, state: "uploading" },
+      [kind]: {
+        documentId: null,
+        filename: file.name,
+        state: "uploading",
+        progress: 0,
+        sizeKb,
+      },
     }));
     try {
       const form = new FormData();
       form.append("file", file);
       form.append("kind", kind);
-      const doc = await apiUpload<DocumentOut>("/documents", form);
+      const doc = await apiUploadWithProgress<DocumentOut>(
+        "/documents",
+        form,
+        (percent) =>
+          setSlots((prev) => ({
+            ...prev,
+            [kind]: { ...prev[kind], progress: percent },
+          })),
+      );
       setSlots((prev) => ({
         ...prev,
         [kind]: {
           documentId: doc.id,
           filename: doc.filename,
           state: doc.status === "ready" ? "ready" : "processing",
+          sizeKb,
         },
       }));
     } catch (err) {
@@ -304,19 +322,38 @@ function DropZone({
         />
         <div className="text-xs font-semibold text-stone-700">{title}</div>
         <div className="mt-0.5 text-[11px] text-stone-400">{hint}</div>
-        <div className="mt-2 text-[11px]">
+        <div className="mt-2 w-full text-[11px]">
           {slot.state === "empty" && (
             <span className="text-stone-400">drop a file or click</span>
           )}
           {slot.state === "uploading" && (
-            <span className="text-sky-600">uploading…</span>
+            <div className="mx-auto max-w-40">
+              <div className="text-sky-600">
+                uploading {slot.progress ?? 0}%
+                {slot.sizeKb ? ` · ${slot.sizeKb} KB` : ""}
+              </div>
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-sky-100">
+                <div
+                  className="h-full rounded-full bg-sky-500 transition-all"
+                  style={{ width: `${slot.progress ?? 0}%` }}
+                />
+              </div>
+            </div>
           )}
           {slot.state === "processing" && (
-            <span className="text-sky-600">indexing evidence…</span>
+            <div className="mx-auto max-w-40">
+              <div className="text-sky-600">indexing evidence…</div>
+              <div className="mt-1 h-1 overflow-hidden rounded-full bg-sky-100">
+                <div className="theater-shimmer h-full w-1/3 rounded-full bg-sky-400" />
+              </div>
+            </div>
           )}
           {slot.state === "ready" && (
             <span className="font-medium text-emerald-700">
               ✓ {displayName(slot.filename)}
+              {slot.sizeKb ? (
+                <span className="font-normal text-stone-400"> · {slot.sizeKb} KB</span>
+              ) : null}
             </span>
           )}
           {slot.state === "failed" && (
