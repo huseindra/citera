@@ -57,6 +57,26 @@ export interface ReviewOut {
   created_at: string;
 }
 
+export interface EvidenceChunkOut {
+  chunk_id: string;
+  rank: number;
+  section_title: string | null;
+  char_start: number | null;
+  char_end: number | null;
+  text_preview: string | null;
+  dense_score: number | null;
+  sparse_score: number | null;
+  fused_score: number;
+}
+
+export interface FindingEvidenceOut {
+  finding_id: string;
+  queries_executed: string[];
+  fusion_params: Record<string, number>;
+  embedding_model: string | null;
+  results: EvidenceChunkOut[];
+}
+
 export interface ReviewSummary {
   id: string;
   document_id: string;

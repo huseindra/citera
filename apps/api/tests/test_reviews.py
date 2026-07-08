@@ -193,6 +193,46 @@ async def test_audit_chain_complete_per_finding(client):
     assert steps.count("grounding.passed") == 7  # all but the not_found rule
 
 
+async def test_finding_evidence_serves_recorded_retrieval(client):
+    protocol_id = await _ingest(client, "protocol.md", "protocol")
+    icf_b_id = await _ingest(client, "icf-b.md", "icf")
+    review = await _run_review(client, icf_b_id, protocol_id)
+
+    conflicting = next(
+        f for f in review["findings"] if f["rule_id"] == "fda-50.25-a2-risks"
+    )
+    resp = await client.get(
+        f"/reviews/{review['id']}/findings/{conflicting['id']}/evidence"
+    )
+    assert resp.status_code == 200
+    evidence = resp.json()
+
+    # the recorded truth: queries + fusion params + per-chunk scores
+    assert evidence["queries_executed"]
+    assert evidence["fusion_params"]["k"] == 60
+    assert evidence["results"]
+    top = evidence["results"][0]
+    assert top["rank"] == 1
+    assert top["fused_score"] > 0
+    assert top["section_title"]  # joined chunk metadata for display
+    assert top["char_end"] > top["char_start"]
+
+    # not_found findings also expose their retrieval (evidence of absence)
+    voluntary = next(
+        f for f in review["findings"] if f["rule_id"] == "fda-50.25-a8-voluntary"
+    )
+    resp = await client.get(
+        f"/reviews/{review['id']}/findings/{voluntary['id']}/evidence"
+    )
+    assert resp.status_code == 200
+    assert resp.json()["queries_executed"] == voluntary["queries_executed"]
+
+    resp = await client.get(
+        f"/reviews/{review['id']}/findings/00000000-0000-0000-0000-000000000000/evidence"
+    )
+    assert resp.status_code == 404
+
+
 async def test_review_requires_ready_documents(client):
     protocol_id = await _ingest(client, "protocol.md", "protocol")
     resp = await client.post(
