@@ -19,7 +19,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import AuditRecord, Chunk
-from app.services.embeddings import get_embedder
+from app.services.embeddings import embedding_metadata, get_embedder
 
 _CANDIDATES_PER_QUERY = 20
 _WORD = re.compile(r"[A-Za-z0-9]{3,}")
@@ -91,6 +91,8 @@ async def hybrid_search(
             "queries": queries,
             "fusion_params": fusion_params,
             "embedding_model": f"{embedder.model}@{embedder.version}",
+            # reproducibility: provider/model/dim/version on every retrieval
+            "embedding": embedding_metadata(),
             "results": [
                 {
                     "chunk_id": str(r.chunk_id),

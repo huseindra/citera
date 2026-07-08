@@ -16,6 +16,8 @@ class CachingEmbedder:
         self._inner = inner
         self._cache: OrderedDict[tuple[str, str], list[float]] = OrderedDict()
         self._max_entries = max_entries
+        self.hits = 0
+        self.misses = 0
 
     @property
     def model(self) -> str:
@@ -29,10 +31,22 @@ class CachingEmbedder:
     def dim(self) -> int:
         return self._inner.dim
 
+    async def health_check(self) -> None:
+        await self._inner.health_check()
+
+    def stats(self) -> dict[str, int]:
+        return {
+            "entries": len(self._cache),
+            "hits": self.hits,
+            "misses": self.misses,
+        }
+
     async def embed(
         self, texts: list[str], *, input_type: InputType = "document"
     ) -> list[list[float]]:
         misses = [t for t in texts if (input_type, t) not in self._cache]
+        self.hits += len(texts) - len(misses)
+        self.misses += len(misses)
         # dedupe misses, preserve order
         unique_misses = list(dict.fromkeys(misses))
         if unique_misses:

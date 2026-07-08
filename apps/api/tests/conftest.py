@@ -9,5 +9,6 @@ pydantic-settings). Live-provider runs are a manual, deliberate act
 
 import os
 
-os.environ["EMBEDDINGS_PROVIDER"] = "fake"
+os.environ["EMBEDDING_PROVIDER"] = "fake"
+os.environ["EMBEDDINGS_PROVIDER"] = "fake"  # legacy alias, kept in sync
 os.environ["LLM_PROVIDER"] = "scripted"

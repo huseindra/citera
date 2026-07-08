@@ -21,6 +21,9 @@ class FakeEmbedder:
     def __init__(self, dim: int = 1024):
         self.dim = dim
 
+    async def health_check(self) -> None:
+        return None  # in-process, always healthy
+
     async def embed(
         self, texts: list[str], *, input_type: InputType = "document"
     ) -> list[list[float]]:
