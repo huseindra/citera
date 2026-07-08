@@ -15,5 +15,5 @@ dev: db
 test:
 	uv run pytest
 
-seed:
-	@echo "seed_demo.py arrives in M9 (pulled forward after M4)."
+seed: db
+	uv run python scripts/seed_demo.py

@@ -3,6 +3,9 @@
 Build order for Citera. Mirrors the checklist in the [README](../README.md).
 
 > For the hackathon MVP slice of this roadmap, see [roadmap-mvp.md](roadmap-mvp.md).
+> **Status: the MVP (M0–M9) is complete** — phases 1–3 below are done for
+> text-based documents; OCR, audit-replay hardening beyond the MVP, and the
+> Common Rule set are the next frontier.
 
 ## Phase 1 — Ingestion Foundation
 

@@ -154,20 +154,36 @@ Infrastructure
 
 ---
 
+## Getting Started
+
+```bash
+docker compose up -d     # PostgreSQL + pgvector (host port 5433)
+uv sync                  # Python workspace
+make seed                # reset DB, ingest the demo corpus, run both reviews
+make api                 # FastAPI on :8000
+make web                 # Vite dev server on :5173 (needs pnpm install in apps/web once)
+```
+
+Open http://localhost:5173 — the seeded reviews (one clean ICF, one with
+three planted defects) are listed on the home page. Without an
+`ANTHROPIC_API_KEY` a deterministic scripted evaluator runs; with one,
+Claude evaluates for real. See [docs/demo-script.md](docs/demo-script.md)
+for the full walkthrough.
+
 ## Roadmap
 
-- [ ] Document ingestion
-- [ ] OCR pipeline
-- [ ] Chunking pipeline
-- [ ] Embedding pipeline
-- [ ] Hybrid Retrieval
-- [ ] Regulation Engine
-- [ ] Evidence Heatmap
-- [ ] Semantic Evidence Map
-- [ ] Citation Graph
-- [ ] Explainable Retrieval
-- [ ] Audit Replay
-- [ ] FDA 21 CFR Part 50 Rule Set
+- [x] Document ingestion
+- [ ] OCR pipeline (scanned PDFs — text-based documents supported)
+- [x] Chunking pipeline
+- [x] Embedding pipeline
+- [x] Hybrid Retrieval
+- [x] Regulation Engine
+- [x] Evidence Heatmap
+- [x] Semantic Evidence Map
+- [x] Citation Graph
+- [x] Explainable Retrieval
+- [x] Audit Replay
+- [x] FDA 21 CFR Part 50 Rule Set
 - [ ] Common Rule (45 CFR 46) Rule Set
 
 ---
