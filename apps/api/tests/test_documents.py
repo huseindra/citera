@@ -33,6 +33,9 @@ async def client():
     from app.db import Base, engine
     from app.main import app
 
+    # pytest-asyncio gives every test its own event loop; pooled asyncpg
+    # connections are loop-bound, so start each fixture with a fresh pool.
+    await engine.dispose()
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)

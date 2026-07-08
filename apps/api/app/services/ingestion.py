@@ -12,6 +12,7 @@ from citera_schemas import AuditStep
 
 from app.db import session_factory
 from app.models import AuditRecord, Chunk, Document
+from app.services.embeddings import get_embedder
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +30,11 @@ async def run_chunking(document_id: UUID) -> None:
                 else None
             )
             chunks = chunk_document(document.canonical_text, document.id, page_map)
-            for chunk in chunks:
+            embedder = get_embedder()
+            vectors = await embedder.embed(
+                [c.text for c in chunks], input_type="document"
+            )
+            for chunk, vector in zip(chunks, vectors):
                 session.add(
                     Chunk(
                         id=chunk.id,
@@ -40,6 +45,9 @@ async def run_chunking(document_id: UUID) -> None:
                         char_end=chunk.span.char_end,
                         section_title=chunk.section_title,
                         content_hash=chunk.content_hash,
+                        embedding=vector,
+                        embedding_model=embedder.model,
+                        embedding_version=embedder.version,
                     )
                 )
             session.add(
@@ -52,6 +60,18 @@ async def run_chunking(document_id: UUID) -> None:
                             {c.section_title for c in chunks if c.section_title}
                         ),
                         "max_chunk_chars": max((len(c.text) for c in chunks), default=0),
+                    },
+                )
+            )
+            session.add(
+                AuditRecord(
+                    step=AuditStep.INGEST_EMBED,
+                    document_id=document.id,
+                    payload={
+                        "model": embedder.model,
+                        "version": embedder.version,
+                        "dim": embedder.dim,
+                        "embedded": len(vectors),
                     },
                 )
             )
