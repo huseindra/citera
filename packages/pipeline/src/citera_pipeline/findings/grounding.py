@@ -87,13 +87,18 @@ def _nearest(occurrences: list[int], hint: int | None) -> int:
 
 
 def _normalize(text: str) -> tuple[str, list[int]]:
-    """Collapse whitespace runs and unify punctuation variants, keeping a
-    map from every normalized character back to its original offset."""
+    """Collapse whitespace runs, unify punctuation variants, and skip
+    markdown emphasis markers (*) entirely — models quote '**bold text**'
+    as 'bold text', and both sides must normalize identically. Keeps a
+    map from every normalized character back to its original offset, so
+    matched spans land on the real characters (markers excluded)."""
     chars: list[str] = []
     index_map: list[int] = []
     prev_space = False
     for i, ch in enumerate(text):
         ch = _TRANSLATE.get(ch, ch)
+        if ch == "*":
+            continue  # emphasis marker, not content
         if ch.isspace():
             if prev_space:
                 continue
