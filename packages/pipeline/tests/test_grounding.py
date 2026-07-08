@@ -35,6 +35,21 @@ def test_whitespace_variant_grounds_via_normalization():
     assert sliced.endswith("previous studies.")
 
 
+def test_quote_without_markdown_emphasis_markers_grounds():
+    """The live-Claude false-reject: models quote '**bold**' as 'bold'."""
+    text = (
+        "Records will be seen by regulatory authorities, **including the "
+        "FDA, which may inspect study records**."
+    )
+    quote = "including the FDA, which may inspect study records"
+    result = ground_quote(quote, text)
+    assert result.ok and result.method == "normalized"
+    sliced = text[result.char_start : result.char_end]
+    assert sliced.startswith("including the FDA")
+    # the span lands on content characters, not the ** markers
+    assert "**" not in sliced.replace("**.", "")
+
+
 def test_unicode_quote_variant_grounds():
     text = 'The sponsor states: "no serious side effects have been observed" here.'
     quote = "“no serious side effects have been observed”"
