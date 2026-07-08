@@ -4,17 +4,12 @@
 // sections, one click away.
 
 import { useQuery } from "@tanstack/react-query";
-import { Suspense, lazy } from "react";
 import { apiGet } from "../../api/client";
 import type { FindingEvidenceOut, FindingOut } from "../../api/types";
 import { STATUS_META } from "../../lib/status";
 import { AuditReplay } from "../finding/AuditReplay";
-
-const CitationGraphView = lazy(() =>
-  import("../finding/CitationGraph").then((m) => ({
-    default: m.CitationGraphView,
-  })),
-);
+import { EvidencePathStrip } from "./EvidencePathStrip";
+import { StrengthMeter } from "./StrengthMeter";
 
 interface Props {
   reviewId: string;
@@ -69,6 +64,13 @@ export function Inspector({
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
+        {/* 0. The path from regulation to finding — animated per selection */}
+        <EvidencePathStrip
+          finding={finding}
+          evidence={evidence.data ?? null}
+          onScrollToOffset={onScrollToOffset}
+        />
+
         {/* 1. Evidence first */}
         <EvidenceCards finding={finding} onScrollToOffset={onScrollToOffset} />
 
@@ -83,12 +85,7 @@ export function Inspector({
             )}
           </div>
           <p className="leading-6 text-stone-700">{finding.reasoning}</p>
-          {finding.evidence_strength && (
-            <div className="mt-2 text-[11px] text-stone-500">
-              evidence strength:{" "}
-              <span className="font-medium">{finding.evidence_strength}</span>
-            </div>
-          )}
+          <StrengthMeter strength={finding.evidence_strength} />
           {finding.status !== "conflicting" && finding.protocol_reference && (
             <p className="mt-2 text-xs text-stone-500">
               Protocol reference: {finding.protocol_reference}
@@ -105,27 +102,6 @@ export function Inspector({
             evidence={evidence.data ?? null}
             onScrollToOffset={onScrollToOffset}
           />
-        </details>
-
-        <details className="rounded-lg border border-stone-200">
-          <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-stone-600">
-            Citation graph
-          </summary>
-          <div className="flex h-64 flex-col border-t border-stone-100">
-            <Suspense
-              fallback={
-                <div className="flex flex-1 items-center justify-center text-xs text-stone-400">
-                  Loading graph…
-                </div>
-              }
-            >
-              <CitationGraphView
-                finding={finding}
-                evidence={evidence.data ?? null}
-                onScrollToOffset={onScrollToOffset}
-              />
-            </Suspense>
-          </div>
         </details>
 
         <details className="rounded-lg border border-stone-200">
