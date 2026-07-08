@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
+import { Link, Outlet } from "react-router-dom";
 import { apiGet, type HealthResponse } from "./api/client";
 
 function HealthBadge() {
   const { data, isLoading, isError } = useQuery({
     queryKey: ["health"],
     queryFn: () => apiGet<HealthResponse>("/health"),
-    refetchInterval: 10_000,
+    refetchInterval: 15_000,
   });
 
   const state = isLoading
@@ -25,19 +26,16 @@ function HealthBadge() {
 
 export default function App() {
   return (
-    <div className="min-h-screen bg-white text-stone-900">
-      <header className="flex items-center justify-between border-b border-stone-200 px-6 py-3">
-        <div>
+    <div className="flex h-screen flex-col bg-white text-stone-900">
+      <header className="flex shrink-0 items-center justify-between border-b border-stone-200 px-6 py-3">
+        <Link to="/" className="block">
           <h1 className="text-sm font-semibold tracking-tight">Citera</h1>
           <p className="text-xs text-stone-500">Evidence Intelligence</p>
-        </div>
+        </Link>
         <HealthBadge />
       </header>
-      <main className="mx-auto max-w-3xl px-6 py-16 text-center">
-        <p className="text-sm text-stone-500">
-          Workspace arrives in M5. This shell verifies the frontend ↔ API
-          plumbing end to end.
-        </p>
+      <main className="min-h-0 flex-1 overflow-y-auto">
+        <Outlet />
       </main>
     </div>
   );

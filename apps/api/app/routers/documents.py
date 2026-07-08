@@ -135,3 +135,21 @@ async def get_document(
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return await _to_out(session, doc)
+
+
+class DocumentText(BaseModel):
+    id: UUID
+    filename: str
+    canonical_text: str
+
+
+@router.get("/{document_id}/text", response_model=DocumentText)
+async def get_document_text(
+    document_id: UUID, session: AsyncSession = Depends(get_session)
+):
+    doc = await session.get(Document, document_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    return DocumentText(
+        id=doc.id, filename=doc.filename, canonical_text=doc.canonical_text
+    )

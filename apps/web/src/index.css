@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+/* Subtle, fast, explanatory motion (design-principles.md → Motion):
+   pulse once when an evidence span is selected, then settle. */
+@keyframes evidence-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgb(120 113 108 / 0.45);
+  }
+  100% {
+    box-shadow: 0 0 0 10px rgb(120 113 108 / 0);
+  }
+}
+
+.evidence-pulse {
+  animation: evidence-pulse 0.9s ease-out 2;
+}

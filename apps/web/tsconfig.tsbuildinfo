@@ -1,1 +1,1 @@
-{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./vite.config.ts"],"version":"5.9.3"}
+{"root":["./src/app.tsx","./src/main.tsx","./src/api/client.ts","./src/api/types.ts","./src/components/document/documentviewer.tsx","./src/components/matrix/coveragematrix.tsx","./src/lib/segment.test.ts","./src/lib/segment.ts","./src/lib/status.ts","./src/pages/home.tsx","./src/pages/review.tsx","./vite.config.ts"],"version":"5.9.3"}
