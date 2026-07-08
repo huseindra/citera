@@ -54,6 +54,21 @@ async def run_review(review_id: UUID) -> None:
         review.status = "running"
         await session.commit()
 
+        # Pre-warm the (cached) query embeddings in ONE batched call —
+        # per-rule retrieval then hits the cache instead of a rate-limited
+        # API eight separate times.
+        try:
+            from app.services.embeddings import get_embedder
+
+            all_queries = [q for rule in ruleset.rules for q in rule.retrieval_queries]
+            await get_embedder().embed(all_queries, input_type="query")
+        except Exception:
+            logger.warning(
+                "query prewarm failed for review %s; falling back to per-rule "
+                "embedding",
+                review_id,
+            )
+
         evaluator = get_evaluator()
         for rule in ruleset.rules:
             try:
