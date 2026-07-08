@@ -2,37 +2,34 @@ import { useQuery } from "@tanstack/react-query";
 import { Link, Outlet } from "react-router-dom";
 import { apiGet, type HealthResponse } from "./api/client";
 
-function HealthBadge() {
-  const { data, isLoading, isError } = useQuery({
+function HealthDot() {
+  const { data, isError } = useQuery({
     queryKey: ["health"],
     queryFn: () => apiGet<HealthResponse>("/health"),
-    refetchInterval: 15_000,
+    refetchInterval: 20_000,
   });
-
-  const state = isLoading
-    ? { label: "connecting…", classes: "bg-stone-100 text-stone-500" }
-    : isError || data?.status !== "ok"
-      ? { label: "api degraded", classes: "bg-amber-50 text-amber-700" }
-      : { label: "api connected", classes: "bg-emerald-50 text-emerald-700" };
-
+  const ok = !isError && data?.status === "ok";
   return (
     <span
-      className={`rounded-full px-3 py-1 text-xs font-medium ${state.classes}`}
-    >
-      {state.label}
-    </span>
+      title={ok ? "API connected" : "API unreachable or degraded"}
+      className={`inline-block h-1.5 w-1.5 rounded-full ${
+        ok ? "bg-emerald-500" : "bg-amber-500"
+      }`}
+    />
   );
 }
 
 export default function App() {
   return (
-    <div className="flex h-screen flex-col bg-white text-stone-900">
-      <header className="flex shrink-0 items-center justify-between border-b border-stone-200 px-6 py-3">
-        <Link to="/" className="block">
-          <h1 className="text-sm font-semibold tracking-tight">Citera</h1>
-          <p className="text-xs text-stone-500">Evidence Intelligence</p>
+    <div className="flex h-screen flex-col bg-stone-50/40 text-stone-900 antialiased">
+      <header className="flex h-11 shrink-0 items-center justify-between border-b border-stone-200/80 bg-white/80 px-4 backdrop-blur">
+        <Link to="/" className="flex items-baseline gap-2">
+          <span className="text-sm font-bold tracking-tight">Citera</span>
+          <span className="text-[10px] font-medium uppercase tracking-widest text-stone-400">
+            Evidence Intelligence
+          </span>
         </Link>
-        <HealthBadge />
+        <HealthDot />
       </header>
       <main className="min-h-0 flex-1 overflow-y-auto">
         <Outlet />

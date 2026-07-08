@@ -14,3 +14,17 @@
 .evidence-pulse {
   animation: evidence-pulse 0.9s ease-out 2;
 }
+
+/* review theater: the sweep on the rule Claude is currently evaluating */
+@keyframes theater-sweep {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(400%);
+  }
+}
+
+.theater-shimmer {
+  animation: theater-sweep 1.4s ease-in-out infinite;
+}

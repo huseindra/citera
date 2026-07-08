@@ -53,8 +53,24 @@ export interface ReviewOut {
   ruleset_version: string;
   status: "pending" | "running" | "complete" | "failed";
   rule_count: number;
+  evaluator_model: string | null;
   findings: FindingOut[];
   created_at: string;
+}
+
+export interface RuleOut {
+  id: string;
+  citation: string;
+  title: string;
+  description: string;
+  severity: string;
+}
+
+export interface RuleSetOut {
+  id: string;
+  name: string;
+  version: string;
+  rules: RuleOut[];
 }
 
 export interface EvidenceChunkOut {
@@ -111,5 +127,6 @@ export interface ReviewSummary {
   document_filename: string | null;
   ruleset_id: string;
   status: string;
+  status_counts: Record<string, number>;
   created_at: string;
 }

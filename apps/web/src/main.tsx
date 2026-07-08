@@ -5,6 +5,7 @@ import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import "allotment/dist/style.css";
 import App from "./App";
 import { HomePage } from "./pages/Home";
+import { ReportPage } from "./pages/Report";
 import { ReviewPage } from "./pages/Review";
 import "./index.css";
 
@@ -19,6 +20,8 @@ const router = createBrowserRouter([
       { path: "reviews/:reviewId", element: <ReviewPage /> },
     ],
   },
+  // report renders without the app chrome so it prints clean
+  { path: "/reviews/:reviewId/report", element: <ReportPage /> },
 ]);
 
 createRoot(document.getElementById("root")!).render(

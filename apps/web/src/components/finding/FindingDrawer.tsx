@@ -13,6 +13,7 @@ const CitationGraphView = lazy(() =>
 interface Props {
   reviewId: string;
   finding: FindingOut;
+  evaluatorModel: string | null;
   onClose: () => void;
   onScrollToOffset: (offset: number) => void;
 }
@@ -28,6 +29,7 @@ const TAB_LABELS: Record<Tab, string> = {
 export function FindingDrawer({
   reviewId,
   finding,
+  evaluatorModel,
   onClose,
   onScrollToOffset,
 }: Props) {
@@ -44,7 +46,7 @@ export function FindingDrawer({
   });
 
   return (
-    <div className="flex h-72 shrink-0 flex-col border-t border-stone-200 bg-white">
+    <div className="flex h-full flex-col border-t border-stone-200 bg-white">
       <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2">
         <div className="flex items-center gap-3">
           <span
@@ -86,6 +88,7 @@ export function FindingDrawer({
         <EvidenceTab
           finding={finding}
           evidence={evidence.data ?? null}
+          evaluatorModel={evaluatorModel}
           onScrollToOffset={onScrollToOffset}
         />
       ) : tab === "graph" ? (
@@ -114,10 +117,12 @@ export function FindingDrawer({
 function EvidenceTab({
   finding,
   evidence,
+  evaluatorModel,
   onScrollToOffset,
 }: {
   finding: FindingOut;
   evidence: FindingEvidenceOut | null;
+  evaluatorModel: string | null;
   onScrollToOffset: (offset: number) => void;
 }) {
   const conflicting = finding.status === "conflicting";
@@ -171,8 +176,18 @@ function EvidenceTab({
           ` · evidence strength: ${finding.evidence_strength}`}
       </div>
 
-      {/* 3. The AI's reasoning — after the evidence */}
-      <p className="leading-6 text-stone-700">{finding.reasoning}</p>
+      {/* 3. The AI's reasoning — after the evidence, clearly attributed */}
+      <div>
+        <div className="mb-1 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-stone-400">
+          Claude's assessment
+          {evaluatorModel && (
+            <span className="rounded-full border border-stone-200 bg-stone-50 px-1.5 py-0.5 normal-case text-stone-500">
+              {evaluatorModel.split(" ")[0]}
+            </span>
+          )}
+        </div>
+        <p className="leading-6 text-stone-700">{finding.reasoning}</p>
+      </div>
       {!conflicting && finding.protocol_reference && (
         <p className="text-xs text-stone-500">
           Protocol reference: {finding.protocol_reference}
