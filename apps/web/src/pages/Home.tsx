@@ -177,7 +177,8 @@ export function HomePage() {
         </div>
         <div className="mt-4 flex items-center justify-between">
           <p className="text-[11px] text-stone-400">
-            Markdown / text (synthetic documents only — no real clinical data).
+            Markdown, text, PDF or DOCX (synthetic documents only — no real
+            clinical data).
           </p>
           <button
             disabled={!canStart || startReview.isPending}
@@ -312,7 +313,7 @@ function DropZone({
       >
         <input
           type="file"
-          accept=".md,.markdown,.txt,.pdf"
+          accept=".md,.markdown,.txt,.pdf,.docx"
           className="hidden"
           onChange={(e) => {
             const file = e.target.files?.[0];

@@ -78,12 +78,19 @@ async def test_reupload_returns_same_document_no_duplicate_chunks(client):
 
 async def test_unsupported_and_empty_uploads_rejected(client):
     resp = await client.post(
-        "/documents", files={"file": ("x.docx", b"data", "application/octet-stream")}
+        "/documents", files={"file": ("x.rtf", b"data", "application/octet-stream")}
     )
     assert resp.status_code == 415
 
     resp = await client.post(
         "/documents", files={"file": ("x.md", b"   \n", "text/markdown")}
+    )
+    assert resp.status_code == 422
+
+    # corrupt docx is unprocessable, not unsupported and not "too large"
+    resp = await client.post(
+        "/documents",
+        files={"file": ("x.docx", b"not a zip", "application/octet-stream")},
     )
     assert resp.status_code == 422
 
