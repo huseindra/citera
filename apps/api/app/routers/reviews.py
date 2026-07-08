@@ -96,6 +96,35 @@ async def create_review(
     return await _to_out(session, review)
 
 
+class ReviewSummary(BaseModel):
+    id: UUID
+    document_id: UUID
+    document_filename: str | None
+    ruleset_id: str
+    status: str
+    created_at: datetime
+
+
+@router.get("", response_model=list[ReviewSummary])
+async def list_reviews(session: AsyncSession = Depends(get_session)):
+    rows = await session.execute(
+        select(Review, Document.filename)
+        .join(Document, Document.id == Review.document_id)
+        .order_by(Review.created_at.desc())
+    )
+    return [
+        ReviewSummary(
+            id=review.id,
+            document_id=review.document_id,
+            document_filename=filename,
+            ruleset_id=review.ruleset_id,
+            status=review.status,
+            created_at=review.created_at,
+        )
+        for review, filename in rows
+    ]
+
+
 @router.get("/{review_id}", response_model=ReviewOut)
 async def get_review(review_id: UUID, session: AsyncSession = Depends(get_session)):
     review = await session.get(Review, review_id)
