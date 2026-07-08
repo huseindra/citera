@@ -63,16 +63,13 @@ async def run_chunking(document_id: UUID) -> None:
                     },
                 )
             )
+            from app.services.embeddings import embedding_metadata
+
             session.add(
                 AuditRecord(
                     step=AuditStep.INGEST_EMBED,
                     document_id=document.id,
-                    payload={
-                        "model": embedder.model,
-                        "version": embedder.version,
-                        "dim": embedder.dim,
-                        "embedded": len(vectors),
-                    },
+                    payload={**embedding_metadata(), "embedded": len(vectors)},
                 )
             )
             document.status = "ready"

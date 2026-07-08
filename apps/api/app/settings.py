@@ -1,3 +1,4 @@
+from pydantic import AliasChoices, Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -12,8 +13,20 @@ class Settings(BaseSettings):
 
     anthropic_api_key: str = ""
     voyage_api_key: str = ""
-    # auto → voyage when a key is present, else fake (offline dev/tests)
-    embeddings_provider: str = "auto"
+
+    # Embedding provider is ALWAYS explicit — no probing, no hidden runtime
+    # behavior. Startup fails fast when the configured provider is
+    # unavailable. (EMBEDDINGS_PROVIDER accepted as a legacy alias.)
+    embedding_provider: str = Field(
+        default="fake",
+        validation_alias=AliasChoices("EMBEDDING_PROVIDER", "EMBEDDINGS_PROVIDER"),
+    )
+    # Provider and model are deliberately separate concerns.
+    embedding_model: str = ""
+    # Overrides the provider's preset base URL (openai-compatible providers).
+    embedding_base_url: str = ""
+    embedding_api_key: str = ""
+
     # auto → claude when ANTHROPIC_API_KEY is present, else scripted demo
     llm_provider: str = "auto"
     claude_model: str = "claude-sonnet-5"

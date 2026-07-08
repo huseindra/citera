@@ -1,10 +1,14 @@
-"""Voyage AI embeddings over REST (no SDK dependency)."""
+"""Voyage AI embeddings over REST (no SDK dependency).
+
+Kept separate from OpenAICompatEmbedder because Voyage's payload differs
+(input_type is a first-class request field, not a text prefix).
+"""
 
 import asyncio
 
 import httpx
 
-from citera_pipeline.embed.base import InputType
+from citera_pipeline.embed.base import EmbeddingError, InputType
 
 _API_URL = "https://api.voyageai.com/v1/embeddings"
 _BATCH_SIZE = 96
@@ -15,10 +19,6 @@ _MAX_RATE_LIMIT_ATTEMPTS = 7
 _MAX_BACKOFF_SECONDS = 45.0
 
 
-class EmbeddingError(Exception):
-    pass
-
-
 class VoyageEmbedder:
     version = "1"
 
@@ -26,20 +26,35 @@ class VoyageEmbedder:
         self.model = model
         self.dim = dim
         self._api_key = api_key
+        # one client for the process lifetime — TLS handshakes are not free
+        self._client = httpx.AsyncClient(timeout=60.0)
+
+    async def health_check(self) -> None:
+        try:
+            [vector] = await self._embed_batch(["healthcheck"], "query")
+        except Exception as exc:
+            raise EmbeddingError(
+                f"Voyage unreachable or misconfigured (model={self.model}): {exc}"
+            ) from exc
+        if len(vector) != self.dim:
+            raise EmbeddingError(
+                f"Dimension mismatch: Voyage returns {len(vector)}-d vectors "
+                f"but EMBEDDING_DIM={self.dim}"
+            )
 
     async def embed(
         self, texts: list[str], *, input_type: InputType = "document"
     ) -> list[list[float]]:
         vectors: list[list[float]] = []
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            for start in range(0, len(texts), _BATCH_SIZE):
-                batch = texts[start : start + _BATCH_SIZE]
-                vectors.extend(await self._embed_batch(client, batch, input_type))
+        for start in range(0, len(texts), _BATCH_SIZE):
+            batch = texts[start : start + _BATCH_SIZE]
+            vectors.extend(await self._embed_batch(batch, input_type))
         return vectors
 
     async def _embed_batch(
-        self, client: httpx.AsyncClient, batch: list[str], input_type: InputType
+        self, batch: list[str], input_type: InputType
     ) -> list[list[float]]:
+        client = self._client
         last_error: Exception | None = None
         generic_attempts = 0
         rate_limit_attempts = 0
