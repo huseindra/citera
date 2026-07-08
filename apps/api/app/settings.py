@@ -14,6 +14,9 @@ class Settings(BaseSettings):
     voyage_api_key: str = ""
     # auto → voyage when a key is present, else fake (offline dev/tests)
     embeddings_provider: str = "auto"
+    # auto → claude when ANTHROPIC_API_KEY is present, else scripted demo
+    llm_provider: str = "auto"
+    claude_model: str = "claude-sonnet-5"
 
 
 settings = Settings()
