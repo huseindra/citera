@@ -28,3 +28,19 @@
 .theater-shimmer {
   animation: theater-sweep 1.4s ease-in-out infinite;
 }
+
+/* evidence path: nodes stagger in when a finding is selected */
+@keyframes path-node-in {
+  from {
+    opacity: 0;
+    transform: translateX(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.path-node-in {
+  animation: path-node-in 0.35s ease-out forwards;
+}
