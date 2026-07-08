@@ -233,6 +233,54 @@ async def test_finding_evidence_serves_recorded_retrieval(client):
     assert resp.status_code == 404
 
 
+async def test_finding_audit_chain_is_ordered_and_verbatim(client):
+    protocol_id = await _ingest(client, "protocol.md", "protocol")
+    icf_b_id = await _ingest(client, "icf-b.md", "icf")
+    review = await _run_review(client, icf_b_id, protocol_id)
+    by_rule = {f["rule_id"]: f for f in review["findings"]}
+
+    # grounded finding: the full chain, in pipeline order
+    conflicting = by_rule["fda-50.25-a2-risks"]
+    resp = await client.get(
+        f"/reviews/{review['id']}/findings/{conflicting['id']}/audit"
+    )
+    assert resp.status_code == 200
+    audit = resp.json()
+    steps = [r["step"] for r in audit["records"]]
+    assert steps == [
+        "ingest.extract",
+        "ingest.chunk",
+        "ingest.embed",
+        "retrieve",
+        "evaluate.prompt",
+        "evaluate.response",
+        "grounding.passed",
+        "finding.persisted",
+    ]
+
+    # payloads are the raw truth
+    by_step = {r["step"]: r["payload"] for r in audit["records"]}
+    assert by_step["retrieve"]["queries"]
+    assert by_step["evaluate.prompt"]["model"]
+    assert by_step["evaluate.prompt"]["prompt"] is not None
+    assert by_step["grounding.passed"]["char_start"] == conflicting["span"]["char_start"]
+    assert by_step["finding.persisted"]["status"] == "conflicting"
+
+    # not_found: no grounding step, retrieval still present
+    voluntary = by_rule["fda-50.25-a8-voluntary"]
+    resp = await client.get(
+        f"/reviews/{review['id']}/findings/{voluntary['id']}/audit"
+    )
+    steps = [r["step"] for r in resp.json()["records"]]
+    assert "retrieve" in steps
+    assert not any(s.startswith("grounding.") for s in steps)
+
+    resp = await client.get(
+        f"/reviews/{review['id']}/findings/00000000-0000-0000-0000-000000000000/audit"
+    )
+    assert resp.status_code == 404
+
+
 async def test_review_requires_ready_documents(client):
     protocol_id = await _ingest(client, "protocol.md", "protocol")
     resp = await client.post(
