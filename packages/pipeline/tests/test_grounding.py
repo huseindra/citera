@@ -35,19 +35,24 @@ def test_whitespace_variant_grounds_via_normalization():
     assert sliced.endswith("previous studies.")
 
 
-def test_quote_without_markdown_emphasis_markers_grounds():
-    """The live-Claude false-reject: models quote '**bold**' as 'bold'."""
+def test_quote_crossing_markdown_emphasis_grounds():
+    """The live-Claude false-reject: the model quotes across a '**' boundary
+    without the markers ('…authorities, including the FDA…' vs
+    '…authorities, **including the FDA…**')."""
     text = (
-        "Records will be seen by regulatory authorities, **including the "
-        "FDA, which may inspect study records**."
+        "Records that identify you will be seen by regulatory authorities, "
+        "**including the FDA, which may inspect study records**. Data are "
+        "kept on secure systems."
     )
-    quote = "including the FDA, which may inspect study records"
+    quote = (
+        "seen by regulatory authorities, including the FDA, "
+        "which may inspect study records."
+    )
     result = ground_quote(quote, text)
     assert result.ok and result.method == "normalized"
     sliced = text[result.char_start : result.char_end]
-    assert sliced.startswith("including the FDA")
-    # the span lands on content characters, not the ** markers
-    assert "**" not in sliced.replace("**.", "")
+    assert sliced.startswith("seen by regulatory authorities")
+    assert sliced.endswith("study records**.")  # original chars, markers intact
 
 
 def test_unicode_quote_variant_grounds():
