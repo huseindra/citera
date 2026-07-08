@@ -133,7 +133,8 @@ async def _evaluate_rule(
                 status=FindingStatus.NOT_FOUND,
                 reasoning=outcome.reasoning,
                 queries_executed=retrieval.queries_executed,
-            )
+            ),
+            retrieval_audit_id=retrieval.audit_record_id,
         )
 
     # Span-grounding gate for every evidence-backed status
@@ -160,6 +161,7 @@ async def _evaluate_rule(
             f"Rejected by the span-grounding gate ({grounding.reason}). "
             f"The evaluator claimed '{outcome.status}' with a quote that could "
             f"not be located in the document. Original reasoning: {outcome.reasoning}",
+            retrieval_audit_id=retrieval.audit_record_id,
         )
 
     session.add(
@@ -192,7 +194,8 @@ async def _evaluate_rule(
             ),
             evidence_strength=derive_strength(source_rank, grounding.method),
             protocol_reference=outcome.protocol_reference,
-        )
+        ),
+        retrieval_audit_id=retrieval.audit_record_id,
     )
 
 
@@ -211,7 +214,9 @@ def _validated(**kwargs) -> FindingSchema:
     return FindingSchema(id=uuid4(), **kwargs)
 
 
-def _to_model(finding: FindingSchema) -> Finding:
+def _to_model(
+    finding: FindingSchema, retrieval_audit_id: UUID | None = None
+) -> Finding:
     return Finding(
         id=finding.id,
         review_id=finding.review_id,
@@ -227,15 +232,22 @@ def _to_model(finding: FindingSchema) -> Finding:
         ),
         protocol_reference=finding.protocol_reference,
         queries_executed=finding.queries_executed or None,
+        retrieval_audit_id=retrieval_audit_id,
     )
 
 
-def _failed_finding(review_id: UUID, rule: Rule, reasoning: str) -> Finding:
+def _failed_finding(
+    review_id: UUID,
+    rule: Rule,
+    reasoning: str,
+    retrieval_audit_id: UUID | None = None,
+) -> Finding:
     return _to_model(
         _validated(
             review_id=review_id,
             rule_id=rule.id,
             status=FindingStatus.EVALUATION_FAILED,
             reasoning=reasoning,
-        )
+        ),
+        retrieval_audit_id=retrieval_audit_id,
     )

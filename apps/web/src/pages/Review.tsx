@@ -1,15 +1,21 @@
 import { useQuery } from "@tanstack/react-query";
 import { Allotment } from "allotment";
+import { useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut } from "../api/types";
 import { CoverageMatrix } from "../components/matrix/CoverageMatrix";
 import { DocumentViewer } from "../components/document/DocumentViewer";
+import { FindingDrawer } from "../components/finding/FindingDrawer";
 
 export function ReviewPage() {
   const { reviewId } = useParams();
   const [searchParams, setSearchParams] = useSearchParams();
   const selectedId = searchParams.get("finding");
+  const [scrollOffset, setScrollOffset] = useState<{
+    offset: number;
+    nonce: number;
+  } | null>(null);
 
   const review = useQuery({
     queryKey: ["review", reviewId],
@@ -49,6 +55,9 @@ export function ReviewPage() {
 
   const { data } = review;
   const running = data.status === "pending" || data.status === "running";
+  const selectedFinding = data.findings.find((f) => f.id === selectedId) ?? null;
+  const scrollTo = (offset: number) =>
+    setScrollOffset((prev) => ({ offset, nonce: (prev?.nonce ?? 0) + 1 }));
 
   return (
     <div className="flex h-full flex-col">
@@ -90,10 +99,19 @@ export function ReviewPage() {
               findings={data.findings}
               selectedId={selectedId}
               onSelect={select}
+              scrollOffset={scrollOffset}
             />
           </Allotment.Pane>
         </Allotment>
       </div>
+      {selectedFinding && (
+        <FindingDrawer
+          reviewId={data.id}
+          finding={selectedFinding}
+          onClose={() => select(selectedFinding.id)}
+          onScrollToOffset={scrollTo}
+        />
+      )}
     </div>
   );
 }

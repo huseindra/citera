@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
-from app.models import Document, Finding, Review
+from app.models import AuditRecord, Chunk, Document, Finding, Review
 from app.services.review import run_review
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -131,6 +131,80 @@ async def get_review(review_id: UUID, session: AsyncSession = Depends(get_sessio
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found")
     return await _to_out(session, review)
+
+
+class EvidenceChunkOut(BaseModel):
+    chunk_id: UUID
+    rank: int
+    section_title: str | None
+    char_start: int | None
+    char_end: int | None
+    text_preview: str | None
+    dense_score: float | None
+    sparse_score: float | None
+    fused_score: float
+
+
+class FindingEvidenceOut(BaseModel):
+    finding_id: UUID
+    queries_executed: list[str]
+    fusion_params: dict
+    embedding_model: str | None
+    results: list[EvidenceChunkOut]
+
+
+@router.get(
+    "/{review_id}/findings/{finding_id}/evidence",
+    response_model=FindingEvidenceOut,
+)
+async def get_finding_evidence(
+    review_id: UUID, finding_id: UUID, session: AsyncSession = Depends(get_session)
+):
+    """The audit layer of the finding drawer: the retrieval that fed this
+    finding, served verbatim from the audit record (record-and-show) and
+    joined with chunk metadata for display context only."""
+    finding = await session.get(Finding, finding_id)
+    if finding is None or finding.review_id != review_id:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    if finding.retrieval_audit_id is None:
+        raise HTTPException(
+            status_code=404, detail="No retrieval recorded for this finding"
+        )
+    audit = await session.get(AuditRecord, finding.retrieval_audit_id)
+    if audit is None:
+        raise HTTPException(status_code=404, detail="Audit record not found")
+
+    payload = audit.payload
+    recorded = payload.get("results", [])
+    chunk_ids = [UUID(r["chunk_id"]) for r in recorded]
+    rows = {}
+    if chunk_ids:
+        found = await session.scalars(select(Chunk).where(Chunk.id.in_(chunk_ids)))
+        rows = {c.id: c for c in found}
+
+    results = []
+    for r in recorded:
+        chunk = rows.get(UUID(r["chunk_id"]))
+        results.append(
+            EvidenceChunkOut(
+                chunk_id=UUID(r["chunk_id"]),
+                rank=r["rank"],
+                dense_score=r["dense_score"],
+                sparse_score=r["sparse_score"],
+                fused_score=r["fused_score"],
+                section_title=chunk.section_title if chunk else None,
+                char_start=chunk.char_start if chunk else None,
+                char_end=chunk.char_end if chunk else None,
+                text_preview=(chunk.text[:180] if chunk else None),
+            )
+        )
+    return FindingEvidenceOut(
+        finding_id=finding.id,
+        queries_executed=payload.get("queries", []),
+        fusion_params=payload.get("fusion_params", {}),
+        embedding_model=payload.get("embedding_model"),
+        results=results,
+    )
 
 
 async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:

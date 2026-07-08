@@ -92,6 +92,10 @@ class Finding(Base):
     evidence_strength: Mapped[str | None]
     protocol_reference: Mapped[str | None] = mapped_column(Text)
     queries_executed: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # links the finding to the audit record of the retrieval that fed it
+    retrieval_audit_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
