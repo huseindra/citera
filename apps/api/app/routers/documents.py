@@ -7,6 +7,7 @@ from uuid import UUID
 from citera_pipeline.ingest import (
     EmptyDocumentError,
     ExtractionError,
+    FileTooLargeError,
     UnsupportedFileTypeError,
     extract,
 )
@@ -72,10 +73,11 @@ async def upload_document(
         extraction = extract(filename, data)
     except UnsupportedFileTypeError as exc:
         raise HTTPException(status_code=415, detail=str(exc)) from exc
-    except EmptyDocumentError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except ExtractionError as exc:
+    except FileTooLargeError as exc:
         raise HTTPException(status_code=413, detail=str(exc)) from exc
+    except (EmptyDocumentError, ExtractionError) as exc:
+        # empty or unreadable (e.g. corrupt docx) — unprocessable, not "too large"
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     content_hash = hashlib.sha256(data).hexdigest()
     existing = await session.scalar(
