@@ -1,31 +1,88 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiGet, apiPost, apiUpload } from "../api/client";
 import type { DocumentOut, ReviewOut, ReviewSummary } from "../api/types";
+import { displayName, rulesetName, timeAgo } from "../lib/format";
+import { STATUS_META } from "../lib/status";
+
+type SlotKind = "protocol" | "icf";
+
+interface Slot {
+  documentId: string | null;
+  filename: string | null;
+  state: "empty" | "uploading" | "processing" | "ready" | "failed";
+  error?: string;
+}
+
+const EMPTY_SLOT: Slot = { documentId: null, filename: null, state: "empty" };
 
 export function HomePage() {
-  const queryClient = useQueryClient();
   const navigate = useNavigate();
+  const [slots, setSlots] = useState<Record<SlotKind, Slot>>({
+    protocol: EMPTY_SLOT,
+    icf: EMPTY_SLOT,
+  });
 
   const documents = useQuery({
     queryKey: ["documents"],
     queryFn: () => apiGet<DocumentOut[]>("/documents"),
+    // poll while a slot is still chunking in the background
+    refetchInterval: () =>
+      Object.values(slots).some((s) => s.state === "processing") ? 1200 : false,
   });
+
+  // promote processing slots to ready once the poll sees them
+  const docById = new Map((documents.data ?? []).map((d) => [d.id, d]));
+  for (const kind of ["protocol", "icf"] as SlotKind[]) {
+    const slot = slots[kind];
+    if (slot.state === "processing" && slot.documentId) {
+      const doc = docById.get(slot.documentId);
+      if (doc?.status === "ready") {
+        queueMicrotask(() =>
+          setSlots((prev) => ({ ...prev, [kind]: { ...prev[kind], state: "ready" } })),
+        );
+      } else if (doc?.status === "failed") {
+        queueMicrotask(() =>
+          setSlots((prev) => ({
+            ...prev,
+            [kind]: { ...prev[kind], state: "failed", error: doc.status_reason ?? "" },
+          })),
+        );
+      }
+    }
+  }
+
   const reviews = useQuery({
     queryKey: ["reviews"],
     queryFn: () => apiGet<ReviewSummary[]>("/reviews"),
   });
 
-  const upload = useMutation({
-    mutationFn: async ({ file, kind }: { file: File; kind: string }) => {
+  const upload = useCallback(async (kind: SlotKind, file: File) => {
+    setSlots((prev) => ({
+      ...prev,
+      [kind]: { documentId: null, filename: file.name, state: "uploading" },
+    }));
+    try {
       const form = new FormData();
       form.append("file", file);
       form.append("kind", kind);
-      return apiUpload<DocumentOut>("/documents", form);
-    },
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["documents"] }),
-  });
+      const doc = await apiUpload<DocumentOut>("/documents", form);
+      setSlots((prev) => ({
+        ...prev,
+        [kind]: {
+          documentId: doc.id,
+          filename: doc.filename,
+          state: doc.status === "ready" ? "ready" : "processing",
+        },
+      }));
+    } catch (err) {
+      setSlots((prev) => ({
+        ...prev,
+        [kind]: { ...prev[kind], state: "failed", error: (err as Error).message },
+      }));
+    }
+  }, []);
 
   const startReview = useMutation({
     mutationFn: (body: { document_id: string; protocol_document_id: string }) =>
@@ -33,132 +90,88 @@ export function HomePage() {
     onSuccess: (review) => navigate(`/reviews/${review.id}`),
   });
 
-  const [icfId, setIcfId] = useState("");
-  const [protocolId, setProtocolId] = useState("");
-
-  const ready = (documents.data ?? []).filter((d) => d.status === "ready");
-  const icfs = ready.filter((d) => d.kind !== "protocol");
-  const protocols = ready.filter((d) => d.kind === "protocol");
+  const readyDocs = (documents.data ?? []).filter((d) => d.status === "ready");
+  const canStart =
+    slots.protocol.state === "ready" && slots.icf.state === "ready";
+  const latestComplete = (reviews.data ?? []).find((r) => r.status === "complete");
 
   return (
-    <div className="mx-auto max-w-3xl space-y-10 px-6 py-10">
-      <section>
-        <h2 className="text-sm font-semibold text-stone-800">Documents</h2>
-        <p className="mt-1 text-xs text-stone-500">
-          Upload the study protocol and the consent form to review
-          (markdown/text; synthetic documents only).
+    <div className="mx-auto max-w-3xl px-6 pb-16 pt-14">
+      {/* Hero — the 30-second answer to "what is this?" */}
+      <div className="mb-10">
+        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
+          Evidence-first AI review of clinical consent documents
+        </h1>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-stone-500">
+          Claude checks an informed consent form against FDA&nbsp;21&nbsp;CFR
+          50.25 and the study protocol. Every finding carries a verified
+          verbatim quote, the retrieval that found it, and a replayable audit
+          trail — <span className="text-stone-700">trust the evidence, not the model.</span>
         </p>
-        <form
-          className="mt-3 flex items-center gap-2 text-sm"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const form = e.currentTarget;
-            const fileInput = form.elements.namedItem("file") as HTMLInputElement;
-            const kindInput = form.elements.namedItem("kind") as HTMLSelectElement;
-            const file = fileInput.files?.[0];
-            if (file) {
-              upload.mutate({ file, kind: kindInput.value });
-              form.reset();
-            }
-          }}
-        >
-          <input
-            name="file"
-            type="file"
-            accept=".md,.markdown,.txt,.pdf"
-            required
-            className="text-xs text-stone-600 file:mr-2 file:rounded-md file:border file:border-stone-300 file:bg-white file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-stone-700"
-          />
-          <select
-            name="kind"
-            className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-xs"
-            defaultValue="icf"
+        {latestComplete && (
+          <Link
+            to={`/reviews/${latestComplete.id}`}
+            className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-stone-400"
           >
-            <option value="icf">ICF</option>
-            <option value="protocol">Protocol</option>
-            <option value="other">Other</option>
-          </select>
-          <button
-            type="submit"
-            disabled={upload.isPending}
-            className="rounded-md bg-stone-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-          >
-            {upload.isPending ? "Uploading…" : "Upload"}
-          </button>
-        </form>
-        {upload.isError && (
-          <p className="mt-2 text-xs text-red-700">
-            {(upload.error as Error).message}
-          </p>
+            Open the latest review
+            <span aria-hidden>→</span>
+          </Link>
         )}
-        <ul className="mt-4 divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white">
-          {(documents.data ?? []).map((d) => (
-            <li
-              key={d.id}
-              className="flex items-center justify-between px-4 py-2 text-sm"
-            >
-              <div>
-                <span className="text-stone-800">{d.filename}</span>
-                <span className="ml-2 text-xs uppercase text-stone-400">
-                  {d.kind}
-                </span>
-              </div>
-              <span className="text-xs text-stone-500">
-                {d.status === "ready"
-                  ? `${d.chunk_count} chunks`
-                  : d.status === "failed"
-                    ? `failed: ${d.status_reason}`
-                    : d.status}
-              </span>
-            </li>
-          ))}
-          {documents.data?.length === 0 && (
-            <li className="px-4 py-3 text-xs text-stone-400">
-              No documents yet.
-            </li>
-          )}
-        </ul>
-      </section>
+      </div>
 
-      <section>
-        <h2 className="text-sm font-semibold text-stone-800">Run a review</h2>
-        <div className="mt-3 flex items-center gap-2 text-xs">
-          <select
-            value={icfId}
-            onChange={(e) => setIcfId(e.target.value)}
-            className="min-w-44 rounded-md border border-stone-300 bg-white px-2 py-1.5"
-          >
-            <option value="">Consent form…</option>
-            {icfs.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.filename}
-              </option>
-            ))}
-          </select>
-          <span className="text-stone-400">validated against</span>
-          <select
-            value={protocolId}
-            onChange={(e) => setProtocolId(e.target.value)}
-            className="min-w-44 rounded-md border border-stone-300 bg-white px-2 py-1.5"
-          >
-            <option value="">Protocol…</option>
-            {protocols.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.filename}
-              </option>
-            ))}
-          </select>
+      {/* New review wizard */}
+      <section className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm">
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-stone-800">New review</h2>
+          <span className="text-[11px] text-stone-400">
+            {rulesetName("fda-21cfr50")}
+          </span>
+        </div>
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <DropZone
+            kind="protocol"
+            title="Study protocol"
+            hint="the source of truth"
+            slot={slots.protocol}
+            onFile={upload}
+            existing={readyDocs.filter((d) => d.kind === "protocol")}
+            onPick={(doc) =>
+              setSlots((prev) => ({
+                ...prev,
+                protocol: { documentId: doc.id, filename: doc.filename, state: "ready" },
+              }))
+            }
+          />
+          <DropZone
+            kind="icf"
+            title="Consent form (ICF)"
+            hint="the document under review"
+            slot={slots.icf}
+            onFile={upload}
+            existing={readyDocs.filter((d) => d.kind === "icf")}
+            onPick={(doc) =>
+              setSlots((prev) => ({
+                ...prev,
+                icf: { documentId: doc.id, filename: doc.filename, state: "ready" },
+              }))
+            }
+          />
+        </div>
+        <div className="mt-4 flex items-center justify-between">
+          <p className="text-[11px] text-stone-400">
+            Markdown / text (synthetic documents only — no real clinical data).
+          </p>
           <button
-            disabled={!icfId || !protocolId || startReview.isPending}
+            disabled={!canStart || startReview.isPending}
             onClick={() =>
               startReview.mutate({
-                document_id: icfId,
-                protocol_document_id: protocolId,
+                document_id: slots.icf.documentId!,
+                protocol_document_id: slots.protocol.documentId!,
               })
             }
-            className="rounded-md bg-stone-900 px-3 py-1.5 font-medium text-white disabled:opacity-40"
+            className="rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white transition-opacity disabled:opacity-30"
           >
-            {startReview.isPending ? "Starting…" : "Review (FDA 21 CFR 50.25)"}
+            {startReview.isPending ? "Starting…" : "Start review"}
           </button>
         </div>
         {startReview.isError && (
@@ -168,31 +181,166 @@ export function HomePage() {
         )}
       </section>
 
-      <section>
+      {/* Past reviews */}
+      <section className="mt-10">
         <h2 className="text-sm font-semibold text-stone-800">Reviews</h2>
-        <ul className="mt-3 divide-y divide-stone-100 rounded-lg border border-stone-200 bg-white">
+        <ul className="mt-3 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
           {(reviews.data ?? []).map((r) => (
             <li key={r.id}>
               <Link
                 to={`/reviews/${r.id}`}
-                className="flex items-center justify-between px-4 py-2 text-sm hover:bg-stone-50"
+                className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-stone-50"
               >
-                <span className="text-stone-800">
-                  {r.document_filename ?? r.document_id}
-                </span>
-                <span className="text-xs text-stone-500">
-                  {r.ruleset_id} · {r.status}
-                </span>
+                <div className="min-w-0">
+                  <div className="truncate font-medium text-stone-800">
+                    {displayName(r.document_filename)}
+                  </div>
+                  <div className="text-[11px] text-stone-400">
+                    {rulesetName(r.ruleset_id)} · {timeAgo(r.created_at)}
+                  </div>
+                </div>
+                <StatusChips counts={r.status_counts} status={r.status} />
               </Link>
             </li>
           ))}
           {reviews.data?.length === 0 && (
-            <li className="px-4 py-3 text-xs text-stone-400">
-              No reviews yet.
+            <li className="px-4 py-6 text-center text-xs text-stone-400">
+              No reviews yet — start one above, or run <code>make seed</code>{" "}
+              for the demo corpus.
             </li>
           )}
         </ul>
       </section>
+    </div>
+  );
+}
+
+function StatusChips({
+  counts,
+  status,
+}: {
+  counts: Record<string, number>;
+  status: string;
+}) {
+  if (status !== "complete") {
+    return (
+      <span className="shrink-0 rounded-full bg-sky-50 px-2.5 py-0.5 text-[11px] font-medium text-sky-700">
+        {status}
+      </span>
+    );
+  }
+  const order = ["conflicting", "not_found", "partial", "evaluation_failed", "satisfied"];
+  return (
+    <div className="flex shrink-0 items-center gap-1">
+      {order
+        .filter((s) => counts[s])
+        .map((s) => (
+          <span
+            key={s}
+            title={STATUS_META[s as keyof typeof STATUS_META].label}
+            className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[11px] font-medium ${STATUS_META[s as keyof typeof STATUS_META].chip}`}
+          >
+            <span aria-hidden>{STATUS_META[s as keyof typeof STATUS_META].icon}</span>
+            {counts[s]}
+          </span>
+        ))}
+    </div>
+  );
+}
+
+function DropZone({
+  kind,
+  title,
+  hint,
+  slot,
+  onFile,
+  existing,
+  onPick,
+}: {
+  kind: SlotKind;
+  title: string;
+  hint: string;
+  slot: Slot;
+  onFile: (kind: SlotKind, file: File) => void;
+  existing: DocumentOut[];
+  onPick: (doc: DocumentOut) => void;
+}) {
+  const [dragging, setDragging] = useState(false);
+  const onDrop = (e: DragEvent) => {
+    e.preventDefault();
+    setDragging(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) onFile(kind, file);
+  };
+
+  return (
+    <div>
+      <label
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragging(true);
+        }}
+        onDragLeave={() => setDragging(false)}
+        onDrop={onDrop}
+        className={`flex min-h-28 cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed px-4 py-5 text-center transition-colors ${
+          slot.state === "ready"
+            ? "border-emerald-300 bg-emerald-50/50"
+            : slot.state === "failed"
+              ? "border-red-300 bg-red-50/50"
+              : dragging
+                ? "border-stone-500 bg-stone-50"
+                : "border-stone-200 hover:border-stone-400"
+        }`}
+      >
+        <input
+          type="file"
+          accept=".md,.markdown,.txt,.pdf"
+          className="hidden"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file) onFile(kind, file);
+            e.target.value = "";
+          }}
+        />
+        <div className="text-xs font-semibold text-stone-700">{title}</div>
+        <div className="mt-0.5 text-[11px] text-stone-400">{hint}</div>
+        <div className="mt-2 text-[11px]">
+          {slot.state === "empty" && (
+            <span className="text-stone-400">drop a file or click</span>
+          )}
+          {slot.state === "uploading" && (
+            <span className="text-sky-600">uploading…</span>
+          )}
+          {slot.state === "processing" && (
+            <span className="text-sky-600">indexing evidence…</span>
+          )}
+          {slot.state === "ready" && (
+            <span className="font-medium text-emerald-700">
+              ✓ {displayName(slot.filename)}
+            </span>
+          )}
+          {slot.state === "failed" && (
+            <span className="text-red-600">failed — {slot.error}</span>
+          )}
+        </div>
+      </label>
+      {existing.length > 0 && slot.state !== "ready" && (
+        <select
+          value=""
+          onChange={(e) => {
+            const doc = existing.find((d) => d.id === e.target.value);
+            if (doc) onPick(doc);
+          }}
+          className="mt-1.5 w-full rounded-md border border-stone-200 bg-white px-2 py-1 text-[11px] text-stone-500"
+        >
+          <option value="">…or pick an uploaded document</option>
+          {existing.map((d) => (
+            <option key={d.id} value={d.id}>
+              {displayName(d.filename)}
+            </option>
+          ))}
+        </select>
+      )}
     </div>
   );
 }

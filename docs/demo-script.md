@@ -86,6 +86,12 @@ substance to ICF-A).
 
    Closing line: **"Don't trust the model. Verify the evidence."**
 
+7. **Export report (if time allows, 15 seconds).**
+   Click *Export report* — a print-ready compliance report with every
+   verified quote, audit reference, and a **reviewer determination block
+   (Concur / Override) + signature line** per finding. "The AI finds;
+   the human decides — and signs."
+
 **Encore (if asked "is this live?"):** upload `icf-b.md` again from the
 home page, run a fresh review, watch the matrix fill in at 1.5s polling.
 

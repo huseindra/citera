@@ -4,7 +4,7 @@ from uuid import UUID
 from citera_rulesets import RulesetError, load_ruleset
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import and_, or_, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -50,6 +50,8 @@ class ReviewOut(BaseModel):
     ruleset_version: str
     status: str
     rule_count: int
+    # which model actually evaluated (from the audit log) — honest chip
+    evaluator_model: str | None
     findings: list[FindingOut]
     created_at: datetime
 
@@ -102,6 +104,8 @@ class ReviewSummary(BaseModel):
     document_filename: str | None
     ruleset_id: str
     status: str
+    # finding counts keyed by status — review list shows outcomes at a glance
+    status_counts: dict[str, int]
     created_at: datetime
 
 
@@ -112,6 +116,15 @@ async def list_reviews(session: AsyncSession = Depends(get_session)):
         .join(Document, Document.id == Review.document_id)
         .order_by(Review.created_at.desc())
     )
+    counts_rows = await session.execute(
+        select(Finding.review_id, Finding.status, func.count()).group_by(
+            Finding.review_id, Finding.status
+        )
+    )
+    counts: dict[UUID, dict[str, int]] = {}
+    for review_id, status, count in counts_rows:
+        counts.setdefault(review_id, {})[status] = count
+
     return [
         ReviewSummary(
             id=review.id,
@@ -119,6 +132,7 @@ async def list_reviews(session: AsyncSession = Depends(get_session)):
             document_filename=filename,
             ruleset_id=review.ruleset_id,
             status=review.status,
+            status_counts=counts.get(review.id, {}),
             created_at=review.created_at,
         )
         for review, filename in rows
@@ -297,6 +311,15 @@ async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:
         )
     ).all()
 
+    evaluator_model = await session.scalar(
+        select(AuditRecord.payload["model"].astext)
+        .where(
+            AuditRecord.review_id == review.id,
+            AuditRecord.step == "evaluate.prompt",
+        )
+        .limit(1)
+    )
+
     findings = [
         FindingOut(
             id=f.id,
@@ -327,6 +350,7 @@ async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:
         ruleset_version=review.ruleset_version,
         status=review.status,
         rule_count=len(rules),
+        evaluator_model=evaluator_model,
         findings=findings,
         created_at=review.created_at,
     )
