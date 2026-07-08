@@ -3,6 +3,7 @@ import { Suspense, lazy, useState } from "react";
 import { apiGet } from "../../api/client";
 import type { FindingEvidenceOut, FindingOut } from "../../api/types";
 import { STATUS_META } from "../../lib/status";
+import { AuditReplay } from "./AuditReplay";
 
 // React Flow is heavy — load it only when the graph tab is opened
 const CitationGraphView = lazy(() =>
@@ -16,7 +17,13 @@ interface Props {
   onScrollToOffset: (offset: number) => void;
 }
 
-type Tab = "evidence" | "graph";
+type Tab = "evidence" | "graph" | "audit";
+
+const TAB_LABELS: Record<Tab, string> = {
+  evidence: "Evidence",
+  graph: "Citation graph",
+  audit: "Audit replay",
+};
 
 export function FindingDrawer({
   reviewId,
@@ -52,7 +59,7 @@ export function FindingDrawer({
           <span className="text-xs text-stone-500">{finding.citation}</span>
         </div>
         <div className="flex items-center gap-1 text-xs">
-          {(["evidence", "graph"] as Tab[]).map((t) => (
+          {(Object.keys(TAB_LABELS) as Tab[]).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -62,7 +69,7 @@ export function FindingDrawer({
                   : "text-stone-600 hover:bg-stone-100"
               }`}
             >
-              {t === "evidence" ? "Evidence" : "Citation graph"}
+              {TAB_LABELS[t]}
             </button>
           ))}
           <button
@@ -81,7 +88,7 @@ export function FindingDrawer({
           evidence={evidence.data ?? null}
           onScrollToOffset={onScrollToOffset}
         />
-      ) : (
+      ) : tab === "graph" ? (
         <Suspense
           fallback={
             <div className="flex flex-1 items-center justify-center text-xs text-stone-400">
@@ -95,6 +102,8 @@ export function FindingDrawer({
             onScrollToOffset={onScrollToOffset}
           />
         </Suspense>
+      ) : (
+        <AuditReplay reviewId={reviewId} findingId={finding.id} />
       )}
     </div>
   );

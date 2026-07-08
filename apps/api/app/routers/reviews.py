@@ -4,7 +4,7 @@ from uuid import UUID
 from citera_rulesets import RulesetError, load_ruleset
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
 from pydantic import BaseModel
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
@@ -204,6 +204,81 @@ async def get_finding_evidence(
         fusion_params=payload.get("fusion_params", {}),
         embedding_model=payload.get("embedding_model"),
         results=results,
+    )
+
+
+class AuditRecordOut(BaseModel):
+    id: UUID
+    step: str
+    created_at: datetime
+    # served verbatim from the append-only log — never summarized
+    payload: dict
+
+
+class FindingAuditOut(BaseModel):
+    finding_id: UUID
+    rule_id: str
+    records: list[AuditRecordOut]
+
+
+# created_at is Postgres' transaction timestamp, so records written in one
+# per-rule transaction tie — pipeline order breaks the tie deterministically.
+_STEP_ORDER = {
+    "ingest.extract": 0,
+    "ingest.chunk": 1,
+    "ingest.embed": 2,
+    "retrieve": 3,
+    "evaluate.prompt": 4,
+    "evaluate.response": 5,
+    "grounding.passed": 6,
+    "grounding.failed": 6,
+    "finding.persisted": 7,
+}
+
+
+@router.get(
+    "/{review_id}/findings/{finding_id}/audit", response_model=FindingAuditOut
+)
+async def get_finding_audit(
+    review_id: UUID, finding_id: UUID, session: AsyncSession = Depends(get_session)
+):
+    """Everything that produced this finding, in order, from the
+    append-only audit log. Record-and-show: this endpoint selects and
+    orders; it never re-executes or rewrites payloads."""
+    review = await session.get(Review, review_id)
+    finding = await session.get(Finding, finding_id)
+    if review is None or finding is None or finding.review_id != review_id:
+        raise HTTPException(status_code=404, detail="Finding not found")
+
+    conditions = [
+        # the reviewed document's ingestion trail
+        and_(
+            AuditRecord.document_id == review.document_id,
+            AuditRecord.step.like("ingest.%"),
+        ),
+        # this rule's evaluation + grounding records
+        and_(
+            AuditRecord.review_id == review_id,
+            AuditRecord.payload["rule_id"].astext == finding.rule_id,
+        ),
+        # the persisted-finding record
+        AuditRecord.finding_id == finding_id,
+    ]
+    if finding.retrieval_audit_id is not None:
+        conditions.append(AuditRecord.id == finding.retrieval_audit_id)
+
+    rows = (await session.scalars(select(AuditRecord).where(or_(*conditions)))).all()
+    rows.sort(key=lambda r: (r.created_at, _STEP_ORDER.get(r.step, 99)))
+
+    return FindingAuditOut(
+        finding_id=finding.id,
+        rule_id=finding.rule_id,
+        records=[
+            AuditRecordOut(
+                id=r.id, step=r.step, created_at=r.created_at, payload=r.payload
+            )
+            for r in rows
+        ],
     )
 
 

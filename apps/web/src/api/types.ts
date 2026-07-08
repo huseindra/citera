@@ -77,6 +77,19 @@ export interface FindingEvidenceOut {
   results: EvidenceChunkOut[];
 }
 
+export interface AuditRecordOut {
+  id: string;
+  step: string;
+  created_at: string;
+  payload: Record<string, unknown>;
+}
+
+export interface FindingAuditOut {
+  finding_id: string;
+  rule_id: string;
+  records: AuditRecordOut[];
+}
+
 export interface ReviewSummary {
   id: string;
   document_id: string;
