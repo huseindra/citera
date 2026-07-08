@@ -6,6 +6,7 @@ from sqlalchemy import text
 
 from app import models  # noqa: F401  (registers tables on Base.metadata)
 from app.db import Base, engine
+from app.routers.documents import router as documents_router
 from app.settings import settings
 
 
@@ -27,6 +28,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+app.include_router(documents_router)
 
 
 @app.get("/health")
