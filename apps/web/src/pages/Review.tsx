@@ -6,6 +6,7 @@ import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut } from "../api/types";
 import { CoverageMatrix } from "../components/matrix/CoverageMatrix";
 import { DocumentViewer } from "../components/document/DocumentViewer";
+import { SemanticMap } from "../components/document/SemanticMap";
 import { FindingDrawer } from "../components/finding/FindingDrawer";
 
 export function ReviewPage() {
@@ -16,6 +17,7 @@ export function ReviewPage() {
     offset: number;
     nonce: number;
   } | null>(null);
+  const [showMap, setShowMap] = useState(false);
 
   const review = useQuery({
     queryKey: ["review", reviewId],
@@ -70,19 +72,32 @@ export function ReviewPage() {
             {data.ruleset_id} v{data.ruleset_version}
           </span>
         </div>
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-medium ${
-            running
-              ? "bg-sky-50 text-sky-700"
-              : data.status === "complete"
-                ? "bg-emerald-50 text-emerald-700"
-                : "bg-red-50 text-red-700"
-          }`}
-        >
-          {running
-            ? `reviewing… ${data.findings.length}/${data.rule_count}`
-            : data.status}
-        </span>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowMap((v) => !v)}
+            aria-pressed={showMap}
+            className={`rounded-md border px-3 py-1 text-xs font-medium ${
+              showMap
+                ? "border-stone-800 bg-stone-900 text-white"
+                : "border-stone-300 text-stone-600 hover:bg-stone-50"
+            }`}
+          >
+            Semantic map
+          </button>
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-medium ${
+              running
+                ? "bg-sky-50 text-sky-700"
+                : data.status === "complete"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-red-50 text-red-700"
+            }`}
+          >
+            {running
+              ? `reviewing… ${data.findings.length}/${data.rule_count}`
+              : data.status}
+          </span>
+        </div>
       </div>
       <div className="min-h-0 flex-1">
         <Allotment defaultSizes={[1, 2]}>
@@ -94,13 +109,24 @@ export function ReviewPage() {
             />
           </Allotment.Pane>
           <Allotment.Pane minSize={400}>
-            <DocumentViewer
-              text={documentText.data.canonical_text}
-              findings={data.findings}
-              selectedId={selectedId}
-              onSelect={select}
-              scrollOffset={scrollOffset}
-            />
+            <div className="relative h-full">
+              {showMap && (
+                <SemanticMap
+                  documentId={data.document_id}
+                  findings={data.findings}
+                  selectedId={selectedId}
+                  onScrollToOffset={scrollTo}
+                  onClose={() => setShowMap(false)}
+                />
+              )}
+              <DocumentViewer
+                text={documentText.data.canonical_text}
+                findings={data.findings}
+                selectedId={selectedId}
+                onSelect={select}
+                scrollOffset={scrollOffset}
+              />
+            </div>
           </Allotment.Pane>
         </Allotment>
       </div>
