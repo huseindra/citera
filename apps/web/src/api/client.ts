@@ -33,6 +33,38 @@ export async function apiUpload<T>(path: string, form: FormData): Promise<T> {
   return handle(resp, "POST", path);
 }
 
+/** Upload with progress events — fetch can't report upload progress, XHR can. */
+export function apiUploadWithProgress<T>(
+  path: string,
+  form: FormData,
+  onProgress: (percent: number) => void,
+): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("POST", `/api${path}`);
+    xhr.upload.onprogress = (event) => {
+      if (event.lengthComputable) {
+        onProgress(Math.round((event.loaded / event.total) * 100));
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(JSON.parse(xhr.responseText) as T);
+      } else {
+        let detail = `${xhr.status}`;
+        try {
+          detail = `${xhr.status}: ${JSON.parse(xhr.responseText).detail}`;
+        } catch {
+          /* non-JSON body */
+        }
+        reject(new Error(`POST ${path} failed (${detail})`));
+      }
+    };
+    xhr.onerror = () => reject(new Error(`POST ${path} failed (network)`));
+    xhr.send(form);
+  });
+}
+
 export interface HealthResponse {
   status: "ok" | "degraded";
   db: string;
