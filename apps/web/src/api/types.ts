@@ -77,6 +77,21 @@ export interface FindingEvidenceOut {
   results: EvidenceChunkOut[];
 }
 
+export interface SemanticPoint {
+  chunk_id: string;
+  x: number;
+  y: number;
+  section_title: string | null;
+  char_start: number;
+  char_end: number;
+  preview: string;
+}
+
+export interface SemanticMapOut {
+  document_id: string;
+  points: SemanticPoint[];
+}
+
 export interface AuditRecordOut {
   id: string;
   step: string;
