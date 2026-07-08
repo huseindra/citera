@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Allotment } from "allotment";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut, RuleSetOut } from "../api/types";
@@ -20,6 +20,8 @@ export function ReviewPage() {
     nonce: number;
   } | null>(null);
   const [showMap, setShowMap] = useState(false);
+  // playback: re-animate a completed review, one finding per beat
+  const [playbackIndex, setPlaybackIndex] = useState<number | null>(null);
 
   const review = useQuery({
     queryKey: ["review", reviewId],
@@ -49,6 +51,16 @@ export function ReviewPage() {
       replace: true,
     });
 
+  useEffect(() => {
+    if (playbackIndex === null || !review.data) return;
+    if (playbackIndex >= review.data.findings.length) {
+      const done = setTimeout(() => setPlaybackIndex(null), 700);
+      return () => clearTimeout(done);
+    }
+    const tick = setTimeout(() => setPlaybackIndex((i) => (i ?? 0) + 1), 850);
+    return () => clearTimeout(tick);
+  }, [playbackIndex, review.data]);
+
   if (review.isError) {
     return (
       <div className="p-8 text-sm text-red-700">
@@ -64,10 +76,22 @@ export function ReviewPage() {
   }
 
   const { data } = review;
-  const running = data.status === "pending" || data.status === "running";
+  const reviewRunning = data.status === "pending" || data.status === "running";
+  const playing = playbackIndex !== null;
+  const running = reviewRunning || playing;
   const selectedFinding = data.findings.find((f) => f.id === selectedId) ?? null;
   const scrollTo = (offset: number) =>
     setScrollOffset((prev) => ({ offset, nonce: (prev?.nonce ?? 0) + 1 }));
+
+  // findings in evaluation order (persisted sequentially by the orchestrator)
+  const orderedFindings = useMemo(
+    () =>
+      [...data.findings].sort((a, b) => a.created_at.localeCompare(b.created_at)),
+    [data.findings],
+  );
+  const visibleFindings = playing
+    ? orderedFindings.slice(0, playbackIndex)
+    : data.findings;
 
   return (
     <div className="flex h-full flex-col">
@@ -104,12 +128,27 @@ export function ReviewPage() {
             Semantic map
           </button>
           {data.status === "complete" && (
-            <Link
-              to={`/reviews/${data.id}/report`}
-              className="rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
-            >
-              Export report
-            </Link>
+            <>
+              <button
+                onClick={() =>
+                  playing ? setPlaybackIndex(null) : setPlaybackIndex(0)
+                }
+                title="Re-animate this review, finding by finding"
+                className={`rounded-md border px-3 py-1 text-xs font-medium ${
+                  playing
+                    ? "border-sky-500 bg-sky-50 text-sky-700"
+                    : "border-stone-300 text-stone-600 hover:bg-stone-50"
+                }`}
+              >
+                {playing ? "■ Stop" : "▶ Replay"}
+              </button>
+              <Link
+                to={`/reviews/${data.id}/report`}
+                className="rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+              >
+                Export report
+              </Link>
+            </>
           )}
           <span
             className={`rounded-full px-3 py-1 text-xs font-medium ${
@@ -120,9 +159,11 @@ export function ReviewPage() {
                   : "bg-red-50 text-red-700"
             }`}
           >
-            {running
-              ? `Claude reviewing · ${data.findings.length}/${data.rule_count}`
-              : data.status}
+            {playing
+              ? `Replaying · ${visibleFindings.length}/${data.rule_count}`
+              : reviewRunning
+                ? `Claude reviewing · ${data.findings.length}/${data.rule_count}`
+                : data.status}
           </span>
         </div>
       </div>
@@ -130,7 +171,7 @@ export function ReviewPage() {
         <Allotment defaultSizes={[1, 2, 1.2]}>
           <Allotment.Pane minSize={280} preferredSize={330}>
             <div className="flex h-full flex-col">
-              {data.status === "complete" && (
+              {data.status === "complete" && !playing && (
                 <VerdictStrip
                   findings={data.findings}
                   ruleCount={data.rule_count}
@@ -139,7 +180,7 @@ export function ReviewPage() {
               <div className="min-h-0 flex-1">
                 <CoverageMatrix
                   rules={ruleset.data?.rules ?? []}
-                  findings={data.findings}
+                  findings={visibleFindings}
                   running={running}
                   selectedId={selectedId}
                   onSelect={select}
