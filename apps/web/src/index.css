@@ -44,3 +44,21 @@
 .path-node-in {
   animation: path-node-in 0.35s ease-out forwards;
 }
+
+/* console theater: a finding row landing in place of its queued rule */
+@keyframes finding-lands {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+    background-color: rgb(240 249 255);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    background-color: transparent;
+  }
+}
+
+.finding-lands {
+  animation: finding-lands 0.5s ease-out;
+}
