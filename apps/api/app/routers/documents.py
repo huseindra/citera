@@ -26,6 +26,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.serializers import UTCDateTime
 from app.models import AuditRecord, Chunk, Document
 from app.services.ingestion import run_chunking
 
@@ -41,7 +42,7 @@ class DocumentOut(BaseModel):
     status: str
     status_reason: str | None
     chunk_count: int
-    created_at: datetime
+    created_at: UTCDateTime
 
 
 async def _to_out(session: AsyncSession, doc: Document) -> DocumentOut:
