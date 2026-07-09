@@ -80,7 +80,7 @@ export function ReviewPage() {
     return (
       <div className="p-8 text-sm text-red-700">
         Failed to load review.{" "}
-        <Link to="/" className="underline">
+        <Link to="/playground" className="underline">
           Back home
         </Link>
       </div>
@@ -106,7 +106,7 @@ export function ReviewPage() {
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-2">
         <div className="flex min-w-0 items-baseline gap-3">
-          <Link to="/" className="text-stone-400 hover:text-stone-600" aria-label="Back">
+          <Link to="/playground" className="text-stone-400 hover:text-stone-600" aria-label="Back">
             ←
           </Link>
           <h2 className="truncate text-sm font-semibold text-stone-800">
@@ -152,7 +152,7 @@ export function ReviewPage() {
                 {playing ? "■ Stop" : "▶ Replay"}
               </button>
               <Link
-                to={`/reviews/${data.id}/report`}
+                to={`/playground/reviews/${data.id}/report`}
                 className="rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
               >
                 Export report

@@ -19,7 +19,7 @@ interface Slot {
 
 const EMPTY_SLOT: Slot = { documentId: null, filename: null, state: "empty" };
 
-export function HomePage() {
+export function PlaygroundPage() {
   const navigate = useNavigate();
   const [slots, setSlots] = useState<Record<SlotKind, Slot>>({
     protocol: EMPTY_SLOT,
@@ -113,7 +113,7 @@ export function HomePage() {
   const startReview = useMutation({
     mutationFn: (body: { document_id: string; protocol_document_id: string }) =>
       apiPost<ReviewOut>("/reviews", body),
-    onSuccess: (review) => navigate(`/reviews/${review.id}`),
+    onSuccess: (review) => navigate(`/playground/reviews/${review.id}`),
   });
 
   const readyDocs = (documents.data ?? []).filter((d) => d.status === "ready");
@@ -122,21 +122,39 @@ export function HomePage() {
   const latestComplete = (reviews.data ?? []).find((r) => r.status === "complete");
 
   return (
-    <div className="mx-auto max-w-3xl px-6 pb-16 pt-14">
-      {/* Hero — the 30-second answer to "what is this?" */}
-      <div className="mb-10">
-        <h1 className="text-2xl font-semibold tracking-tight text-stone-900">
-          Evidence-first AI review of clinical consent documents
+    <div className="mx-auto max-w-3xl px-6 pb-16 pt-10">
+      {/* Playground framing: this is the SDK, demonstrated */}
+      <div className="mb-8">
+        <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-widest text-stone-400">
+          <span aria-hidden>⚡</span> Interactive Playground
+        </div>
+        <h1 className="mt-1 text-xl font-semibold tracking-tight text-stone-900">
+          Evidence-verified clinical review, live
         </h1>
         <p className="mt-2 max-w-xl text-sm leading-6 text-stone-500">
-          Claude checks an informed consent form against FDA&nbsp;21&nbsp;CFR
-          50.25 and the study protocol. Every finding carries a verified
-          verbatim quote, the retrieval that found it, and a replayable audit
-          trail — <span className="text-stone-700">trust the evidence, not the model.</span>
+          Every action below is an SDK call — upload documents, run a
+          review, inspect verified findings. Ready to embed it?{" "}
+          <Link to="/keys" className="font-medium text-stone-700 underline">
+            Get an API key
+          </Link>
+          .
         </p>
+        <details className="mt-3 max-w-xl">
+          <summary className="cursor-pointer text-xs font-medium text-stone-500">
+            View the equivalent SDK code
+          </summary>
+          <pre className="mt-2 overflow-x-auto rounded-lg bg-stone-900 p-3 text-[11px] leading-5 text-stone-100">
+{`const protocol = await citera.documents.upload({ file, kind: "protocol" });
+const icf      = await citera.documents.upload({ file, kind: "icf" });
+const review   = await citera.reviews.create({
+  document: icf.id, protocol: protocol.id, ruleset: "fda-21cfr50",
+});
+const result = await citera.reviews.waitUntilComplete(review.id);`}
+          </pre>
+        </details>
         {latestComplete && (
           <Link
-            to={`/reviews/${latestComplete.id}`}
+            to={`/playground/reviews/${latestComplete.id}`}
             className="mt-4 inline-flex items-center gap-1.5 rounded-full border border-stone-300 bg-white px-3 py-1.5 text-xs font-medium text-stone-700 hover:border-stone-400"
           >
             Open the latest review
@@ -215,7 +233,7 @@ export function HomePage() {
           {(reviews.data ?? []).map((r) => (
             <li key={r.id}>
               <Link
-                to={`/reviews/${r.id}`}
+                to={`/playground/reviews/${r.id}`}
                 className="flex items-center justify-between gap-3 px-4 py-3 text-sm hover:bg-stone-50"
               >
                 <div className="min-w-0">

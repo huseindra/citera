@@ -1,6 +1,21 @@
 # Citera
 
-> Evidence intelligence platform — AI-powered clinical document review with explainable retrieval, semantic evidence mapping, and transparent regulatory reasoning.
+> **Clinical Regulatory Intelligence SDK** — embed AI-powered clinical
+> review into any workflow with a single SDK. Every finding is
+> evidence-verified, explainable, and audit-replayable.
+
+Citera is SDK-first: the primary product is the platform API
+(`/v1` — Documents, Reviews, Findings, Evidence, Reports, Rulesets).
+The bundled reviewer application is the **Interactive Playground**, the
+reference app demonstrating the SDK.
+
+```ts
+const citera = new Citera({ apiKey });
+const review = await citera.reviews.create({
+  document: icf.id, protocol: protocol.id, ruleset: "fda-21cfr50",
+});
+const result = await citera.reviews.waitUntilComplete(review.id);
+```
 
 ## Vision
 

@@ -42,7 +42,7 @@ export function ReportPage() {
     <div className="min-h-screen bg-white text-stone-900">
       {/* screen-only toolbar */}
       <div className="flex items-center justify-between border-b border-stone-200 px-8 py-3 print:hidden">
-        <Link to={`/reviews/${data.id}`} className="text-sm text-stone-500 hover:text-stone-800">
+        <Link to={`/playground/reviews/${data.id}`} className="text-sm text-stone-500 hover:text-stone-800">
           ← Back to review
         </Link>
         <button
