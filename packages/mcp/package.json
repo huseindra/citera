@@ -1,0 +1,31 @@
+{
+  "name": "@citera/mcp",
+  "version": "0.1.0",
+  "description": "Citera MCP server — expose the Clinical Regulatory Intelligence Engine to Claude and other MCP clients. A thin adapter over @citera/sdk; business logic never lives here.",
+  "license": "MIT",
+  "type": "module",
+  "bin": {
+    "citera-mcp": "dist/index.js"
+  },
+  "main": "./dist/index.js",
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@citera/sdk": "file:../sdk",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^5.6.0"
+  }
+}

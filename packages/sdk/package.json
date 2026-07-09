@@ -1,0 +1,29 @@
+{
+  "name": "@citera/sdk",
+  "version": "0.1.0",
+  "description": "Citera — Clinical Regulatory Intelligence SDK for TypeScript. Evidence-verified clinical regulatory review through the Citera REST API.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^26.1.1",
+    "typescript": "^5.6.0"
+  }
+}

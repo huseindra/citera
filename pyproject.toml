@@ -18,6 +18,8 @@ dev = [
 
 [tool.uv.workspace]
 members = ["apps/api", "packages/*"]
+# TypeScript packages (sdk, mcp) live under packages/ too — not uv members
+exclude = ["packages/sdk", "packages/mcp"]
 
 [tool.uv.sources]
 citera-api = { workspace = true }
