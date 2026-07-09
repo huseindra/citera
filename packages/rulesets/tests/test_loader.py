@@ -112,12 +112,12 @@ def test_tga_rules_carry_dual_gcp_citations():
 
 def test_registry_status_lifecycle():
     entries = {e["id"]: e for e in registry()}
-    assert entries["fda-21cfr50"]["status"] == "available"
-    for dev_id in ("hsa-hpct2016", "bpom-cukb", "tga-ns-ichgcp"):
-        entry = entries[dev_id]
-        assert entry["status"] == "in_development"
-        # in-development packs are versioned and counted — shipped, not vapor
-        assert entry["version"] == "v0.1.0"
+    # all four packs validated against live Claude + Voyage on their
+    # synthetic corpora — available, independently versioned
+    for pack_id in SHIPPED:
+        entry = entries[pack_id]
+        assert entry["status"] == "available"
+        assert entry["version"] == "v1.0.0"
         assert entry["rule_count"] > 0
     for roadmap_id in ("pmda", "ema", "mhra", "hc", "nmpa"):
         assert entries[roadmap_id]["status"] == "roadmap"
