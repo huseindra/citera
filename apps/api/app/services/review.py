@@ -54,6 +54,13 @@ async def run_review(review_id: UUID) -> None:
         review.status = "running"
         await session.commit()
 
+        # Capture primitives up front: session.rollback() expires ORM
+        # objects, and touching an expired attribute in async SQLAlchemy
+        # raises — nothing below the loop may depend on live ORM state.
+        document_id = document.id
+        canonical_text = document.canonical_text
+        protocol_text = protocol.canonical_text if protocol else None
+
         # Pre-warm the (cached) query embeddings in ONE batched call —
         # per-rule retrieval then hits the cache instead of a rate-limited
         # API eight separate times.
@@ -70,55 +77,83 @@ async def run_review(review_id: UUID) -> None:
             )
 
         evaluator = get_evaluator()
-        for rule in ruleset.rules:
-            try:
-                finding = await _evaluate_rule(
-                    session, review, document, protocol, rule, evaluator
-                )
-            except Exception as exc:
-                logger.exception("rule %s failed in review %s", rule.id, review_id)
-                finding = _failed_finding(
-                    review.id, rule, f"{type(exc).__name__}: {exc}"
-                )
-            session.add(finding)
-            await session.flush()
-            session.add(
-                AuditRecord(
-                    step=AuditStep.FINDING_PERSISTED,
-                    review_id=review.id,
-                    finding_id=finding.id,
-                    document_id=review.document_id,
-                    payload={"rule_id": rule.id, "status": finding.status},
-                )
-            )
-            await session.commit()  # progressive results for polling clients
+        try:
+            for rule in ruleset.rules:
+                try:
+                    finding = await _evaluate_rule(
+                        session,
+                        review_id,
+                        document_id,
+                        canonical_text,
+                        protocol_text,
+                        rule,
+                        evaluator,
+                    )
+                except Exception as exc:
+                    logger.exception(
+                        "rule %s failed in review %s", rule.id, review_id
+                    )
+                    # the exception may have poisoned the session (failed
+                    # flush) — roll back so the failed finding can commit
+                    await session.rollback()
+                    finding = _failed_finding(
+                        review_id, rule, f"{type(exc).__name__}: {exc}"
+                    )
+                try:
+                    session.add(finding)
+                    await session.flush()
+                    session.add(
+                        AuditRecord(
+                            step=AuditStep.FINDING_PERSISTED,
+                            review_id=review_id,
+                            finding_id=finding.id,
+                            document_id=document_id,
+                            payload={"rule_id": rule.id, "status": finding.status},
+                        )
+                    )
+                    await session.commit()  # progressive results for polling
+                except Exception:
+                    logger.exception(
+                        "persisting finding for rule %s failed in review %s",
+                        rule.id,
+                        review_id,
+                    )
+                    await session.rollback()
 
-        review.status = "complete"
-        await session.commit()
+            closing = await session.get(Review, review_id)
+            if closing is not None:
+                closing.status = "complete"
+                await session.commit()
+        except Exception:
+            # LAST-RESORT safety net: a review must never stay 'running'
+            # forever — polling clients would wait for eternity.
+            logger.exception("review %s aborted", review_id)
+            await session.rollback()
+            survivor = await session.get(Review, review_id)
+            if survivor is not None:
+                survivor.status = "failed"
+                await session.commit()
 
 
 async def _evaluate_rule(
     session: AsyncSession,
-    review: Review,
-    document: Document,
-    protocol: Document | None,
+    review_id: UUID,
+    document_id: UUID,
+    canonical_text: str,
+    protocol_text: str | None,
     rule: Rule,
     evaluator: Evaluator,
 ) -> Finding:
     retrieval = await hybrid_search(
-        session, document.id, rule.retrieval_queries, review_id=review.id
+        session, document_id, rule.retrieval_queries, review_id=review_id
     )
 
-    outcome = await evaluator.evaluate(
-        rule,
-        retrieval.results,
-        protocol.canonical_text if protocol else None,
-    )
+    outcome = await evaluator.evaluate(rule, retrieval.results, protocol_text)
     session.add(
         AuditRecord(
             step=AuditStep.EVALUATE_PROMPT,
-            review_id=review.id,
-            document_id=document.id,
+            review_id=review_id,
+            document_id=document_id,
             payload={
                 "rule_id": rule.id,
                 "model": outcome.model,
@@ -129,8 +164,8 @@ async def _evaluate_rule(
     session.add(
         AuditRecord(
             step=AuditStep.EVALUATE_RESPONSE,
-            review_id=review.id,
-            document_id=document.id,
+            review_id=review_id,
+            document_id=document_id,
             payload={
                 "rule_id": rule.id,
                 "model": outcome.model,
@@ -143,7 +178,7 @@ async def _evaluate_rule(
         # Evidence of absence: the queries executed ARE the evidence.
         return _to_model(
             _validated(
-                review_id=review.id,
+                review_id=review_id,
                 rule_id=rule.id,
                 status=FindingStatus.NOT_FOUND,
                 reasoning=outcome.reasoning,
@@ -154,14 +189,14 @@ async def _evaluate_rule(
 
     # Span-grounding gate for every evidence-backed status
     hint, source_rank = _source_chunk_hint(outcome.source_chunk_id, retrieval)
-    grounding = ground_quote(outcome.verbatim_quote, document.canonical_text, hint)
+    grounding = ground_quote(outcome.verbatim_quote, canonical_text, hint)
 
     if not grounding.ok:
         session.add(
             AuditRecord(
                 step=AuditStep.GROUNDING_FAILED,
-                review_id=review.id,
-                document_id=document.id,
+                review_id=review_id,
+                document_id=document_id,
                 payload={
                     "rule_id": rule.id,
                     "claimed_status": outcome.status,
@@ -171,7 +206,7 @@ async def _evaluate_rule(
             )
         )
         return _failed_finding(
-            review.id,
+            review_id,
             rule,
             f"Rejected by the span-grounding gate ({grounding.reason}). "
             f"The evaluator claimed '{outcome.status}' with a quote that could "
@@ -182,8 +217,8 @@ async def _evaluate_rule(
     session.add(
         AuditRecord(
             step=AuditStep.GROUNDING_PASSED,
-            review_id=review.id,
-            document_id=document.id,
+            review_id=review_id,
+            document_id=document_id,
             payload={
                 "rule_id": rule.id,
                 "method": grounding.method,
@@ -193,16 +228,16 @@ async def _evaluate_rule(
         )
     )
 
-    grounded_quote = document.canonical_text[grounding.char_start : grounding.char_end]
+    grounded_quote = canonical_text[grounding.char_start : grounding.char_end]
     return _to_model(
         _validated(
-            review_id=review.id,
+            review_id=review_id,
             rule_id=rule.id,
             status=FindingStatus(outcome.status),
             reasoning=outcome.reasoning,
             verbatim_quote=grounded_quote,
             span=EvidenceSpan(
-                document_id=document.id,
+                document_id=document_id,
                 page=None,
                 char_start=grounding.char_start,
                 char_end=grounding.char_end,

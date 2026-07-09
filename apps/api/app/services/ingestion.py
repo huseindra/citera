@@ -73,8 +73,15 @@ async def run_chunking(document_id: UUID) -> None:
                 )
             )
             document.status = "ready"
+            await session.commit()
         except Exception as exc:
             logger.exception("ingestion failed for document %s", document_id)
-            document.status = "failed"
-            document.status_reason = f"{type(exc).__name__}: {exc}"
-        await session.commit()
+            # discard partial chunk/audit state and any poisoned session
+            # before recording the failure — a document must never stay
+            # 'processing' forever
+            await session.rollback()
+            survivor = await session.get(Document, document_id)
+            if survivor is not None:
+                survivor.status = "failed"
+                survivor.status_reason = f"{type(exc).__name__}: {exc}"
+                await session.commit()
