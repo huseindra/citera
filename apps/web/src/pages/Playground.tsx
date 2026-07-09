@@ -12,6 +12,7 @@ import type {
   FindingOut,
   ReviewOut,
   ReviewSummary,
+  RuleSetOut,
   RulesetInfo,
 } from "../api/types";
 import {
@@ -317,33 +318,73 @@ function ReviewResults({
   rulesetVersion: string;
   onExportLogged: () => void;
 }) {
+  const ruleset = useQuery({
+    queryKey: ["ruleset", review.ruleset_id],
+    queryFn: () => apiGet<RuleSetOut>(`/rulesets/${review.ruleset_id}`),
+    staleTime: Infinity,
+  });
+  // live-ticking clock while the review runs
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!running) return;
+    const timer = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, [running]);
+
   const total = review.rule_count || review.findings.length || 1;
+  const checked = review.findings.length;
   const counts = summarize(review);
-  const score = Math.round((counts.satisfied / total) * 100);
+  // while running: honest "so far" score over what's been checked
+  const score = Math.round((counts.satisfied / (running ? Math.max(1, checked) : total)) * 100);
   const coverage = Math.round(
     (review.findings.filter((f) => f.span || (f.queries_executed ?? []).length > 0)
       .length /
-      total) *
+      Math.max(1, running ? checked : total)) *
       100,
   );
-  const duration = reviewDuration(review);
+  const duration = running
+    ? liveDuration(review.created_at, now)
+    : reviewDuration(review);
+  const progress = Math.round((checked / total) * 100);
 
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-sm font-semibold text-stone-800">Review Summary</h2>
-        {running && (
-          <p className="text-[11px] text-sky-600">
-            Checking requirement {review.findings.length + 1} of {total}…
-          </p>
-        )}
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-stone-800">
+            Review Summary
+          </h2>
+          {running && (
+            <span className="text-[11px] font-medium text-sky-600">
+              {checked}/{total} requirements checked
+            </span>
+          )}
+        </div>
+        {/* progress bar — the review is a process, show it as one */}
+        <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-100">
+          <div
+            className={`h-full rounded-full transition-all duration-700 ${
+              running ? "bg-sky-500" : counts.critical > 0 ? "bg-red-400" : "bg-emerald-500"
+            }`}
+            style={{ width: `${running ? Math.max(4, progress) : 100}%` }}
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-5 gap-2">
-        <Metric label="Compliance score" value={running ? "…" : `${score}%`} tone={score === 100 ? "good" : score >= 60 ? "warn" : "bad"} />
-        <Metric label="Evidence coverage" value={running ? "…" : `${coverage}%`} />
+        <Metric
+          label={running ? "Compliance (so far)" : "Compliance score"}
+          value={checked === 0 ? "—" : `${score}%`}
+          tone={score === 100 ? "good" : score >= 60 ? "warn" : "bad"}
+          pulse={running}
+        />
+        <Metric
+          label={running ? "Evidence (so far)" : "Evidence coverage"}
+          value={checked === 0 ? "—" : `${coverage}%`}
+          pulse={running}
+        />
         <Metric label="Critical findings" value={String(counts.critical)} tone={counts.critical > 0 ? "bad" : "good"} />
-        <Metric label="Review duration" value={running ? "running" : duration} />
+        <Metric label="Review duration" value={duration} pulse={running} />
         <Metric label="Ruleset" value={rulesetVersion} />
       </div>
 
@@ -378,35 +419,11 @@ function ReviewResults({
       <div>
         <h3 className="text-xs font-semibold text-stone-800">Findings</h3>
         <ul className="mt-2 divide-y divide-stone-100 overflow-hidden rounded-xl border border-stone-200 bg-white">
-          {review.findings.map((f) => {
-            const meta = STATUS_META[f.status];
-            return (
-              <li key={f.id}>
-                <Link
-                  to={`/playground/reviews/${review.id}?finding=${f.id}`}
-                  className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-stone-50"
-                >
-                  <div className="min-w-0">
-                    <div className="truncate font-medium text-stone-800">
-                      {f.rule_title ?? f.rule_id}
-                    </div>
-                    <div className="text-[11px] text-stone-400">
-                      {f.citation} · {f.severity}
-                    </div>
-                  </div>
-                  <span
-                    className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.chip}`}
-                  >
-                    <span aria-hidden>{meta.icon}</span>
-                    {meta.label}
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-          {review.findings.length === 0 && (
-            <li className="px-4 py-4 text-xs text-stone-400">Waiting for the first finding…</li>
-          )}
+          <TheaterRows
+            review={review}
+            rules={ruleset.data?.rules ?? []}
+            running={running}
+          />
         </ul>
         <p className="mt-2 text-[11px] text-stone-400">
           Click a finding to open its full dossier — evidence, requirement,
@@ -417,14 +434,122 @@ function ReviewResults({
   );
 }
 
+/** All requirements visible from second one: completed rows are findings,
+ *  the next rule is honestly "analyzing" (the engine is sequential), the
+ *  rest are queued. The list is never empty while a review runs. */
+function TheaterRows({
+  review,
+  rules,
+  running,
+}: {
+  review: ReviewOut;
+  rules: RuleSetOut["rules"];
+  running: boolean;
+}) {
+  const byRule = new Map(review.findings.map((f) => [f.rule_id, f]));
+
+  const findingRow = (f: FindingOut) => {
+    const meta = STATUS_META[f.status];
+    return (
+      <li key={f.id} className="finding-lands">
+        <Link
+          to={`/playground/reviews/${review.id}?finding=${f.id}`}
+          className="flex items-center justify-between gap-3 px-4 py-2.5 text-sm hover:bg-stone-50"
+        >
+          <div className="min-w-0">
+            <div className="truncate font-medium text-stone-800">
+              {f.rule_title ?? f.rule_id}
+            </div>
+            <div className="text-[11px] text-stone-400">
+              {f.citation} · {f.severity}
+            </div>
+          </div>
+          <span
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.chip}`}
+          >
+            <span aria-hidden>{meta.icon}</span>
+            {meta.label}
+          </span>
+        </Link>
+      </li>
+    );
+  };
+
+  if (!running || rules.length === 0) {
+    if (review.findings.length === 0) {
+      return (
+        <li className="px-4 py-4 text-xs text-stone-400">
+          No findings recorded for this review.
+        </li>
+      );
+    }
+    return <>{sortForDisplay(review.findings).map(findingRow)}</>;
+  }
+
+  // theater: ruleset order, engine evaluates sequentially
+  return (
+    <>
+      {rules.map((rule, index) => {
+        const finding = byRule.get(rule.id);
+        if (finding) return findingRow(finding);
+        const active = index === review.findings.length;
+        return (
+          <li
+            key={rule.id}
+            className={`flex items-center justify-between gap-3 px-4 py-2.5 text-sm ${
+              active ? "" : "opacity-50"
+            }`}
+            aria-busy={active}
+          >
+            <div className="min-w-0">
+              <div className={`truncate font-medium ${active ? "text-stone-800" : "text-stone-400"}`}>
+                {rule.title}
+              </div>
+              <div className="text-[11px] text-stone-400">
+                {rule.citation} · {rule.severity}
+              </div>
+              {active && (
+                <div className="mt-1.5 h-1 w-44 overflow-hidden rounded-full bg-stone-100">
+                  <div className="theater-shimmer h-full w-1/3 rounded-full bg-sky-300" />
+                </div>
+              )}
+            </div>
+            {active ? (
+              <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700">
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-sky-500" />
+                </span>
+                Analyzing…
+              </span>
+            ) : (
+              <span className="inline-flex shrink-0 items-center rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[11px] text-stone-400">
+                queued
+              </span>
+            )}
+          </li>
+        );
+      })}
+    </>
+  );
+}
+
+function sortForDisplay(findings: FindingOut[]): FindingOut[] {
+  return [...findings].sort(
+    (a, b) => STATUS_META[a.status].order - STATUS_META[b.status].order,
+  );
+}
+
 function Metric({
   label,
   value,
   tone,
+  pulse,
 }: {
   label: string;
   value: string;
   tone?: "good" | "warn" | "bad";
+  pulse?: boolean;
 }) {
   const toneClass =
     tone === "good"
@@ -435,9 +560,19 @@ function Metric({
           ? "text-red-700"
           : "text-stone-900";
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-3">
-      <div className="text-[9px] font-medium uppercase tracking-wide text-stone-400">
+    <div
+      className={`rounded-xl border bg-white p-3 ${
+        pulse ? "border-sky-200" : "border-stone-200"
+      }`}
+    >
+      <div className="flex items-center gap-1 text-[9px] font-medium uppercase tracking-wide text-stone-400">
         {label}
+        {pulse && (
+          <span className="relative flex h-1.5 w-1.5">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-sky-400 opacity-75" />
+            <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-sky-500" />
+          </span>
+        )}
       </div>
       <div className={`mt-0.5 truncate text-base font-semibold ${toneClass}`}>{value}</div>
     </div>
@@ -603,6 +738,11 @@ function buildSnippet(
     );
   }
   return lines.join("\n");
+}
+
+function liveDuration(startedAt: string, now: number): string {
+  const seconds = Math.max(0, Math.round((now - new Date(startedAt).getTime()) / 1000));
+  return seconds < 60 ? `${seconds}s` : `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
 }
 
 function reviewDuration(review: ReviewOut): string {
