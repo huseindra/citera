@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ArrowUpRight } from "lucide-react";
 import { Link, NavLink, Outlet } from "react-router-dom";
 import { apiGet, type HealthResponse } from "./api/client";
 
@@ -56,7 +57,17 @@ export default function App() {
             ))}
           </nav>
         </div>
-        <HealthDot />
+        <div className="flex items-center gap-3">
+          <a
+            href="https://github.com/huseindra/citera"
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex items-center gap-1 rounded-md px-2.5 py-1 text-xs font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-800"
+          >
+            GitHub <ArrowUpRight aria-hidden className="h-3 w-3" />
+          </a>
+          <HealthDot />
+        </div>
       </header>
       <main className="min-h-0 flex-1 overflow-y-auto">
         <Outlet />
