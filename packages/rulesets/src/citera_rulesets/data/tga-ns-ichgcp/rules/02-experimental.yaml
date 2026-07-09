@@ -1,0 +1,19 @@
+id: tga-randomization-experimental
+citation: E6(R2) 4.8.10(c),(f) / E6(R3) 2.8.10(b),(c)
+title: Randomisation and experimental aspects
+description: The trial treatments, the probability of random assignment, and the aspects of
+  the trial that are experimental.
+retrieval_queries:
+- random assignment chance placebo treatment groups
+- experimental study drug not approved
+- randomised allocation ratio
+evaluation_criteria: The ICF must describe the treatment arms, the probability of random assignment
+  where the trial randomises, and identify experimental aspects, consistent with the protocol
+  design.
+severity: major
+statutory_refs:
+- ICH E6(R2) 4.8.10(c)
+- ICH E6(R2) 4.8.10(f)
+- ICH E6(R3) Annex 1 2.8.10(b)
+- ICH E6(R3) Annex 1 2.8.10(c)
+remediation: State the arms, randomisation ratio, and which components are experimental.

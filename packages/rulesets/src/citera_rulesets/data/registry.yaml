@@ -1,0 +1,49 @@
+# Ruleset registry — every regulatory authority is a pluggable ruleset.
+# Status lifecycle: available (reviews run) | in_development (pack shipped
+# and versioned, reviews refused) | roadmap (planned, no pack yet).
+# All other metadata (name, version, languages, aliases, rules) lives in
+# the pack's own ruleset.yaml — the registry is a thin status index.
+# Scope v1: drug clinical trials only.
+
+rulesets:
+  - id: fda-21cfr50
+    status: available
+
+  - id: hsa-hpct2016
+    status: in_development
+
+  - id: bpom-cukb
+    status: in_development
+
+  - id: tga-ns-ichgcp
+    status: in_development
+
+  - id: pmda
+    authority: PMDA
+    name: J-GCP (MHLW Ordinance No. 28), Art. 51
+    jurisdiction: Japan
+    status: roadmap
+
+  - id: ema
+    authority: EMA
+    name: Clinical Trials Regulation (EU) 536/2014
+    jurisdiction: European Union
+    status: roadmap
+
+  - id: mhra
+    authority: MHRA
+    name: Medicines for Human Use (Clinical Trials) Regulations
+    jurisdiction: United Kingdom
+    status: roadmap
+
+  - id: hc
+    authority: Health Canada
+    name: FDR Division 5 + TCPS 2
+    jurisdiction: Canada
+    status: roadmap
+
+  - id: nmpa
+    authority: NMPA
+    name: China GCP 2020, Art. 24
+    jurisdiction: China
+    status: roadmap

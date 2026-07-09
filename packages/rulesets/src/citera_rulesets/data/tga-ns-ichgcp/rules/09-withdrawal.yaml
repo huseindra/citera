@@ -1,0 +1,16 @@
+id: tga-data-withdrawal
+citation: NS 2.2.6(g); E6(R3) 2.8.10(n)
+title: Data handling on withdrawal
+description: Whether it will be possible to withdraw the participant's data, and how the participant's
+  data will be handled if they withdraw.
+retrieval_queries:
+- withdraw your data samples already collected
+- data collected before you withdrew will be retained
+- what happens to your information if you leave the study
+evaluation_criteria: The ICF must state whether data can be withdrawn and how data already
+  collected is handled on withdrawal.
+severity: major
+statutory_refs:
+- National Statement (2025) 2.2.6(g)
+- ICH E6(R3) Annex 1 2.8.10(n)
+remediation: 'State the data-withdrawal position: what can be withdrawn and what is retained.'

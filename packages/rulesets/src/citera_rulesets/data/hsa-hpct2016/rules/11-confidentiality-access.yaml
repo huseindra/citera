@@ -1,0 +1,19 @@
+id: hsa-r19-confidentiality-access
+citation: HP(CT) Regs 2016, reg 19(1)(n)–(o)
+title: Confidentiality and access to medical records
+description: Who will be granted access to the subject's medical records (including inspection
+  by the Health Sciences Authority), and the extent to which records identifying the subject
+  will be kept confidential.
+retrieval_queries:
+- confidentiality of your records identity will not be revealed
+- access to your medical records monitors auditors authority
+- Health Sciences Authority may inspect records
+evaluation_criteria: The ICF must disclose who may access the subject's medical records —
+  including monitors, auditors, the ethics committee, and the Health Sciences Authority —
+  and explain the extent of confidentiality of identifying records.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(n)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(o)
+remediation: Name the parties with record access (including HSA) and state the confidentiality
+  protections.

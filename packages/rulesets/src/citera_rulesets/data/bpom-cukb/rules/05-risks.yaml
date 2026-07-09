@@ -1,0 +1,18 @@
+id: bpom-4810-risks
+citation: Pedoman CUKB 4.8.10 (g)
+title: Risiko yang dapat diperkirakan
+description: Risiko atau ketidaknyamanan yang dapat diperkirakan terhadap subjek dan, jika
+  berlaku, terhadap embrio, fetus, atau bayi yang menyusu.
+retrieval_queries:
+- risiko efek samping obat penelitian
+- risiko terhadap kehamilan janin bayi menyusui
+- ketidaknyamanan yang mungkin Anda alami
+- risks side effects
+evaluation_criteria: The PSP must describe reasonably foreseeable risks and discomforts consistently
+  with the protocol's documented safety profile, including reproductive risks where applicable.
+  Understating documented risks is a conflict.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf g
+remediation: Selaraskan bagian risiko dengan data keamanan protokol, termasuk frekuensi dan
+  pemantauannya.

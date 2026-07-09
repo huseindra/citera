@@ -1,0 +1,16 @@
+id: hsa-r19-injury-compensation
+citation: HP(CT) Regs 2016, reg 19(1)(j)
+title: Compensation and treatment for trial-related injury
+description: Any compensation and treatment available to the subject in the event of a trial-related
+  injury.
+retrieval_queries:
+- if you are injured compensation medical treatment
+- research related injury who pays for treatment
+- insurance coverage for study injury
+evaluation_criteria: The ICF must state what compensation and treatment are available if the
+  subject is injured in the trial, and must not be vague about who bears the costs.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(j)
+remediation: State who provides and pays for treatment of research injuries and what compensation
+  applies.

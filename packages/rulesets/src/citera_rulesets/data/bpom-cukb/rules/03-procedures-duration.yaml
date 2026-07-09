@@ -1,0 +1,18 @@
+id: bpom-4810-procedures-duration
+citation: Pedoman CUKB 4.8.10 (d), (s)
+title: Prosedur dan lama keikutsertaan
+description: Prosedur uji klinik yang akan diikuti, termasuk semua prosedur invasif, serta
+  perkiraan lamanya keikutsertaan subjek.
+retrieval_queries:
+- prosedur penelitian kunjungan pemeriksaan pengambilan darah
+- berapa lama keikutsertaan Anda minggu bulan
+- prosedur invasif suntikan biopsi
+- study procedures visits duration
+evaluation_criteria: The PSP must describe the procedures the subject will undergo (flagging
+  invasive ones) and state the expected duration of participation, consistent with the protocol's
+  visit schedule.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf d
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf s
+remediation: Rinci jadwal kunjungan, prosedur (tandai yang invasif), dan total lama keikutsertaan.

@@ -1,0 +1,17 @@
+id: tga-alternatives
+citation: NS 2.2.6(a); E6(R2) 4.8.10(i) / E6(R3) 2.8.10(h)
+title: Alternatives to participation
+description: Any alternatives to participation, including alternative procedures or treatments
+  and their important potential benefits and risks.
+retrieval_queries:
+- alternatives to taking part other treatment options
+- standard treatment instead of the study
+- other therapies available
+evaluation_criteria: The ICF must disclose alternatives to participation with their material
+  benefits and risks.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.6(a)
+- ICH E6(R2) 4.8.10(i)
+- ICH E6(R3) Annex 1 2.8.10(h)
+remediation: Describe standard-of-care and other options with key benefits and risks.

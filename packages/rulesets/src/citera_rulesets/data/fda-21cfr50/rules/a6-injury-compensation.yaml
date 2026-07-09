@@ -1,0 +1,22 @@
+id: fda-50.25-a6-injury-compensation
+citation: 21 CFR 50.25(a)(6)
+title: Compensation and medical treatment for injury
+description: 'For research involving more than minimal risk, an explanation as to whether
+  any compensation and an explanation as to whether any medical treatments are available if
+  injury occurs and, if so, what they consist of, or where further information may be obtained.
+
+  '
+retrieval_queries:
+- what happens if you are injured during the study
+- compensation for research related injury who pays medical treatment costs
+evaluation_criteria: 'The ICF must explain (1) whether medical treatment is available if a
+  study-related injury occurs, (2) whether compensation is available, and (3) what these consist
+  of or where further information may be obtained. Mentioning only that care exists, without
+  addressing costs or compensation, satisfies the element only partially.
+
+  '
+severity: major
+statutory_refs:
+- 21 CFR 50.25(a)(6)
+remediation: State whether compensation and medical treatment are available for injury, what
+  they consist of, and where to get further information.

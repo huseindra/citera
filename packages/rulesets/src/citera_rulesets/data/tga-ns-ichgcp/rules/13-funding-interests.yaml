@@ -1,0 +1,17 @@
+id: tga-monitoring-funding-interests
+citation: NS 2.2.6(b),(h),(i)
+title: Monitoring, funding, and declarations of interest
+description: How the research will be monitored, the amounts and sources of funding, and financial
+  or other relevant declarations of interest of researchers, sponsors, or institutions.
+retrieval_queries:
+- who is funding this research sponsor
+- how the study is monitored safety board
+- conflict of interest declaration researchers
+evaluation_criteria: The ICF must disclose how the trial is monitored, its funding source,
+  and any relevant declarations of interest.
+severity: minor
+statutory_refs:
+- National Statement (2025) 2.2.6(b)
+- National Statement (2025) 2.2.6(h)
+- National Statement (2025) 2.2.6(i)
+remediation: Add monitoring arrangements, funder identity, and interest declarations.

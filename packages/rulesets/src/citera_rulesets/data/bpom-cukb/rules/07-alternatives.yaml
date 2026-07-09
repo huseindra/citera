@@ -1,0 +1,16 @@
+id: bpom-4810-alternatives
+citation: Pedoman CUKB 4.8.10 (i)
+title: Prosedur atau pengobatan alternatif
+description: Prosedur atau pengobatan alternatif yang mungkin ada bagi subjek, serta kemungkinan
+  manfaat dan risikonya yang penting.
+retrieval_queries:
+- alternatif pengobatan lain selain ikut penelitian
+- terapi standar yang tersedia manfaat dan risikonya
+- pilihan pengobatan lain
+- alternative treatments available
+evaluation_criteria: The PSP must disclose available alternative procedures or treatments
+  with their material benefits and risks.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf i
+remediation: Uraikan pengobatan standar dan pilihan lain beserta manfaat dan risiko utamanya.

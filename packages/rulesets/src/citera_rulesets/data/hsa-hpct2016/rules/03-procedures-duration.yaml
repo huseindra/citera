@@ -1,0 +1,18 @@
+id: hsa-r19-procedures-duration
+citation: HP(CT) Regs 2016, reg 19(1)(d), (s)
+title: Procedures and expected duration
+description: The procedures to be followed, including all invasive procedures, and the expected
+  duration of the subject's participation.
+retrieval_queries:
+- study procedures visits tests blood samples
+- how long will participation last duration weeks months
+- invasive procedures biopsies injections
+evaluation_criteria: The ICF must describe the procedures the subject will undergo (including
+  all invasive procedures) and state the expected duration of participation, consistent with
+  the protocol's schedule of assessments.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(d)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(s)
+remediation: List the visits, procedures (flagging invasive ones), and total participation
+  time.

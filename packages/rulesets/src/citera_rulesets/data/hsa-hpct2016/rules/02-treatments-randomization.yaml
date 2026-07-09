@@ -1,0 +1,18 @@
+id: hsa-r19-treatments-randomization
+citation: HP(CT) Regs 2016, reg 19(1)(c), (f)
+title: Trial treatments, randomisation, and experimental aspects
+description: The treatments or procedures in the trial, the probability of random assignment,
+  and the aspects of the trial which are experimental.
+retrieval_queries:
+- random assignment chance of receiving placebo or study drug
+- treatment groups randomization
+- experimental study drug not approved
+evaluation_criteria: The ICF must describe the trial treatments, state the probability of
+  random assignment where the trial randomises, and identify which aspects are experimental,
+  consistent with the protocol design.
+severity: major
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(c)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(f)
+remediation: Describe each treatment arm, the randomisation ratio, and label experimental
+  components.

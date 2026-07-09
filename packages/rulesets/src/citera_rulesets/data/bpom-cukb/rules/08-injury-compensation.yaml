@@ -1,0 +1,17 @@
+id: bpom-4810-injury-compensation
+citation: Pedoman CUKB 4.8.10 (j)
+title: Kompensasi dan pengobatan bila terjadi cedera
+description: Kompensasi dan/atau pengobatan yang tersedia bagi subjek bila terjadi cedera
+  yang berkaitan dengan uji klinik.
+retrieval_queries:
+- kompensasi bila terjadi cedera akibat penelitian
+- pengobatan cedera terkait uji klinik ditanggung
+- ganti rugi perawatan medis cedera
+- compensation for research related injury
+evaluation_criteria: The PSP must state what compensation and/or treatment is available for
+  trial-related injury and who bears the cost.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf j
+remediation: Jelaskan siapa yang menyediakan dan membiayai pengobatan cedera penelitian serta
+  kompensasinya.

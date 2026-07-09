@@ -1,0 +1,15 @@
+id: bpom-4810-enrolment
+citation: Pedoman CUKB 4.8.10 (t)
+title: Perkiraan jumlah subjek
+description: Perkiraan jumlah subjek yang ikut serta dalam uji klinik.
+retrieval_queries:
+- berapa banyak peserta yang akan ikut serta
+- perkiraan jumlah subjek penelitian
+- jumlah pasien yang direkrut
+- number of participants enrolled
+evaluation_criteria: The PSP must state the approximate number of subjects, consistent with
+  the protocol's planned enrolment.
+severity: minor
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf t
+remediation: Sebutkan jumlah rencana rekrutmen dari protokol.

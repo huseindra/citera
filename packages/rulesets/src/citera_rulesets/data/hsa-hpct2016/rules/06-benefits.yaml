@@ -1,0 +1,17 @@
+id: hsa-r19-benefits
+citation: HP(CT) Regs 2016, reg 19(1)(h)
+title: Reasonably expected benefits
+description: The reasonably expected benefits, including whether there is any intended clinical
+  benefit to the subject.
+retrieval_queries:
+- benefits you may expect from taking part
+- there may be no direct benefit to you
+- how this research may help others
+evaluation_criteria: The ICF must describe reasonably expected benefits and state honestly
+  whether clinical benefit to the subject is intended; if none is intended, the subject must
+  be told.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(h)
+remediation: State expected benefits without overstatement; say plainly if no direct benefit
+  is intended.

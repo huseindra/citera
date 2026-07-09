@@ -1,0 +1,22 @@
+id: tga-confidentiality-access
+citation: NS 2.2.6(f); E6(R2) 4.8.10(n),(o) / E6(R3) 2.8.10(o),(p)
+title: Privacy, confidentiality, and record access
+description: How privacy and confidentiality will be protected, and that monitors, auditors,
+  the HREC, and regulatory authorities (including the TGA) will be granted direct access to
+  original medical records.
+retrieval_queries:
+- confidentiality of your records privacy protected
+- access to your medical records monitors auditors
+- identity will not be revealed publications
+evaluation_criteria: The ICF must explain privacy/confidentiality protections and disclose
+  direct record access by monitors, auditors, the HREC, and regulators, with identity kept
+  confidential in publications.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.6(f)
+- ICH E6(R2) 4.8.10(n)
+- ICH E6(R2) 4.8.10(o)
+- ICH E6(R3) Annex 1 2.8.10(o)
+- ICH E6(R3) Annex 1 2.8.10(p)
+remediation: Name the parties with record access (including the TGA) and the confidentiality
+  protections.

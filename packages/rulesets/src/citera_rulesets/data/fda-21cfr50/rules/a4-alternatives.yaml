@@ -1,0 +1,20 @@
+id: fda-50.25-a4-alternatives
+citation: 21 CFR 50.25(a)(4)
+title: Alternative procedures or treatments
+description: 'A disclosure of appropriate alternative procedures or courses of treatment,
+  if any, that might be advantageous to the subject.
+
+  '
+retrieval_queries:
+- alternatives to participating other treatment options
+- standard treatment available without joining the study
+evaluation_criteria: 'The ICF must disclose appropriate alternative procedures or courses
+  of treatment available to the participant outside the study, consistent with the standard-of-care
+  options described in the protocol.
+
+  '
+severity: major
+statutory_refs:
+- 21 CFR 50.25(a)(4)
+remediation: Disclose appropriate alternative procedures or treatments and their material
+  advantages and disadvantages.

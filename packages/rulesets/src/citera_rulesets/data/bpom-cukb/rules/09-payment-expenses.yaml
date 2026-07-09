@@ -1,0 +1,18 @@
+id: bpom-4810-payment-expenses
+citation: Pedoman CUKB 4.8.10 (k)–(l)
+title: Pembayaran prorata dan biaya subjek
+description: Pembayaran prorata yang diharapkan (bila ada) kepada subjek, dan biaya yang diperkirakan
+  (bila ada) untuk subjek.
+retrieval_queries:
+- penggantian biaya transport uang saku peserta
+- pembayaran prorata bila mengundurkan diri
+- biaya yang harus Anda tanggung
+- payment reimbursement expenses
+evaluation_criteria: Where subjects are paid, the PSP must explain pro-ration; it must disclose
+  any costs the subject bears. A clear statement that neither applies also satisfies the requirement.
+severity: minor
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf k
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf l
+remediation: Jelaskan jadwal pembayaran, prorata bila berhenti lebih awal, dan biaya yang
+  ditanggung peserta.

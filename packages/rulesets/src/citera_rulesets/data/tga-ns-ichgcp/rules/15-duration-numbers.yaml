@@ -1,0 +1,18 @@
+id: tga-termination-duration-numbers
+citation: E6(R2) 4.8.10(r),(t) / E6(R3) 2.8.10(s),(u)
+title: Termination circumstances and enrolment
+description: Foreseeable circumstances under which participation may be terminated, and the
+  approximate number of participants in the trial.
+retrieval_queries:
+- your participation may be stopped by the doctor
+- reasons for early termination withdrawal by investigator
+- how many people will take part number of participants
+evaluation_criteria: The ICF must describe foreseeable termination circumstances and state
+  the approximate enrolment, consistent with the protocol.
+severity: minor
+statutory_refs:
+- ICH E6(R2) 4.8.10(r)
+- ICH E6(R2) 4.8.10(t)
+- ICH E6(R3) Annex 1 2.8.10(s)
+- ICH E6(R3) Annex 1 2.8.10(u)
+remediation: List early-termination circumstances and the planned enrolment number.

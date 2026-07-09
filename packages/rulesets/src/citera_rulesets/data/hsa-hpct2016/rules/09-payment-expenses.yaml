@@ -1,0 +1,18 @@
+id: hsa-r19-payment-expenses
+citation: HP(CT) Regs 2016, reg 19(1)(k)–(l)
+title: Payment pro-ration and anticipated expenses
+description: The circumstances which may result in pro-ration of payment to the subject, and
+  any anticipated expenses to the subject.
+retrieval_queries:
+- payment reimbursement for participation prorated
+- costs you may have to pay expenses
+- transport allowance compensation for time
+evaluation_criteria: Where subjects are paid, the ICF must explain pro-ration on early withdrawal;
+  it must disclose any expenses the subject is expected to bear. If neither applies, a clear
+  statement to that effect satisfies the requirement.
+severity: minor
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(k)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(l)
+remediation: Explain payment schedule, pro-ration on withdrawal, and any costs borne by the
+  participant.

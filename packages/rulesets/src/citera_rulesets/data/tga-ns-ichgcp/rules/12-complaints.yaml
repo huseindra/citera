@@ -1,0 +1,21 @@
+id: tga-contacts-complaints
+citation: NS 2.2.6(d),(e); E6(R2) 4.8.10(q) / E6(R3) 2.8.10(r)
+title: Contacts — researchers and a separate complaints person
+description: Contact details of the researchers, and contact details of a person to receive
+  complaints who is independent of the research team, plus whom to contact about participants'
+  rights and trial-related injury.
+retrieval_queries:
+- who to contact questions about the study
+- complaints contact independent of the researchers
+- contact about your rights as a participant
+evaluation_criteria: The ICF must provide researcher contacts AND a separate complaints contact
+  independent of the research team, plus contacts for rights and injury. A single researcher
+  contact for everything is partial.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.6(d)
+- National Statement (2025) 2.2.6(e)
+- ICH E6(R2) 4.8.10(q)
+- ICH E6(R3) Annex 1 2.8.10(r)
+remediation: Add an independent complaints contact (e.g. HREC office) distinct from the research
+  team.

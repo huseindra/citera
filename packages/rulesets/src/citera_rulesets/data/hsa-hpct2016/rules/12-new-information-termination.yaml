@@ -1,0 +1,19 @@
+id: hsa-r19-new-information-termination
+citation: HP(CT) Regs 2016, reg 19(1)(p), (r)
+title: New information and termination circumstances
+description: That the subject will be informed in a timely manner of information relevant
+  to continuing participation, and the foreseeable circumstances under which participation
+  may be terminated.
+retrieval_queries:
+- new information that may affect your willingness to continue
+- your participation may be stopped ended by the doctor
+- reasons the study doctor may withdraw you
+evaluation_criteria: The ICF must commit to informing subjects of new relevant information
+  during the trial and describe foreseeable circumstances under which their participation
+  may be terminated.
+severity: major
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(p)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(r)
+remediation: Add commitments to share new safety information and list circumstances for early
+  termination.

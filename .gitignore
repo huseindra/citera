@@ -33,6 +33,9 @@ coverage/
 
 # Data (never commit clinical documents)
 data/
+# rule packs are declarative YAML content, not clinical data
+!packages/rulesets/src/citera_rulesets/data/
+!packages/rulesets/src/citera_rulesets/data/**
 uploads/
 *.pdf
 # synthetic demo material is the one exception

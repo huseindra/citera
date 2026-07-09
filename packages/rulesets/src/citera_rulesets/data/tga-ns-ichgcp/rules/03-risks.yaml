@@ -1,0 +1,19 @@
+id: tga-risks
+citation: NS 2.2.2; E6(R2) 4.8.10(g) / E6(R3) 2.8.10(f)
+title: Reasonably foreseeable risks
+description: The reasonably foreseeable risks or inconveniences to the participant and, where
+  applicable, to an embryo, foetus, nursing infant, or the participant's partner.
+retrieval_queries:
+- risks side effects of the study drug
+- pregnancy embryo foetus nursing infant risk
+- discomforts you may experience
+evaluation_criteria: The ICF must describe reasonably foreseeable risks consistently with
+  the protocol's safety profile, including reproductive-partner risks where applicable. Understating
+  documented risks is a conflict.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.2
+- ICH E6(R2) 4.8.10(g)
+- ICH E6(R3) Annex 1 2.8.10(f)
+remediation: Align the risk section with the protocol's safety data, including frequencies
+  and monitoring.

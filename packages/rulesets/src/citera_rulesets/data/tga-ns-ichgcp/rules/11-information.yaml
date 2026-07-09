@@ -1,0 +1,17 @@
+id: tga-new-information
+citation: NS 2.2.8; E6(R2) 4.8.10(p) / E6(R3) 2.8.10(q)
+title: New information during the trial
+description: That participants will be told in a timely manner of new information relevant
+  to their willingness to continue, with consent renegotiated where warranted.
+retrieval_queries:
+- new information that may affect your willingness to continue
+- you will be told about new findings
+- updated information consent
+evaluation_criteria: The ICF must commit to informing participants of new relevant information
+  in a timely way.
+severity: major
+statutory_refs:
+- National Statement (2025) 2.2.8
+- ICH E6(R2) 4.8.10(p)
+- ICH E6(R3) Annex 1 2.8.10(q)
+remediation: Add a commitment to share new safety or relevance information promptly.

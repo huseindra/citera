@@ -1,0 +1,18 @@
+id: tga-dissemination-results
+citation: NS 2.2.6(k); E6(R3) 2.8.10(p),(v)
+title: Dissemination, registration, and results availability
+description: The likelihood and form of dissemination of results (including publication),
+  that the trial may be registered on public databases, and that trial results and actual
+  treatment received can be made available if desired.
+retrieval_queries:
+- results of the study will be published
+- trial registered public database registry
+- you can be informed of the study results
+evaluation_criteria: The ICF must explain how results will be disseminated and registered,
+  and (per E6(R3)) that participants may access trial results and their actual treatment.
+severity: minor
+statutory_refs:
+- National Statement (2025) 2.2.6(k)
+- ICH E6(R3) Annex 1 2.8.10(p)
+- ICH E6(R3) Annex 1 2.8.10(v)
+remediation: Add publication/registration statements and how participants can obtain results.
