@@ -141,3 +141,25 @@ async def test_finding_dossier_404_on_unknown_id(client):
         "/v1/findings/00000000-0000-0000-0000-000000000000"
     )
     assert resp.status_code == 404
+
+
+async def test_timestamps_carry_explicit_utc_offset(client, review):
+    """Naive ISO timestamps are ambiguous on the wire: JS `new Date()`
+    parses them as local time, skewing every duration by the viewer's
+    UTC offset (the "duration starts at 420m" bug in WIB)."""
+    assert review["created_at"].endswith("+00:00")
+    assert all(f["created_at"].endswith("+00:00") for f in review["findings"])
+
+    documents = (await client.get("/documents")).json()
+    assert all(d["created_at"].endswith("+00:00") for d in documents)
+
+    summaries = (await client.get("/reviews")).json()
+    assert all(r["created_at"].endswith("+00:00") for r in summaries)
+
+    dossier = (
+        await client.get(f"/v1/findings/{review['findings'][0]['id']}")
+    ).json()
+    assert dossier["created_at"].endswith("+00:00")
+
+    usage = (await client.get("/v1/usage/summary")).json()
+    assert all(r["at"].endswith("+00:00") for r in usage["recent"])

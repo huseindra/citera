@@ -21,6 +21,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.serializers import UTCDateTime, as_utc
 from app.models import ApiKey, AuditRecord
 
 router = APIRouter(tags=["platform"])
@@ -45,7 +46,7 @@ class KeyOut(BaseModel):
     id: UUID
     name: str
     prefix: str
-    created_at: datetime
+    created_at: UTCDateTime
     revoked: bool
 
 
@@ -156,7 +157,7 @@ async def usage_summary(session: AsyncSession = Depends(get_session)):
         "recent": [
             {
                 "operation": _OPERATION_LABELS.get(step, step),
-                "at": created_at.isoformat(),
+                "at": as_utc(created_at).isoformat(),
             }
             for step, created_at in recent_rows
         ],

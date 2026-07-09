@@ -13,6 +13,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.serializers import UTCDateTime
 from app.models import AuditRecord, Finding, Review
 from app.services.coverage import COVERAGE_LABEL, IMPACT_LABEL
 
@@ -57,7 +58,7 @@ class FindingDetailOut(BaseModel):
     protocol_reference: str | None
     suggested_revision: str | None
     audit: AuditStatusOut
-    created_at: datetime
+    created_at: UTCDateTime
 
 
 @router.get("/{finding_id}", response_model=FindingDetailOut)

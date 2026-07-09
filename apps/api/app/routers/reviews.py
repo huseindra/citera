@@ -9,6 +9,7 @@ from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
+from app.serializers import UTCDateTime, as_utc
 from app.models import AuditRecord, Chunk, Document, Finding, Review
 from app.services.coverage import COVERAGE_LABEL, IMPACT_LABEL, compute_coverage
 from app.services.review import run_review
@@ -48,7 +49,7 @@ class FindingOut(BaseModel):
     protocol_reference: str | None
     queries_executed: list[str] | None
     suggested_revision: str | None
-    created_at: datetime
+    created_at: UTCDateTime
 
 
 class ReviewOut(BaseModel):
@@ -63,7 +64,7 @@ class ReviewOut(BaseModel):
     # which model actually evaluated (from the audit log) — honest chip
     evaluator_model: str | None
     findings: list[FindingOut]
-    created_at: datetime
+    created_at: UTCDateTime
 
 
 async def _require_ready_document(
@@ -132,7 +133,7 @@ class ReviewSummary(BaseModel):
     status: str
     # finding counts keyed by status — review list shows outcomes at a glance
     status_counts: dict[str, int]
-    created_at: datetime
+    created_at: UTCDateTime
 
 
 @router.get("", response_model=list[ReviewSummary])
@@ -234,7 +235,7 @@ def _render_markdown(report: ReviewReportOut) -> str:
         "",
         f"- **Ruleset:** {review.ruleset_id} (v{review.ruleset_version})",
         f"- **Review ID:** `{review.id}`",
-        f"- **Reviewed at:** {review.created_at.isoformat()}",
+        f"- **Reviewed at:** {as_utc(review.created_at).isoformat()}",
         "",
         "## Regulatory Readiness",
         "",
@@ -398,7 +399,7 @@ async def get_finding_evidence(
 class AuditRecordOut(BaseModel):
     id: UUID
     step: str
-    created_at: datetime
+    created_at: UTCDateTime
     # served verbatim from the append-only log — never summarized
     payload: dict
 
