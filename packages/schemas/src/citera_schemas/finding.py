@@ -47,9 +47,16 @@ class Finding(BaseModel):
     protocol_reference: str | None = None
     # For not_found: proof of what was searched (evidence of absence).
     queries_executed: list[str] = []
+    # AI-drafted replacement text that would satisfy the requirement.
+    # Generated, not quoted — never grounded, always labeled as a draft.
+    suggested_revision: str | None = None
 
     @model_validator(mode="after")
     def _evidence_first(self) -> "Finding":
+        if self.status == FindingStatus.SATISFIED and self.suggested_revision:
+            raise ValueError(
+                "satisfied findings must not carry a suggested_revision"
+            )
         if self.status in _EVIDENCE_BACKED:
             if self.span is None or not self.verbatim_quote:
                 raise ValueError(

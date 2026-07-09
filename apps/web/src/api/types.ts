@@ -42,6 +42,7 @@ export interface FindingOut {
   evidence_strength: "strong" | "moderate" | "weak" | null;
   protocol_reference: string | null;
   queries_executed: string[] | null;
+  suggested_revision: string | null;
   created_at: string;
 }
 
@@ -53,6 +54,7 @@ export interface ReviewOut {
   ruleset_version: string;
   status: "pending" | "running" | "complete" | "failed";
   rule_count: number;
+  generate_suggested_revision: boolean;
   evaluator_model: string | null;
   findings: FindingOut[];
   created_at: string;

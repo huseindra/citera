@@ -18,6 +18,8 @@ class ReviewCreate(BaseModel):
     document_id: UUID
     protocol_document_id: UUID
     ruleset_id: str = "fda-21cfr50"
+    # draft an AI revision for every non-satisfied finding (labeled draft)
+    generate_suggested_revision: bool = True
 
 
 class SpanOut(BaseModel):
@@ -39,6 +41,7 @@ class FindingOut(BaseModel):
     evidence_strength: str | None
     protocol_reference: str | None
     queries_executed: list[str] | None
+    suggested_revision: str | None
     created_at: datetime
 
 
@@ -50,6 +53,7 @@ class ReviewOut(BaseModel):
     ruleset_version: str
     status: str
     rule_count: int
+    generate_suggested_revision: bool
     # which model actually evaluated (from the audit log) — honest chip
     evaluator_model: str | None
     findings: list[FindingOut]
@@ -104,6 +108,7 @@ async def create_review(
         ruleset_id=ruleset.id,
         ruleset_version=ruleset.version,
         status="pending",
+        generate_suggested_revision=body.generate_suggested_revision,
     )
     session.add(review)
     await session.commit()
@@ -352,6 +357,7 @@ async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:
             evidence_strength=f.evidence_strength,
             protocol_reference=f.protocol_reference,
             queries_executed=f.queries_executed,
+            suggested_revision=f.suggested_revision,
             created_at=f.created_at,
         )
         for f in rows
@@ -364,6 +370,7 @@ async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:
         ruleset_version=review.ruleset_version,
         status=review.status,
         rule_count=len(rules),
+        generate_suggested_revision=review.generate_suggested_revision,
         evaluator_model=evaluator_model,
         findings=findings,
         created_at=review.created_at,

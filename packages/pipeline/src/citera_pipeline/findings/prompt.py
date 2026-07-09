@@ -42,17 +42,31 @@ contradicts the ICF text, with its section name.
 - reasoning must be 2-4 plain-language sentences a human reviewer can verify independently. \
 Reference the regulation, the quote, and (if relevant) the protocol."""
 
+# Appended only when the review requests suggested revisions — the tool
+# schema gains the field in lockstep (see findings/llm.py).
+REVISION_PROMPT = """
+- suggested_revision: for partial, conflicting, or not_found findings, draft the ICF text \
+that WOULD satisfy the requirement — replacement text for the flawed passage, or new text \
+for a missing element. Write 1-3 sentences in plain, participant-friendly language \
+(8th-grade reading level), factually consistent with the study protocol. Never invent \
+clinical facts that are not in the protocol. For satisfied findings, use null. \
+This is a DRAFT for the reviewer; it will be labeled as AI-generated."""
+
 
 def build_prompt(
     rule: Rule,
     evidence: list[RetrievedChunk],
     protocol_text: str | None,
+    include_suggested_revision: bool = False,
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     """Returns (system, messages) for the Messages API."""
+    system_text = SYSTEM_PROMPT
+    if include_suggested_revision:
+        system_text += REVISION_PROMPT
     system = [
         {
             "type": "text",
-            "text": SYSTEM_PROMPT,
+            "text": system_text,
             "cache_control": {"type": "ephemeral"},
         }
     ]

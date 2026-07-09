@@ -35,6 +35,7 @@ function finding(
     evidence_strength: null,
     protocol_reference: null,
     queries_executed: null,
+  suggested_revision: null,
     created_at: "",
   };
 }

@@ -20,6 +20,9 @@ class EvaluationOutcome:
     source_chunk_id: str | None
     protocol_reference: str | None
     model: str
+    # AI-drafted replacement text (non-satisfied only, when requested).
+    # Generated, not quoted — never grounded, always labeled as a draft.
+    suggested_revision: str | None = None
     # raw truth for the audit log — recorded verbatim, never summarized
     prompt_payload: dict[str, Any] = field(default_factory=dict)
     raw_response: dict[str, Any] = field(default_factory=dict)
@@ -33,4 +36,6 @@ class Evaluator(Protocol):
         rule: Rule,
         evidence: list[RetrievedChunk],
         protocol_text: str | None,
+        *,
+        include_suggested_revision: bool = False,
     ) -> EvaluationOutcome: ...

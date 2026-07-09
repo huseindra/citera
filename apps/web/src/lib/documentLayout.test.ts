@@ -16,6 +16,7 @@ function finding(id: string, start: number, end: number): FindingOut {
     evidence_strength: null,
     protocol_reference: null,
     queries_executed: null,
+  suggested_revision: null,
     created_at: "",
   };
 }

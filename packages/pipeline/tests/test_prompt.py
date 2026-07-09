@@ -55,3 +55,24 @@ def test_prompt_structure_and_cache_breakpoints():
 def test_prompt_without_protocol_has_single_user_block():
     _, messages = build_prompt(_rule(), [_chunk("t", 1)], protocol_text=None)
     assert len(messages[0]["content"]) == 1
+
+
+def test_suggested_revision_is_opt_in():
+    from citera_pipeline.findings.llm import finding_tool
+
+    system, _ = build_prompt(_rule(), [_chunk("t", 1)], protocol_text=None)
+    assert "suggested_revision" not in system[0]["text"]
+    system, _ = build_prompt(
+        _rule(), [_chunk("t", 1)], protocol_text=None,
+        include_suggested_revision=True,
+    )
+    assert "suggested_revision" in system[0]["text"]
+
+    base = finding_tool()
+    assert "suggested_revision" not in base["input_schema"]["properties"]
+    with_revision = finding_tool(include_suggested_revision=True)
+    assert "suggested_revision" in with_revision["input_schema"]["properties"]
+    # strict mode: every property listed as required
+    assert set(with_revision["input_schema"]["required"]) == set(
+        with_revision["input_schema"]["properties"]
+    )

@@ -39,6 +39,29 @@ _PROTOCOL_REFERENCE = (
     "reaction (angioedema). [scripted]"
 )
 
+# Deterministic drafts, consistent with the demo protocol — plain,
+# participant-friendly language mirroring what the Claude evaluator is
+# asked to produce. Only for statuses where action is needed.
+_CANNED_REVISIONS = {
+    "partial": (
+        "If you are injured as a result of taking part in this study, medical "
+        "care is available to you, and the sponsor will pay the reasonable "
+        "costs of treating research-related injuries. You do not give up any "
+        "legal rights by signing this form. [scripted draft]"
+    ),
+    "conflicting": (
+        "The study drug can cause side effects. In earlier studies, about 3 in "
+        "100 participants developed elevated liver enzymes, and rare but "
+        "serious allergic reactions (including angioedema) have occurred. Your "
+        "liver function will be checked at every visit. [scripted draft]"
+    ),
+    "not_found": (
+        "Taking part in this study is completely voluntary. You may refuse to "
+        "participate or stop at any time, without penalty or loss of benefits "
+        "to which you are otherwise entitled. [scripted draft]"
+    ),
+}
+
 
 class ScriptedEvaluator:
     model = "scripted-demo"
@@ -52,6 +75,8 @@ class ScriptedEvaluator:
         rule: Rule,
         evidence: list[RetrievedChunk],
         protocol_text: str | None,
+        *,
+        include_suggested_revision: bool = False,
     ) -> EvaluationOutcome:
         status, chunk, keyword = self._judge(rule.id, evidence)
 
@@ -71,6 +96,11 @@ class ScriptedEvaluator:
             source_chunk_id=source_chunk_id,
             protocol_reference=(
                 _PROTOCOL_REFERENCE if status == "conflicting" else None
+            ),
+            suggested_revision=(
+                _CANNED_REVISIONS.get(status)
+                if include_suggested_revision
+                else None
             ),
             model=self.model,
             prompt_payload={"scripted": True, "rule_id": rule.id},

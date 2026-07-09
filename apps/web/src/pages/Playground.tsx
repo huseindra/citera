@@ -38,6 +38,7 @@ const EMPTY_SLOT: Slot = { documentId: null, filename: null, state: "empty" };
 
 // What every review runs. These are core engine steps, not options — the
 // sidebar shows them as locked capabilities instead of faking toggles.
+// Suggested Revision is the one real option (a genuine API parameter).
 const REVIEW_CAPABILITIES = [
   "Validate Required Elements",
   "Compare Against Study Protocol",
@@ -47,6 +48,7 @@ const REVIEW_CAPABILITIES = [
 
 export function PlaygroundPage() {
   const [ruleset, setRuleset] = useState("fda-21cfr50");
+  const [withRevision, setWithRevision] = useState(true);
   const [docsNonce, setDocsNonce] = useState(0);
   const [slots, setSlots] = useState<Record<SlotKind, Slot>>({
     protocol: EMPTY_SLOT,
@@ -148,13 +150,19 @@ export function PlaygroundPage() {
         document_id: slots.icf.documentId!,
         protocol_document_id: slots.protocol.documentId!,
         ruleset_id: ruleset,
+        generate_suggested_revision: withRevision,
       };
       const review = await apiPost<ReviewOut>("/reviews", body);
       pushLog({
         operation: "client.reviews.create()",
         method: "POST",
         path: "/v1/reviews",
-        request: { ruleset, document_id: body.document_id, protocol_document_id: body.protocol_document_id },
+        request: {
+          ruleset,
+          document_id: body.document_id,
+          protocol_document_id: body.protocol_document_id,
+          generate_suggested_revision: withRevision,
+        },
         response: { id: review.id, status: review.status, rule_count: review.rule_count },
       });
       return review;
@@ -260,16 +268,30 @@ export function PlaygroundPage() {
                   {capability}
                 </li>
               ))}
-              <li className="flex items-center gap-2 text-xs text-stone-400">
-                <span className="h-3.5 w-3.5 rounded-sm border border-stone-300" />
-                Generate Suggested Revision
-                <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                  soon
-                </span>
+              <li>
+                <label className="flex cursor-pointer items-center gap-2 text-xs text-stone-700">
+                  <input
+                    type="checkbox"
+                    checked={withRevision}
+                    onChange={(e) => setWithRevision(e.target.checked)}
+                    className="peer sr-only"
+                  />
+                  <span
+                    className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-colors ${
+                      withRevision
+                        ? "border-stone-800 bg-stone-800 text-white"
+                        : "border-stone-300 bg-white text-transparent"
+                    }`}
+                  >
+                    <Check aria-hidden className="h-2.5 w-2.5" />
+                  </span>
+                  Generate Suggested Revision
+                </label>
               </li>
             </ul>
             <p className="mt-1.5 text-[10px] leading-4 text-stone-400">
-              Core engine steps — included in every review.
+              Checked steps run in every review; Suggested Revision drafts
+              AI replacement text for each non-satisfied finding.
             </p>
           </div>
 
@@ -313,7 +335,7 @@ export function PlaygroundPage() {
         </div>
 
         {/* RIGHT — API Response */}
-        <ApiSidebar log={apiLog} liveSnippet={buildSnippet(ruleset, slots, review)} />
+        <ApiSidebar log={apiLog} liveSnippet={buildSnippet(ruleset, withRevision, slots, review)} />
       </div>
     </div>
   );
@@ -775,6 +797,7 @@ function DropZone({
 
 function buildSnippet(
   ruleset: string,
+  withRevision: boolean,
   slots: Record<SlotKind, Slot>,
   review: ReviewOut | null,
 ): string {
@@ -806,6 +829,7 @@ function buildSnippet(
       `const review = await client.reviews.create({`,
       `  ruleset: "${ruleset}",`,
       `  protocol: protocol.id, icf: icf.id,`,
+      `  suggestedRevision: ${withRevision},`,
       `});`,
       `const result = await client.reviews.waitUntilComplete(review.id);`,
       `console.log(result.findings); // ${review.findings.length} findings`,

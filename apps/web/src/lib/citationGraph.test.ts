@@ -16,6 +16,7 @@ function finding(overrides: Partial<FindingOut>): FindingOut {
     evidence_strength: "strong",
     protocol_reference: null,
     queries_executed: null,
+    suggested_revision: null,
     created_at: "",
     ...overrides,
   };
