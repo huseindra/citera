@@ -162,59 +162,6 @@ class DocumentText(BaseModel):
     id: UUID
     filename: str
     canonical_text: str
-
-
-class SemanticPoint(BaseModel):
-    chunk_id: UUID
-    x: float
-    y: float
-    section_title: str | None
-    char_start: int
-    char_end: int
-    preview: str
-
-
-class SemanticMapOut(BaseModel):
-    document_id: UUID
-    points: list[SemanticPoint]
-
-
-@router.get("/{document_id}/semantic-map", response_model=SemanticMapOut)
-async def get_semantic_map(
-    document_id: UUID, session: AsyncSession = Depends(get_session)
-):
-    """2D PCA projection of the document's chunk embeddings. Fewer than
-    3 embedded chunks yields an empty map (the UI hides the panel)."""
-    from citera_pipeline.semantic import project_2d
-
-    doc = await session.get(Document, document_id)
-    if doc is None:
-        raise HTTPException(status_code=404, detail="Document not found")
-
-    chunks = (
-        await session.scalars(
-            select(Chunk)
-            .where(Chunk.document_id == document_id, Chunk.embedding.is_not(None))
-            .order_by(Chunk.char_start)
-        )
-    ).all()
-
-    coords = project_2d([list(c.embedding) for c in chunks])
-    points = [
-        SemanticPoint(
-            chunk_id=chunk.id,
-            x=x,
-            y=y,
-            section_title=chunk.section_title,
-            char_start=chunk.char_start,
-            char_end=chunk.char_end,
-            preview=chunk.text[:120],
-        )
-        for chunk, (x, y) in zip(chunks, coords)
-    ]
-    return SemanticMapOut(document_id=document_id, points=points)
-
-
 @router.get("/{document_id}/text", response_model=DocumentText)
 async def get_document_text(
     document_id: UUID, session: AsyncSession = Depends(get_session)
