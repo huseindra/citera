@@ -43,7 +43,7 @@ Citera  ◇ Clinical Regulatory Intelligence     Home · Playground · API Keys
 │  │ const citera = new Citera({ apiKey });             │  curl · TS · │
 │  │ const review = await citera.reviews.create({       │  Python tabs │
 │  │   document: icf.id, protocol: protocol.id,         │              │
-│  │   ruleset: "fda-21cfr50" });                       │              │
+│  │   ruleset: "fda" });                       │              │
 │  └────────────────────────────────────────────────────┘              │
 ├──────────────────────────────────────────────────────────────────────┤
 │  CAPABILITIES                                                        │
@@ -165,7 +165,7 @@ const icf      = await citera.documents.upload({ file: icfPdf, kind: "icf" });
 const review = await citera.reviews.create({
   document: icf.id,
   protocol: protocol.id,
-  ruleset: "fda-21cfr50",
+  ruleset: "fda",
 });
 
 const result = await citera.reviews.waitUntilComplete(review.id);
