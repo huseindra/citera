@@ -1,5 +1,17 @@
 import httpx
+import pytest
 from app.main import app
+
+
+@pytest.fixture(autouse=True)
+async def _fresh_engine():
+    """asyncpg pools are loop-bound — dispose per test so DB-touching
+    tests in this module never inherit another loop's connections."""
+    from app.db import engine
+
+    await engine.dispose()
+    yield
+    await engine.dispose()
 
 
 async def _client() -> httpx.AsyncClient:
@@ -49,15 +61,15 @@ async def test_ruleset_registry_lifecycle_and_metadata():
     assert fda["rule_count"] == 8
     assert fda["aliases"] == ["fda"]
 
-    # in-development packs are shipped and versioned but not runnable
-    for dev_id, alias in (
+    # every validated pack is available and independently versioned
+    for pack_id, alias in (
         ("hsa-hpct2016", "hsa"),
         ("bpom-cukb", "bpom"),
         ("tga-ns-ichgcp", "tga"),
     ):
-        entry = entries[dev_id]
-        assert entry["status"] == "in_development"
-        assert entry["version"] == "v0.1.0"
+        entry = entries[pack_id]
+        assert entry["status"] == "available"
+        assert entry["version"] == "v1.0.0"
         assert entry["rule_count"] > 0
         assert entry["aliases"] == [alias]
 
@@ -70,9 +82,10 @@ async def test_ruleset_registry_lifecycle_and_metadata():
         assert entries[roadmap_id]["version"] is None
 
 
-async def test_in_development_ruleset_review_rejected_honestly():
-    """The pack exists and loads — the registry status alone is the gate."""
-    for ruleset in ("hsa", "bpom-cukb", "tga"):
+async def test_non_available_ruleset_review_rejected_honestly():
+    """The registry status alone is the run gate — roadmap entries are
+    listed but refused."""
+    for ruleset in ("pmda", "ema", "nmpa"):
         async with await _client() as client:
             resp = await client.post(
                 "/reviews",
@@ -83,7 +96,23 @@ async def test_in_development_ruleset_review_rejected_honestly():
                 },
             )
         assert resp.status_code == 422, ruleset
-        assert "in development" in resp.json()["detail"]
+        assert "roadmap" in resp.json()["detail"]
+
+
+async def test_validated_packs_clear_the_ruleset_gate():
+    """hsa/bpom/tga aliases pass the gate — the 404 that follows proves
+    validation moved on to documents."""
+    for ruleset in ("hsa", "bpom", "tga"):
+        async with await _client() as client:
+            resp = await client.post(
+                "/reviews",
+                json={
+                    "document_id": "00000000-0000-0000-0000-000000000001",
+                    "protocol_document_id": "00000000-0000-0000-0000-000000000002",
+                    "ruleset": ruleset,
+                },
+            )
+        assert resp.status_code == 404, ruleset
 
 
 async def test_review_accepts_ruleset_alias():

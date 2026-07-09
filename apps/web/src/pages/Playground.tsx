@@ -37,6 +37,14 @@ interface Slot {
 
 const EMPTY_SLOT: Slot = { documentId: null, filename: null, state: "empty" };
 
+// sample study pair (public/samples/<base>-{protocol,icf}.md) per ruleset
+const SAMPLE_STUDIES: Record<string, string> = {
+  "fda-21cfr50": "vtz-2201",
+  "hsa-hpct2016": "hsa",
+  "bpom-cukb": "bpom",
+  "tga-ns-ichgcp": "tga",
+};
+
 // What every review runs. These are core engine steps, not options — the
 // sidebar shows them as locked capabilities instead of faking toggles.
 // Suggested Revision is the one real option (a genuine API parameter).
@@ -176,9 +184,12 @@ export function PlaygroundPage() {
 
   const loadSample = useMutation({
     mutationFn: async () => {
+      // each ruleset ships its own synthetic sample study (the BPOM pair
+      // is in Bahasa Indonesia — the pack reviews Indonesian ICFs)
+      const base = SAMPLE_STUDIES[ruleset] ?? "vtz-2201";
       for (const [kind, path] of [
-        ["protocol", "/samples/vtz-2201-protocol.md"],
-        ["icf", "/samples/vtz-2201-icf.md"],
+        ["protocol", `/samples/${base}-protocol.md`],
+        ["icf", `/samples/${base}-icf.md`],
       ] as const) {
         const blob = await (await fetch(path)).blob();
         await upload(kind, new File([blob], path.split("/").pop()!, { type: "text/markdown" }));

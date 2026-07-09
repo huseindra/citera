@@ -33,11 +33,30 @@ _CANNED_REASONING = {
     ),
 }
 
-_PROTOCOL_REFERENCE = (
-    "Protocol §6 Risks and Safety Considerations documents elevated liver "
-    "enzymes (~3%, monitored every visit) and a serious hypersensitivity "
-    "reaction (angioedema). [scripted]"
-)
+# per-pack protocol references for conflicting findings, keyed by rule-id
+# prefix — the scripted evaluator quotes the right synthetic protocol
+_PROTOCOL_REFERENCES = {
+    "fda": (
+        "Protocol §6 Risks and Safety Considerations documents elevated liver "
+        "enzymes (~3%, monitored every visit) and a serious hypersensitivity "
+        "reaction (angioedema). [scripted]"
+    ),
+    "hsa": (
+        "Protocol §6 Risks and Safety Considerations documents elevated liver "
+        "enzymes (~4%, monitored at every visit) and a moderate "
+        "hypersensitivity reaction (urticaria). [scripted]"
+    ),
+    "tga": (
+        "Protocol §5 Risks and Safety Considerations documents elevated liver "
+        "enzymes (~3%, monitored at every visit) and symptomatic hypotension "
+        "(6%). [scripted]"
+    ),
+    "bpom": (
+        "Protokol §5 Risiko dan Pertimbangan Keselamatan mendokumentasikan "
+        "peningkatan enzim hati (~3%, dipantau setiap kunjungan) dan reaksi "
+        "hipersensitivitas (urtikaria). [scripted]"
+    ),
+}
 
 # Deterministic drafts, consistent with the demo protocol — plain,
 # participant-friendly language mirroring what the Claude evaluator is
@@ -95,7 +114,9 @@ class ScriptedEvaluator:
             verbatim_quote=quote,
             source_chunk_id=source_chunk_id,
             protocol_reference=(
-                _PROTOCOL_REFERENCE if status == "conflicting" else None
+                _PROTOCOL_REFERENCES.get(rule.id.split("-")[0], _PROTOCOL_REFERENCES["fda"])
+                if status == "conflicting"
+                else None
             ),
             suggested_revision=(
                 _CANNED_REVISIONS.get(status)
@@ -114,35 +135,63 @@ class ScriptedEvaluator:
     def _judge(
         self, rule_id: str, evidence: list[RetrievedChunk]
     ) -> tuple[str, RetrievedChunk | None, str | None]:
-        """(status, signal chunk, signal keyword) from evidence content."""
+        """(status, signal chunk, signal keyword) from evidence content.
+
+        Keyword tiers are pack-agnostic (English + Indonesian): the demo
+        corpora of every jurisdiction plant the same defect archetypes —
+        an understated risk section, an incomplete injury-compensation
+        promise, and one missing required element."""
         if not evidence:
             return "not_found", None, None
 
-        if rule_id.endswith("a8-voluntary"):
-            chunk = _first_containing(evidence, "voluntary")
-            if chunk is None:
+        for suffix, tiers in _KEYWORD_JUDGMENTS:
+            if rule_id.endswith(suffix):
+                for status, keywords in tiers:
+                    for keyword in keywords:
+                        chunk = _first_containing(evidence, keyword)
+                        if chunk is not None:
+                            return status, chunk, keyword
+                # no tier matched: the element is absent from the evidence
                 return "not_found", None, None
-            return "satisfied", chunk, "voluntary"
-
-        if rule_id.endswith("a2-risks"):
-            liver = _first_containing(evidence, "liver")
-            if liver is not None:
-                return "satisfied", liver, "liver"
-            tolerated = _first_containing(evidence, "well tolerated")
-            if tolerated is not None:
-                return "conflicting", tolerated, "well tolerated"
-            return "satisfied", evidence[0], None
-
-        if rule_id.endswith("a6-injury-compensation"):
-            pays = _first_containing(evidence, "pay the reasonable costs")
-            if pays is not None:
-                return "satisfied", pays, "pay the reasonable costs"
-            care_only = _first_containing(evidence, "medical care is available")
-            if care_only is not None:
-                return "partial", care_only, "medical care is available"
-            return "satisfied", evidence[0], None
 
         return "satisfied", evidence[0], None
+
+
+# (rule-id suffix, [(status, keywords)] tried in order). First keyword
+# found in any evidence chunk wins; nothing found -> not_found.
+_KEYWORD_JUDGMENTS: list[tuple[str, list[tuple[str, list[str]]]]] = [
+    ("risks", [
+        ("satisfied", ["liver", "enzim hati"]),
+        ("conflicting", ["well tolerated", "sangat aman"]),
+    ]),
+    ("injury-compensation", [
+        ("satisfied", ["pay the reasonable costs", "ditanggung oleh sponsor"]),
+        ("partial", ["medical care is available", "pengobatan tersedia"]),
+    ]),
+    ("voluntary", [
+        ("satisfied", ["voluntary", "sukarela"]),
+    ]),
+    ("tissue", [
+        ("satisfied", ["outside singapore", "exported", "shipped"]),
+    ]),
+    ("ku17-insurance", [
+        ("satisfied", ["asuransi"]),
+        ("partial", ["ditanggung"]),
+    ]),
+    ("4811-copy", [
+        ("satisfied", ["salinan"]),
+    ]),
+    ("489-witness", [
+        ("satisfied", ["saksi"]),
+    ]),
+    ("data-withdrawal", [
+        ("satisfied", ["withdraw your data", "data collected up to", "no further data"]),
+    ]),
+    ("contacts-complaints", [
+        ("satisfied", ["complaint"]),
+        ("partial", ["contact"]),
+    ]),
+]
 
 
 def _first_containing(

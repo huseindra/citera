@@ -1,0 +1,21 @@
+id: tga-procedures-duration
+citation: NS 2.2.2; E6(R2) 4.8.10(d),(s) / E6(R3) 2.8.10(d),(t)
+title: Procedures and expected duration
+description: The procedures to be followed, including all invasive procedures, and the expected
+  duration of participation.
+retrieval_queries:
+- your participation lasts weeks of treatment follow-up
+- clinic visits what will happen at each visit
+- blood draw invasive procedure monitor
+evaluation_criteria: The ICF must describe the procedures the participant will undergo (flagging
+  invasive ones) and state the expected duration of participation, consistent with the protocol's
+  visit schedule.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.2
+- ICH E6(R2) 4.8.10(d)
+- ICH E6(R2) 4.8.10(s)
+- ICH E6(R3) Annex 1 2.8.10(d)
+- ICH E6(R3) Annex 1 2.8.10(t)
+remediation: List the visits, procedures (flagging invasive ones), and total participation
+  time.

@@ -27,10 +27,16 @@ entry without a pack, or a `roadmap` entry *with* a pack, fails loudly.
 | Ruleset | Pack id | Alias | Status | Version | Rules | Languages |
 |---|---|---|---|---|---|---|
 | FDA 21 CFR Part 50.25 | `fda-21cfr50` | `fda` | available | v1.0.0 | 8 | en |
-| HSA — Health Products (Clinical Trials) Regulations 2016, reg 19(1) | `hsa-hpct2016` | `hsa` | in_development | v0.1.0 | 15 | en |
-| BPOM — PerBPOM No. 8 Tahun 2024, Pedoman CUKB 4.8.10 | `bpom-cukb` | `bpom` | in_development | v0.1.0 | 17 | id, en |
-| TGA — National Statement + ICH GCP (dual citation) | `tga-ns-ichgcp` | `tga` | in_development | v0.1.0 | 15 | en |
+| HSA — Health Products (Clinical Trials) Regulations 2016, reg 19(1) | `hsa-hpct2016` | `hsa` | available | v1.0.0 | 15 | en |
+| BPOM — PerBPOM No. 8 Tahun 2024, Pedoman CUKB 4.8.10 | `bpom-cukb` | `bpom` | available | v1.0.0 | 17 | id, en |
+| TGA — National Statement + ICH GCP (dual citation) | `tga-ns-ichgcp` | `tga` | available | v1.0.0 | 16 | en |
 | PMDA · EMA · MHRA · Health Canada · NMPA | — | — | roadmap | — | — | — |
+
+Every available pack was validated end-to-end against its own synthetic
+sample study (`packages/rulesets/demo-corpus/`) twice: with the scripted
+evaluator (CI answer-key tests) and with the live pipeline (Claude +
+Voyage embeddings) — including span-grounding round-trips over Bahasa
+Indonesia text for BPOM.
 
 Notes on legal grounding (see `docs/rulesets-research.md` for sources):
 

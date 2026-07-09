@@ -10,13 +10,13 @@ rulesets:
     status: available
 
   - id: hsa-hpct2016
-    status: in_development
+    status: available
 
   - id: bpom-cukb
-    status: in_development
+    status: available
 
   - id: tga-ns-ichgcp
-    status: in_development
+    status: available
 
   - id: pmda
     authority: PMDA

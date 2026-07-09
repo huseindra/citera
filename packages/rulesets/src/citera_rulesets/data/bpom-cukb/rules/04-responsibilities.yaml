@@ -3,10 +3,9 @@ citation: Pedoman CUKB 4.8.10 (e)
 title: Tanggung jawab subjek
 description: Tanggung jawab subjek selama uji klinik.
 retrieval_queries:
-- tanggung jawab Anda selama penelitian
-- kewajiban subjek mengikuti petunjuk hadir kunjungan
-- hal yang tidak boleh dilakukan selama studi
-- your responsibilities during the study
+- tanggung jawab Anda
+- menerima suntikan sesuai jadwal mengisi buku harian elektronik
+- menghadiri semua kunjungan memberi tahu tim peneliti sebelum memulai obat baru
 evaluation_criteria: The PSP must tell subjects what is expected of them (attending visits,
   following instructions, reporting symptoms).
 severity: minor

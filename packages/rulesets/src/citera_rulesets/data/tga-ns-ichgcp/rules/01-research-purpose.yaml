@@ -1,0 +1,19 @@
+id: tga-research-purpose
+citation: NS 2.2.2; E6(R2) 4.8.10(a),(b) / E6(R3) 2.8.10(a),(b)
+title: Research nature and purpose
+description: A statement that the trial involves research and an explanation of its purpose.
+retrieval_queries:
+- invited to take part in a research study
+- this study involves research its purpose
+- find out whether an investigational medicine works
+evaluation_criteria: The ICF must state that the study is research and explain its purpose,
+  consistent with the protocol's objectives.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.2
+- ICH E6(R2) 4.8.10(a)
+- ICH E6(R2) 4.8.10(b)
+- ICH E6(R3) Annex 1 2.8.10(a)
+- ICH E6(R3) Annex 1 2.8.10(b)
+remediation: State explicitly that the study is research and describe its purpose in plain
+  language.
