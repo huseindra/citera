@@ -10,6 +10,7 @@ from app.db import Base, engine
 from fastapi import APIRouter
 
 from app.routers.documents import router as documents_router
+from app.routers.findings import router as findings_router
 from app.routers.platform import router as platform_router
 from app.routers.retrieval import router as retrieval_router
 from app.routers.reviews import router as reviews_router
@@ -49,6 +50,7 @@ app.add_middleware(
 
 
 app.include_router(documents_router)
+app.include_router(findings_router)
 app.include_router(retrieval_router)
 app.include_router(reviews_router)
 app.include_router(rulesets_router)
@@ -58,6 +60,7 @@ app.include_router(rulesets_router)
 # /v1 is a fast-follow.
 v1 = APIRouter(prefix="/v1")
 v1.include_router(documents_router)
+v1.include_router(findings_router)
 v1.include_router(reviews_router)
 v1.include_router(rulesets_router)
 v1.include_router(platform_router)

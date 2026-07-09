@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Check } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { ReviewSummary, UsageSummary } from "../api/types";
@@ -14,6 +14,47 @@ import {
   REST_EXAMPLE,
   TS_EXAMPLE,
 } from "../lib/snippets";
+
+// One engine, multiple interfaces — every integration returns identical,
+// evidence-verified findings from the same Review Engine.
+const INTEGRATIONS_AVAILABLE = [
+  {
+    name: "Playground",
+    blurb:
+      "Run evidence-verified reviews interactively — upload, review, and walk the finding dossiers.",
+    href: "/playground",
+    external: false,
+  },
+  {
+    name: "REST API",
+    blurb:
+      "The canonical interface. Embed reviews into any backend, pipeline, or eTMF workflow.",
+    href: "/reference",
+    external: false,
+  },
+  {
+    name: "TypeScript SDK",
+    blurb:
+      "@citera/sdk — typed client for Node and the browser: upload, review, wait, report.",
+    href: "/reference",
+    external: false,
+  },
+  {
+    name: "Claude MCP",
+    blurb:
+      "@citera/mcp — ask Claude to review a protocol; findings come from the same engine.",
+    href: "https://github.com/huseindra/citera/tree/main/packages/mcp",
+    external: true,
+  },
+] as const;
+
+const INTEGRATIONS_ROADMAP = [
+  ["Cursor", "regulatory review inside the editor"],
+  ["OpenAI Agents", "Citera as an agent tool"],
+  ["LangGraph", "review nodes in agent graphs"],
+  ["CrewAI", "compliance crew member"],
+  ["n8n", "no-code review automations"],
+] as const;
 
 const CAPABILITIES = [
   ["Analyze Protocols", "Parse and index clinical protocols with exact source spans."],
@@ -115,6 +156,67 @@ export function PlatformHome() {
               <p className="mt-1 text-xs leading-5 text-stone-500">{blurb}</p>
             </div>
           ))}
+        </div>
+      </section>
+
+      {/* Integrations — one engine, multiple interfaces */}
+      <section>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-stone-800">Integrations</h2>
+          <span className="text-[11px] text-stone-400">
+            Every interface returns identical findings from the same engine
+          </span>
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {INTEGRATIONS_AVAILABLE.map((integration) => (
+            <div
+              key={integration.name}
+              className="rounded-xl border border-stone-200 bg-white p-4"
+            >
+              <div className="flex items-center justify-between">
+                <div className="text-sm font-semibold text-stone-800">
+                  {integration.name}
+                </div>
+                <span className="inline-flex items-center gap-1 rounded-full bg-green-50 px-2 py-0.5 text-[10px] font-semibold text-green-700">
+                  <Check aria-hidden className="h-3 w-3" /> Available
+                </span>
+              </div>
+              <p className="mt-1 text-xs leading-5 text-stone-500">
+                {integration.blurb}
+              </p>
+              {integration.external ? (
+                <a
+                  href={integration.href}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Get started <ArrowUpRight aria-hidden className="h-3 w-3" />
+                </a>
+              ) : (
+                <Link
+                  to={integration.href}
+                  className="mt-2 inline-flex items-center gap-0.5 text-[11px] font-medium text-blue-600 hover:text-blue-700"
+                >
+                  Get started <ArrowRight aria-hidden className="h-3 w-3" />
+                </Link>
+              )}
+            </div>
+          ))}
+        </div>
+        <div className="mt-3 rounded-xl border border-stone-200 bg-white px-4 py-3">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+            Integration roadmap
+          </div>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+            {INTEGRATIONS_ROADMAP.map(([name, blurb]) => (
+              <span key={name} className="text-xs text-stone-500">
+                <span className="font-medium text-stone-700">{name}</span>
+                {" — "}
+                {blurb}
+              </span>
+            ))}
+          </div>
         </div>
       </section>
 
