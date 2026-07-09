@@ -25,7 +25,7 @@ from app.models import ApiKey, AuditRecord
 
 router = APIRouter(tags=["platform"])
 
-FREE_PLAN = {"name": "Free", "credits_total": 5000, "rate_limit_rpm": 60}
+FREE_PLAN = {"name": "Free", "credits_total": 25_000, "rate_limit_rpm": 60}
 
 # audit steps rendered in the platform's resource language
 _OPERATION_LABELS = {

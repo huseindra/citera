@@ -12,6 +12,7 @@ import App from "./App";
 import { ApiKeysPage } from "./pages/ApiKeys";
 import { PlatformHome } from "./pages/Platform";
 import { PlaygroundPage } from "./pages/Playground";
+import { ReferencePage } from "./pages/Reference";
 import { ReportPage } from "./pages/Report";
 import { ReviewPage } from "./pages/Review";
 import "./index.css";
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
     children: [
       { index: true, element: <PlatformHome /> },
       { path: "playground", element: <PlaygroundPage /> },
+      { path: "reference", element: <ReferencePage /> },
       { path: "playground/reviews/:reviewId", element: <ReviewPage /> },
       // "/keys", not "/api-keys" — the /api prefix is claimed by the dev proxy
       { path: "keys", element: <ApiKeysPage /> },

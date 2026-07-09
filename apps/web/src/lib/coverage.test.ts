@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { FindingOut, RuleOut } from "../api/types";
-import { COVERAGE_META, computeCoverage, IMPACT_LABEL } from "./coverage";
+import { COVERAGE_META, computeCoverage, IMPACT_LABEL, readinessVerdict } from "./coverage";
 
 function rule(id: string, severity = "critical"): RuleOut {
   return {
@@ -75,5 +75,34 @@ describe("computeCoverage", () => {
     expect(IMPACT_LABEL["critical"]).toBe("Critical");
     expect(IMPACT_LABEL["major"]).toBe("Medium");
     expect(IMPACT_LABEL["minor"]).toBe("Low");
+  });
+});
+
+describe("readinessVerdict", () => {
+  it("all passed -> Ready for Review", () => {
+    const s = computeCoverage([rule("a")], [finding("a", "satisfied")]);
+    expect(readinessVerdict(s.rows, s.passed, s.total).label).toBe(
+      "Ready for Review",
+    );
+  });
+
+  it("critical unresolved finding always blocks readiness", () => {
+    const s = computeCoverage(
+      [rule("a", "critical"), rule("b")],
+      [finding("a", "conflicting"), finding("b", "satisfied")],
+    );
+    expect(readinessVerdict(s.rows, s.passed, s.total).label).toBe(
+      "Not ready — critical findings",
+    );
+  });
+
+  it("minor gaps -> Needs attention", () => {
+    const s = computeCoverage(
+      [rule("a", "minor"), rule("b", "minor")],
+      [finding("a", "partial"), finding("b", "satisfied")],
+    );
+    expect(readinessVerdict(s.rows, s.passed, s.total).label).toBe(
+      "Needs attention",
+    );
   });
 });

@@ -5,7 +5,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
-import { Check, FlaskConical, Zap } from "lucide-react";
+import { Activity, Check, FlaskConical, HeartPulse, Stethoscope, Wind, Zap, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet, apiPost, apiUploadWithProgress } from "../api/client";
 import type {
@@ -37,13 +37,47 @@ interface Slot {
 
 const EMPTY_SLOT: Slot = { documentId: null, filename: null, state: "empty" };
 
-// sample study pair (public/samples/<base>-{protocol,icf}.md) per ruleset
-const SAMPLE_STUDIES: Record<string, string> = {
-  "fda-21cfr50": "vtz-2201",
-  "hsa-hpct2016": "hsa",
-  "bpom-cukb": "bpom",
-  "tga-ns-ichgcp": "tga",
-};
+// Built-in demo studies (public/samples/<base>-{protocol,icf}.md), each
+// tied to the ruleset it was authored for — selecting one populates the
+// whole Playground, no uploads required.
+export interface SampleStudy {
+  base: string;
+  ruleset: string;
+  title: string;
+  detail: string;
+  Icon: LucideIcon;
+}
+
+const SAMPLE_STUDIES: SampleStudy[] = [
+  {
+    base: "vtz-2201",
+    ruleset: "fda-21cfr50",
+    title: "Asthma Study (VTZ-2201)",
+    detail: "Phase 2 · FDA 21 CFR 50.25 · English",
+    Icon: Wind,
+  },
+  {
+    base: "hsa",
+    ruleset: "hsa-hpct2016",
+    title: "COPD Study (SGR-204)",
+    detail: "Phase 2 · HSA Singapore · English",
+    Icon: Stethoscope,
+  },
+  {
+    base: "bpom",
+    ruleset: "bpom-cukb",
+    title: "Studi Asma (KBR-107)",
+    detail: "Fase 2 · BPOM Indonesia · Bahasa Indonesia",
+    Icon: Activity,
+  },
+  {
+    base: "tga",
+    ruleset: "tga-ns-ichgcp",
+    title: "Hypertension Trial (AUV-330)",
+    detail: "Phase 2 · TGA Australia · English",
+    Icon: HeartPulse,
+  },
+];
 
 // What every review runs. These are core engine steps, not options — the
 // sidebar shows them as locked capabilities instead of faking toggles.
@@ -183,13 +217,11 @@ export function PlaygroundPage() {
   });
 
   const loadSample = useMutation({
-    mutationFn: async () => {
-      // each ruleset ships its own synthetic sample study (the BPOM pair
-      // is in Bahasa Indonesia — the pack reviews Indonesian ICFs)
-      const base = SAMPLE_STUDIES[ruleset] ?? "vtz-2201";
+    mutationFn: async (study: SampleStudy) => {
+      setRuleset(study.ruleset);
       for (const [kind, path] of [
-        ["protocol", `/samples/${base}-protocol.md`],
-        ["icf", `/samples/${base}-icf.md`],
+        ["protocol", `/samples/${study.base}-protocol.md`],
+        ["icf", `/samples/${study.base}-icf.md`],
       ] as const) {
         const blob = await (await fetch(path)).blob();
         await upload(kind, new File([blob], path.split("/").pop()!, { type: "text/markdown" }));
@@ -350,7 +382,7 @@ export function PlaygroundPage() {
           ) : (
             <EmptyState
               onUpload={() => setDocsNonce((n) => n + 1)}
-              onLoadSample={() => loadSample.mutate()}
+              onLoadSample={(study) => loadSample.mutate(study)}
               loading={loadSample.isPending || slots.protocol.state === "uploading"}
               sessions={(reviews.data ?? []).slice(0, 4)}
             />
@@ -704,7 +736,7 @@ function EmptyState({
   sessions,
 }: {
   onUpload: () => void;
-  onLoadSample: () => void;
+  onLoadSample: (study: SampleStudy) => void;
   loading: boolean;
   sessions: ReviewSummary[];
 }) {
@@ -712,22 +744,32 @@ function EmptyState({
     <div className="mx-auto max-w-md pt-14 text-center">
       <FlaskConical aria-hidden className="mx-auto h-8 w-8 text-stone-300" />
       <p className="mt-3 text-sm leading-6 text-stone-600">
-        Upload a Study Protocol and an Informed Consent Form — or load one
-        of our sample studies.
+        Upload a Study Protocol and an Informed Consent Form — or load a
+        built-in sample study. Each sample selects its ruleset
+        automatically; no uploads required.
       </p>
-      <div className="mt-4 flex justify-center gap-2">
+      <div className="mt-4 grid grid-cols-2 gap-2 text-left">
+        {SAMPLE_STUDIES.map((study) => (
+          <button
+            key={study.base}
+            onClick={() => onLoadSample(study)}
+            disabled={loading}
+            className="rounded-xl border border-stone-200 bg-white p-3 transition-colors hover:border-blue-600 disabled:opacity-40"
+          >
+            <study.Icon aria-hidden className="h-4 w-4 text-blue-600" />
+            <div className="mt-1.5 text-xs font-semibold text-stone-800">
+              {study.title}
+            </div>
+            <div className="text-[10px] text-stone-400">{study.detail}</div>
+          </button>
+        ))}
+      </div>
+      <div className="mt-3">
         <button
           onClick={onUpload}
           className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50"
         >
-          Upload Documents
-        </button>
-        <button
-          onClick={onLoadSample}
-          disabled={loading}
-          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
-        >
-          {loading ? "Loading sample…" : "Load Sample Study"}
+          {loading ? "Loading sample…" : "Upload Documents"}
         </button>
       </div>
       {sessions.length > 0 && (

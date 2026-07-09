@@ -75,6 +75,28 @@ export interface CoverageSummary {
   rows: CoverageRow[];
 }
 
+/** Honest executive verdict: derived from findings, never from a score
+ *  alone. Critical unresolved findings always block readiness. */
+export function readinessVerdict(
+  rows: CoverageRow[],
+  passed: number,
+  total: number,
+): { label: string; tone: string } {
+  const blocking = rows.some(
+    (r) =>
+      r.finding &&
+      r.finding.status !== "satisfied" &&
+      r.rule.severity === "critical",
+  );
+  if (total > 0 && passed === total) {
+    return { label: "Ready for Review", tone: "text-green-600" };
+  }
+  if (blocking) {
+    return { label: "Not ready — critical findings", tone: "text-red-600" };
+  }
+  return { label: "Needs attention", tone: "text-amber-600" };
+}
+
 export function computeCoverage(
   rules: RuleOut[],
   findings: FindingOut[],

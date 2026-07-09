@@ -23,6 +23,7 @@ const NAV = [
   { to: "/", label: "Home", end: true },
   { to: "/playground", label: "Playground", end: false },
   { to: "/keys", label: "API Keys", end: false },
+  { to: "/reference", label: "API Reference", end: false },
 ];
 
 export default function App() {

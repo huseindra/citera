@@ -72,10 +72,6 @@ export function ReportPage() {
               <dd>{rulesetName(data.ruleset_id)} (v{data.ruleset_version})</dd>
             </div>
             <div className="flex gap-2">
-              <dt className="text-stone-400">Evaluated by</dt>
-              <dd>{data.evaluator_model ?? "—"}</dd>
-            </div>
-            <div className="flex gap-2">
               <dt className="text-stone-400">Reviewed at</dt>
               <dd>{new Date(data.created_at).toLocaleString()}</dd>
             </div>

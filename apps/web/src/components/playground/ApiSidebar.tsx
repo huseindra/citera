@@ -5,6 +5,7 @@
 
 import { Check, Copy } from "lucide-react";
 import { useState } from "react";
+import { PYTHON_COMING_SOON } from "../../lib/snippets";
 import { CodeTabs } from "../platform/CodeTabs";
 
 export interface ApiLogEntry {
@@ -61,7 +62,7 @@ export function ApiSidebar({
     <aside className="flex h-full flex-col gap-4 overflow-y-auto border-l border-stone-200 bg-sidebar p-4">
       <div>
         <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-          SDK Console
+          Developer Console
         </div>
         <p className="mt-0.5 text-[11px] text-stone-400">
           Live — exactly what this Playground just called.
@@ -129,7 +130,11 @@ export function ApiSidebar({
             tabs={[
               { label: "TypeScript", code: liveSnippet },
               {
-                label: "curl",
+                label: "REST",
+                code: last ? requestText : "# run an action first",
+              },
+              {
+                label: "cURL",
                 code: last
                   ? `curl -s ${last.method === "GET" ? "" : `-X ${last.method} `}http://localhost:8000${last.path} \\\n  -H "Authorization: Bearer $CITERA_API_KEY"${
                       last.request
@@ -138,6 +143,7 @@ export function ApiSidebar({
                     }`
                   : "# run an action first",
               },
+              { label: "Python", code: PYTHON_COMING_SOON },
             ]}
           />
         </div>
