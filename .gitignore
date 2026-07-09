@@ -35,3 +35,5 @@ coverage/
 data/
 uploads/
 *.pdf
+# synthetic demo material is the one exception
+!samples/*.pdf
