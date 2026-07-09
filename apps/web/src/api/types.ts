@@ -73,6 +73,17 @@ export interface RuleSetOut {
   rules: RuleOut[];
 }
 
+export interface RulesetInfo {
+  id: string;
+  authority: string;
+  name: string;
+  jurisdiction: string;
+  coverage: string | null;
+  status: "available" | "preview" | "roadmap";
+  version: string | null;
+  rule_count: number | null;
+}
+
 export interface EvidenceChunkOut {
   chunk_id: string;
   rank: number;

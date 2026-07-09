@@ -20,6 +20,37 @@ def available_rulesets() -> list[str]:
     return sorted(p.name for p in _DATA_DIR.iterdir() if (p / "ruleset.yaml").is_file())
 
 
+def registry() -> list[dict]:
+    """All known jurisdictions with status — every authority is just a
+    pluggable ruleset. Entries marked 'available' must have a loadable
+    rule pack; version and rule_count come from the pack itself."""
+    raw = yaml.safe_load((_DATA_DIR / "registry.yaml").read_text())
+    packs = set(available_rulesets())
+    entries: list[dict] = []
+    for item in raw["rulesets"]:
+        entry = {
+            "id": item["id"],
+            "authority": item["authority"],
+            "name": item.get("name", item["authority"]),
+            "jurisdiction": item["jurisdiction"],
+            "coverage": item.get("coverage"),
+            "status": item["status"],
+            "version": None,
+            "rule_count": None,
+        }
+        if item["status"] == "available":
+            if item["id"] not in packs:
+                raise RulesetError(
+                    f"Registry marks '{item['id']}' available but no rule "
+                    f"pack exists — fix the registry or ship the pack"
+                )
+            pack = load_ruleset(item["id"])
+            entry["version"] = f"v{pack.version}"
+            entry["rule_count"] = len(pack.rules)
+        entries.append(entry)
+    return entries
+
+
 def load_ruleset(ruleset_id: str) -> RuleSet:
     base = _DATA_DIR / ruleset_id
     meta_path = base / "ruleset.yaml"
