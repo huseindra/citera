@@ -1,4 +1,4 @@
-from citera_rulesets import RulesetError, available_rulesets, load_ruleset
+from citera_rulesets import RulesetError, load_ruleset, registry
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
@@ -20,9 +20,22 @@ class RuleSetOut(BaseModel):
     rules: list[RuleOut]
 
 
-@router.get("", response_model=list[str])
+class RulesetInfo(BaseModel):
+    id: str
+    authority: str
+    name: str
+    jurisdiction: str
+    coverage: str | None
+    status: str  # available | preview | roadmap
+    version: str | None
+    rule_count: int | None
+
+
+@router.get("", response_model=list[RulesetInfo])
 async def list_rulesets():
-    return available_rulesets()
+    """Every regulatory authority is a pluggable ruleset — available
+    packs run today, previews are in development, roadmap is planned."""
+    return [RulesetInfo(**entry) for entry in registry()]
 
 
 @router.get("/{ruleset_id}", response_model=RuleSetOut)

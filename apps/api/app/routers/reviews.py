@@ -77,12 +77,26 @@ async def create_review(
     background: BackgroundTasks,
     session: AsyncSession = Depends(get_session),
 ):
-    await _require_ready_document(session, body.document_id, "target")
-    await _require_ready_document(session, body.protocol_document_id, "protocol")
+    # ruleset first: configuration errors should fail before upload checks
     try:
         ruleset = load_ruleset(body.ruleset_id)
     except RulesetError as exc:
+        # honest message for known-but-not-yet-shipped jurisdictions
+        from citera_rulesets import registry
+
+        entry = next(
+            (e for e in registry() if e["id"] == body.ruleset_id), None
+        )
+        if entry and entry["status"] != "available":
+            raise HTTPException(
+                status_code=422,
+                detail=f"Ruleset '{entry['authority']}' ({entry['jurisdiction']}) "
+                f"is {entry['status']} — support is currently in development.",
+            ) from exc
         raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    await _require_ready_document(session, body.document_id, "target")
+    await _require_ready_document(session, body.protocol_document_id, "protocol")
 
     review = Review(
         document_id=body.document_id,
