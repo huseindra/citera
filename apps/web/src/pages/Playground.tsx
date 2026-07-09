@@ -35,11 +35,19 @@ interface Slot {
 }
 
 const EMPTY_SLOT: Slot = { documentId: null, filename: null, state: "empty" };
-const PHASES = ["Phase I", "Phase II", "Phase III", "Phase IV"];
+
+// What every review runs. These are core engine steps, not options — the
+// sidebar shows them as locked capabilities instead of faking toggles.
+const REVIEW_CAPABILITIES = [
+  "Validate Required Elements",
+  "Compare Against Study Protocol",
+  "Generate Evidence",
+  "Include Audit Trail",
+];
 
 export function PlaygroundPage() {
   const [ruleset, setRuleset] = useState("fda-21cfr50");
-  const [phase, setPhase] = useState("Phase II");
+  const [docsNonce, setDocsNonce] = useState(0);
   const [slots, setSlots] = useState<Record<SlotKind, Slot>>({
     protocol: EMPTY_SLOT,
     icf: EMPTY_SLOT,
@@ -166,14 +174,16 @@ export function PlaygroundPage() {
     },
   });
 
+  const selectedRuleset = (rulesets.data ?? []).find((r) => r.id === ruleset);
+  const previewSelected = selectedRuleset?.status === "preview";
   const canRun =
     slots.protocol.state === "ready" &&
     slots.icf.state === "ready" &&
+    !previewSelected &&
     !startReview.isPending;
   const review = activeReview.data ?? null;
   const running =
     review !== null && (review.status === "pending" || review.status === "running");
-  const selectedRuleset = (rulesets.data ?? []).find((r) => r.id === ruleset);
 
   // log completion once
   const reviewStatus = review?.status;
@@ -202,8 +212,15 @@ export function PlaygroundPage() {
           </div>
         </div>
         <div className="flex items-center gap-4 text-[11px]">
-          <HeaderStat label="Ruleset" value={selectedRuleset?.authority ?? "—"} />
-          <HeaderStat label="Study" value="Demo Study" />
+          <HeaderStat
+            label="Ruleset"
+            value={
+              selectedRuleset
+                ? `${selectedRuleset.authority} ${selectedRuleset.name.split(" — ")[0]}`
+                : "—"
+            }
+          />
+          <HeaderStat label="Engine" value="Citera Review Engine v1" />
           <HeaderStat
             label="Status"
             value={running ? "Reviewing…" : review ? review.status : canRun ? "Ready" : "Waiting for documents"}
@@ -212,48 +229,62 @@ export function PlaygroundPage() {
       </div>
 
       <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr_360px]">
-        {/* LEFT — Study Configuration */}
-        <div className="space-y-4 overflow-y-auto border-r border-stone-200 bg-white p-4">
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-            Study Configuration
-          </div>
+        {/* LEFT — review configuration: ruleset, documents, run. One
+            screen, no scrolling — everything else belongs to the SDK. */}
+        <div className="flex flex-col gap-4 overflow-y-auto border-r border-stone-200 bg-white p-4">
           <RulesetSelector value={ruleset} onChange={setRuleset} />
-          <div className="grid grid-cols-2 gap-2">
-            <label className="block">
-              <span className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
-                Study type
-              </span>
-              <select className="mt-1 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs" defaultValue="Clinical Trial">
-                <option>Clinical Trial</option>
-              </select>
-            </label>
-            <label className="block">
-              <span className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
-                Phase
-              </span>
-              <select
-                value={phase}
-                onChange={(e) => setPhase(e.target.value)}
-                className="mt-1 w-full rounded-md border border-stone-200 bg-white px-2 py-1.5 text-xs"
-              >
-                {PHASES.map((p) => (
-                  <option key={p}>{p}</option>
-                ))}
-              </select>
-            </label>
+
+          <div key={docsNonce} className={docsNonce > 0 ? "evidence-pulse rounded-xl" : ""}>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+              Documents
+            </div>
+            <div className="mt-1.5 space-y-2">
+              <DropZone kind="protocol" title="Study Protocol" slot={slots.protocol} onFile={upload} />
+              <DropZone kind="icf" title="Informed Consent Form" slot={slots.icf} onFile={upload} />
+            </div>
           </div>
-          <DropZone kind="protocol" title="Protocol" slot={slots.protocol} onFile={upload} />
-          <DropZone kind="icf" title="Informed Consent Form" slot={slots.icf} onFile={upload} />
-          <button
-            disabled={!canRun}
-            onClick={() => startReview.mutate()}
-            className="w-full rounded-lg bg-stone-900 px-4 py-2.5 text-xs font-semibold text-white transition-opacity disabled:opacity-30"
-          >
-            {startReview.isPending ? "Starting…" : "Run Review"}
-          </button>
-          {startReview.isError && (
-            <p className="text-[11px] text-red-700">{(startReview.error as Error).message}</p>
-          )}
+
+          <div>
+            <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+              Review Configuration
+            </div>
+            <ul className="mt-1.5 space-y-1">
+              {REVIEW_CAPABILITIES.map((capability) => (
+                <li
+                  key={capability}
+                  className="flex items-center gap-2 text-xs text-stone-700"
+                >
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-stone-800 text-white">
+                    <Check aria-hidden className="h-2.5 w-2.5" />
+                  </span>
+                  {capability}
+                </li>
+              ))}
+              <li className="flex items-center gap-2 text-xs text-stone-400">
+                <span className="h-3.5 w-3.5 rounded-sm border border-stone-300" />
+                Generate Suggested Revision
+                <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                  soon
+                </span>
+              </li>
+            </ul>
+            <p className="mt-1.5 text-[10px] leading-4 text-stone-400">
+              Core engine steps — included in every review.
+            </p>
+          </div>
+
+          <div className="mt-auto">
+            <button
+              disabled={!canRun}
+              onClick={() => startReview.mutate()}
+              className="w-full rounded-lg bg-stone-900 px-4 py-2.5 text-xs font-semibold text-white transition-opacity disabled:opacity-30"
+            >
+              {startReview.isPending ? "Starting…" : "Run Review"}
+            </button>
+            {startReview.isError && (
+              <p className="mt-2 text-[11px] text-red-700">{(startReview.error as Error).message}</p>
+            )}
+          </div>
         </div>
 
         {/* CENTER — Interactive Review */}
@@ -273,6 +304,7 @@ export function PlaygroundPage() {
             />
           ) : (
             <EmptyState
+              onUpload={() => setDocsNonce((n) => n + 1)}
               onLoadSample={() => loadSample.mutate()}
               loading={loadSample.isPending || slots.protocol.state === "uploading"}
               sessions={(reviews.data ?? []).slice(0, 4)}
@@ -353,12 +385,18 @@ function ReviewResults({
       <div>
         <div className="flex items-baseline justify-between">
           <h2 className="text-sm font-semibold text-stone-800">
-            Review Summary
+            Compliance Summary
           </h2>
-          {running && (
+          {running ? (
             <span className="text-[11px] font-medium text-sky-600">
               {checked}/{total} requirements checked
             </span>
+          ) : (
+            checked > 0 && (
+              <span className="text-[11px] font-medium text-stone-500">
+                {score}% compliant · {counts.satisfied}/{total} satisfied
+              </span>
+            )
           )}
         </div>
         {/* progress bar — the review is a process, show it as one */}
@@ -372,11 +410,22 @@ function ReviewResults({
         </div>
       </div>
 
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-6 gap-2">
         <Metric
-          label={running ? "Compliance (so far)" : "Compliance score"}
-          value={checked === 0 ? "—" : `${score}%`}
-          tone={score === 100 ? "good" : score >= 60 ? "warn" : "bad"}
+          label="Critical"
+          value={checked === 0 ? "—" : String(counts.critical)}
+          tone={counts.critical > 0 ? "bad" : "good"}
+          pulse={running}
+        />
+        <Metric
+          label="Major"
+          value={checked === 0 ? "—" : String(counts.major)}
+          tone={counts.major > 0 ? "warn" : "good"}
+          pulse={running}
+        />
+        <Metric
+          label="Minor"
+          value={checked === 0 ? "—" : String(counts.minor)}
           pulse={running}
         />
         <Metric
@@ -384,38 +433,11 @@ function ReviewResults({
           value={checked === 0 ? "—" : `${coverage}%`}
           pulse={running}
         />
-        <Metric label="Critical findings" value={String(counts.critical)} tone={counts.critical > 0 ? "bad" : "good"} />
-        <Metric label="Review duration" value={duration} pulse={running} />
+        <Metric label="Duration" value={duration} pulse={running} />
         <Metric label="Ruleset" value={rulesetVersion} />
       </div>
 
-      {!running && (
-        <div className="flex gap-2 text-xs">
-          <Link
-            to={`/playground/reviews/${review.id}/report`}
-            onClick={onExportLogged}
-            className="rounded-md bg-stone-900 px-3 py-1.5 font-medium text-white"
-          >
-            Export Report
-          </Link>
-          <button
-            onClick={() => downloadJson(review)}
-            className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
-          >
-            Download JSON
-          </button>
-          <button
-            onClick={() =>
-              navigator.clipboard.writeText(
-                `curl -s -X POST http://localhost:8000/v1/reviews \\\n  -H "Authorization: Bearer $CITERA_API_KEY" \\\n  -H "Content-Type: application/json" \\\n  -d '{"ruleset_id": "${review.ruleset_id}", "document_id": "${review.document_id}", "protocol_document_id": "${review.protocol_document_id}"}'`,
-              )
-            }
-            className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
-          >
-            Copy API Request
-          </button>
-        </div>
-      )}
+      {!running && <ResultActions review={review} onExportLogged={onExportLogged} />}
 
       <div>
         <h3 className="text-xs font-semibold text-stone-800">Findings</h3>
@@ -431,6 +453,56 @@ function ReviewResults({
           analysis, and audit timeline.
         </p>
       </div>
+    </div>
+  );
+}
+
+function ResultActions({
+  review,
+  onExportLogged,
+}: {
+  review: ReviewOut;
+  onExportLogged: () => void;
+}) {
+  const [copied, setCopied] = useState(false);
+  const firstIssue =
+    sortForDisplay(review.findings).find((f) => f.status !== "satisfied") ??
+    review.findings[0];
+
+  return (
+    <div className="flex gap-2 text-xs">
+      <Link
+        to={`/playground/reviews/${review.id}/report`}
+        onClick={onExportLogged}
+        className="rounded-md bg-stone-900 px-3 py-1.5 font-medium text-white"
+      >
+        Export PDF
+      </Link>
+      <button
+        onClick={() => downloadJson(review)}
+        className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
+      >
+        Download JSON
+      </button>
+      <button
+        onClick={() => {
+          navigator.clipboard.writeText(JSON.stringify(review, null, 2));
+          setCopied(true);
+          setTimeout(() => setCopied(false), 1600);
+        }}
+        className="inline-flex items-center gap-1 rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
+      >
+        {copied && <Check aria-hidden className="h-3 w-3 text-emerald-600" />}
+        {copied ? "Copied" : "Copy API Response"}
+      </button>
+      {firstIssue && (
+        <Link
+          to={`/playground/reviews/${review.id}?finding=${firstIssue.id}`}
+          className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
+        >
+          Open Finding
+        </Link>
+      )}
     </div>
   );
 }
@@ -581,10 +653,12 @@ function Metric({
 }
 
 function EmptyState({
+  onUpload,
   onLoadSample,
   loading,
   sessions,
 }: {
+  onUpload: () => void;
   onLoadSample: () => void;
   loading: boolean;
   sessions: ReviewSummary[];
@@ -593,17 +667,24 @@ function EmptyState({
     <div className="mx-auto max-w-md pt-14 text-center">
       <FlaskConical aria-hidden className="mx-auto h-8 w-8 text-stone-300" />
       <p className="mt-3 text-sm leading-6 text-stone-600">
-        Upload a protocol and an informed consent form to experience the
-        Clinical Regulatory Intelligence SDK — or run one of our sample
-        studies.
+        Upload a Study Protocol and an Informed Consent Form — or load one
+        of our sample studies.
       </p>
-      <button
-        onClick={onLoadSample}
-        disabled={loading}
-        className="mt-4 rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
-      >
-        {loading ? "Loading sample…" : "Load Sample (VTZ-2201)"}
-      </button>
+      <div className="mt-4 flex justify-center gap-2">
+        <button
+          onClick={onUpload}
+          className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+        >
+          Upload Documents
+        </button>
+        <button
+          onClick={onLoadSample}
+          disabled={loading}
+          className="rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+        >
+          {loading ? "Loading sample…" : "Load Sample Study"}
+        </button>
+      </div>
       {sessions.length > 0 && (
         <div className="mt-10 text-left">
           <div className="text-[10px] font-medium uppercase tracking-wide text-stone-400">

@@ -1,12 +1,20 @@
-// The right-column Evidence Inspector: one scrolling column in the
-// product hierarchy order (Evidence → Reasoning → Finding detail).
-// Nothing important lives in a tab — retrieval and audit are collapsed
-// sections, one click away.
+// The Finding Dossier: one scrolling column in reviewer reading order —
+// Finding → Impact → Evidence → Requirement → Analysis → Recommended
+// Action → Reviewer Decision → Audit Trail.
+// Internals (embeddings, retrieval scores, prompts) are never exposed
+// here: the dossier speaks the reviewer's language, the audit log keeps
+// the machinery.
 
 import { useQuery } from "@tanstack/react-query";
-import { Sparkles, X as XIcon } from "lucide-react";
+import { FileCheck2, Sparkles, X as XIcon } from "lucide-react";
+import { Link } from "react-router-dom";
 import { apiGet } from "../../api/client";
-import type { FindingEvidenceOut, FindingOut } from "../../api/types";
+import type {
+  FindingEvidenceOut,
+  FindingOut,
+  FindingStatus,
+  RuleSetOut,
+} from "../../api/types";
 import { STATUS_META } from "../../lib/status";
 import { AuditReplay } from "../finding/AuditReplay";
 import { EvidencePathStrip } from "./EvidencePathStrip";
@@ -14,14 +22,33 @@ import { StrengthMeter } from "./StrengthMeter";
 
 interface Props {
   reviewId: string;
+  rulesetId: string;
   finding: FindingOut;
   evaluatorModel: string | null;
   onClose: () => void;
   onScrollToOffset: (offset: number) => void;
 }
 
+const IMPACT: Record<string, string> = {
+  critical: "Must be resolved before the ICF can be submitted.",
+  major: "Should be resolved before submission.",
+  minor: "Review recommended — low regulatory exposure.",
+};
+
+// Deterministic, status-derived guidance — rule-based, not model output.
+const RECOMMENDED_ACTION: Record<FindingStatus, string> = {
+  conflicting:
+    "Reconcile the ICF with the study protocol value, then re-run the review.",
+  partial: "Amend this ICF section to fully address the requirement.",
+  not_found: "Add the missing required element to the ICF.",
+  evaluation_failed:
+    "Re-run the review — this requirement could not be evaluated.",
+  satisfied: "No action required.",
+};
+
 export function Inspector({
   reviewId,
+  rulesetId,
   finding,
   evaluatorModel,
   onClose,
@@ -36,9 +63,17 @@ export function Inspector({
       ),
     retry: false,
   });
+  // served from the same cache the review page already filled
+  const ruleset = useQuery({
+    queryKey: ["ruleset", rulesetId],
+    queryFn: () => apiGet<RuleSetOut>(`/rulesets/${rulesetId}`),
+    staleTime: Infinity,
+  });
+  const rule = ruleset.data?.rules.find((r) => r.id === finding.rule_id);
 
   return (
     <aside className="flex h-full flex-col border-l border-stone-200 bg-white">
+      {/* 1. Finding */}
       <div className="flex items-start justify-between gap-2 border-b border-stone-100 px-4 py-3">
         <div className="min-w-0">
           <span
@@ -50,10 +85,7 @@ export function Inspector({
           <h3 className="mt-1.5 text-sm font-semibold leading-5 text-stone-800">
             {finding.rule_title ?? finding.rule_id}
           </h3>
-          <div className="text-[11px] text-stone-400">
-            {finding.citation}
-            {finding.severity && ` · ${finding.severity}`}
-          </div>
+          <div className="text-[11px] text-stone-400">{finding.citation}</div>
         </div>
         <button
           onClick={onClose}
@@ -65,28 +97,55 @@ export function Inspector({
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-4 py-4 text-sm">
-        {/* 0. The path from regulation to finding — animated per selection */}
-        <EvidencePathStrip
-          finding={finding}
-          evidence={evidence.data ?? null}
-          onScrollToOffset={onScrollToOffset}
-        />
+        {/* 2. Impact */}
+        {finding.severity && finding.status !== "satisfied" && (
+          <section>
+            <SectionLabel>Impact</SectionLabel>
+            <p className="text-xs leading-5 text-stone-700">
+              <span className="font-semibold capitalize">{finding.severity}</span>
+              {IMPACT[finding.severity] && ` — ${IMPACT[finding.severity]}`}
+            </p>
+          </section>
+        )}
 
-        {/* 1. Evidence first */}
-        <EvidenceCards finding={finding} onScrollToOffset={onScrollToOffset} />
-
-        {/* 2. Claude's reasoning, clearly attributed */}
+        {/* 3. Evidence */}
         <section>
-          <div className="mb-1 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-stone-400">
-            <Sparkles aria-hidden className="h-3 w-3" /> Claude's assessment
-            {evaluatorModel && (
-              <span className="rounded-full border border-stone-200 bg-stone-50 px-1.5 py-0.5 normal-case text-stone-500">
-                {evaluatorModel.split(" ")[0]}
-              </span>
-            )}
+          <SectionLabel>Evidence</SectionLabel>
+          <div className="space-y-3">
+            <EvidencePathStrip
+              finding={finding}
+              evidence={evidence.data ?? null}
+              onScrollToOffset={onScrollToOffset}
+            />
+            <EvidenceCards finding={finding} onScrollToOffset={onScrollToOffset} />
+            <StrengthMeter strength={finding.evidence_strength} />
           </div>
+        </section>
+
+        {/* 4. Requirement */}
+        {rule && (
+          <section>
+            <SectionLabel>Requirement</SectionLabel>
+            <p className="rounded-lg border border-stone-200 bg-stone-50/60 px-3 py-2 text-xs leading-5 text-stone-600">
+              <span className="font-medium text-stone-700">{rule.citation}</span>{" "}
+              — {rule.description}
+            </p>
+          </section>
+        )}
+
+        {/* 5. Analysis — Claude's assessment, clearly attributed */}
+        <section>
+          <SectionLabel>
+            <span className="inline-flex items-center gap-1.5">
+              <Sparkles aria-hidden className="h-3 w-3" /> Analysis
+              {evaluatorModel && (
+                <span className="rounded-full border border-stone-200 bg-stone-50 px-1.5 py-0.5 normal-case text-stone-500">
+                  {evaluatorModel.split(" ")[0]}
+                </span>
+              )}
+            </span>
+          </SectionLabel>
           <p className="leading-6 text-stone-700">{finding.reasoning}</p>
-          <StrengthMeter strength={finding.evidence_strength} />
           {finding.status !== "conflicting" && finding.protocol_reference && (
             <p className="mt-2 text-xs text-stone-500">
               Protocol reference: {finding.protocol_reference}
@@ -94,17 +153,30 @@ export function Inspector({
           )}
         </section>
 
-        {/* 3. Detail sections — one click away, never one tab away */}
-        <details className="rounded-lg border border-stone-200">
-          <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-stone-600">
-            Retrieval — what was searched &amp; scored
-          </summary>
-          <RetrievalSection
-            evidence={evidence.data ?? null}
-            onScrollToOffset={onScrollToOffset}
-          />
-        </details>
+        {/* 6. Recommended action — deterministic, from the finding status */}
+        <section>
+          <SectionLabel>Recommended action</SectionLabel>
+          <p className="text-xs leading-5 text-stone-700">
+            {RECOMMENDED_ACTION[finding.status]}
+          </p>
+        </section>
 
+        {/* 7. Reviewer decision — the human signs off, on the report */}
+        <section className="rounded-lg border border-stone-200 px-3 py-2.5">
+          <SectionLabel>Reviewer decision</SectionLabel>
+          <p className="text-[11px] leading-4 text-stone-500">
+            AI findings assist the reviewer; the reviewer makes the final
+            determination. Record Concur / Override on the exported report.
+          </p>
+          <Link
+            to={`/playground/reviews/${reviewId}/report`}
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-stone-700 underline-offset-2 hover:underline"
+          >
+            <FileCheck2 aria-hidden className="h-3 w-3" /> Open sign-off report
+          </Link>
+        </section>
+
+        {/* 8. Audit trail — one click away, never one tab away */}
         <details className="rounded-lg border border-stone-200">
           <summary className="cursor-pointer px-3 py-2 text-xs font-medium text-stone-600">
             Audit trail — recorded, never re-executed
@@ -115,6 +187,14 @@ export function Inspector({
         </details>
       </div>
     </aside>
+  );
+}
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
+      {children}
+    </div>
   );
 }
 
@@ -170,65 +250,6 @@ function EvidenceCards({
           {finding.protocol_reference}
         </blockquote>
       )}
-    </div>
-  );
-}
-
-function RetrievalSection({
-  evidence,
-  onScrollToOffset,
-}: {
-  evidence: FindingEvidenceOut | null;
-  onScrollToOffset: (offset: number) => void;
-}) {
-  if (!evidence) {
-    return (
-      <p className="border-t border-stone-100 px-3 py-2 text-xs text-stone-400">
-        No retrieval recorded for this finding.
-      </p>
-    );
-  }
-  return (
-    <div className="space-y-3 border-t border-stone-100 px-3 py-2 text-xs">
-      <div className="text-stone-500">
-        queries: {evidence.queries_executed.map((q) => `“${q}”`).join(", ")}
-        <br />
-        fusion:{" "}
-        {Object.entries(evidence.fusion_params)
-          .map(([k, v]) => `${k}=${v}`)
-          .join(" · ")}
-        {evidence.embedding_model && ` · embeddings: ${evidence.embedding_model}`}
-      </div>
-      <table className="w-full text-left">
-        <thead className="text-[10px] uppercase text-stone-400">
-          <tr>
-            <th className="py-1 pr-2 font-medium">rank</th>
-            <th className="py-1 pr-2 font-medium">section</th>
-            <th className="py-1 pr-2 font-medium">dense</th>
-            <th className="py-1 pr-2 font-medium">sparse</th>
-            <th className="py-1 pr-2 font-medium">fused</th>
-          </tr>
-        </thead>
-        <tbody className="text-stone-600">
-          {evidence.results.map((r) => (
-            <tr
-              key={r.chunk_id}
-              className="cursor-pointer border-t border-stone-100 hover:bg-stone-50"
-              onClick={() => r.char_start !== null && onScrollToOffset(r.char_start)}
-            >
-              <td className="py-1 pr-2">{r.rank}</td>
-              <td className="py-1 pr-2">{r.section_title ?? "—"}</td>
-              <td className="py-1 pr-2">{r.dense_score?.toFixed(4) ?? "—"}</td>
-              <td className="py-1 pr-2">{r.sparse_score?.toFixed(4) ?? "—"}</td>
-              <td className="py-1 pr-2">{r.fused_score.toFixed(4)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className="text-[10px] text-stone-400">
-        Served verbatim from the append-only audit log. “—” means the chunk
-        was absent from that retriever's results (absence, not zero relevance).
-      </p>
     </div>
   );
 }

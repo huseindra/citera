@@ -231,6 +231,7 @@ export function ReviewPage() {
             {selectedFinding ? (
               <Inspector
                 reviewId={data.id}
+                rulesetId={data.ruleset_id}
                 finding={selectedFinding}
                 evaluatorModel={data.evaluator_model}
                 onClose={() => select(selectedFinding.id)}
