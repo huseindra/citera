@@ -1,0 +1,17 @@
+id: bpom-489-witness
+citation: Pedoman CUKB 4.8.9
+title: Saksi tak memihak (subjek tidak dapat membaca)
+description: Bila subjek atau wakil sahnya tidak dapat membaca, saksi yang tidak memihak harus
+  hadir selama diskusi PSP dan menandatangani serta memberi tanggal pada formulir.
+retrieval_queries:
+- saksi yang tidak memihak tanda tangan
+- bila tidak dapat membaca saksi hadir
+- tanda tangan saksi pada formulir persetujuan
+- impartial witness signature
+evaluation_criteria: The PSP form must provide for an impartial witness (presence, signature,
+  and date) for subjects or legal representatives who cannot read. A witness signature block
+  with this explanation satisfies the requirement.
+severity: major
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.9
+remediation: Sediakan blok tanda tangan saksi tak memihak beserta penjelasan perannya.

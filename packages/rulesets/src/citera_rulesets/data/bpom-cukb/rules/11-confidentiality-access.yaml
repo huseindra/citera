@@ -1,0 +1,19 @@
+id: bpom-4810-confidentiality-access
+citation: Pedoman CUKB 4.8.10 (n)–(o)
+title: Kerahasiaan dan akses rekam medis
+description: Bahwa monitor, auditor, komite etik, dan otoritas regulatori akan diberi akses
+  langsung ke rekam medis asli tanpa melanggar kerahasiaan, dan bahwa rekaman yang mengidentifikasi
+  subjek dijaga kerahasiaannya termasuk saat publikasi.
+retrieval_queries:
+- kerahasiaan identitas Anda dijaga tidak dipublikasikan
+- akses rekam medis monitor auditor komite etik BPOM
+- data pribadi dirahasiakan publikasi hasil
+- confidentiality medical records access
+evaluation_criteria: The PSP must disclose direct access to original medical records by monitors,
+  auditors, the ethics committee, and regulators (including BPOM), and state that identifying
+  records remain confidential, including in publications.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf n
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf o
+remediation: Sebutkan pihak yang dapat mengakses rekam medis (termasuk BPOM) dan jaminan kerahasiaannya.

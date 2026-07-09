@@ -1,0 +1,14 @@
+id: hsa-r19-responsibilities
+citation: HP(CT) Regs 2016, reg 19(1)(e)
+title: Subject responsibilities
+description: The responsibilities of the subject during the trial.
+retrieval_queries:
+- your responsibilities during the study
+- what you must do follow instructions attend visits
+- things you should not do during the study
+evaluation_criteria: The ICF must tell subjects what is expected of them (e.g. attending visits,
+  following dosing instructions, reporting symptoms).
+severity: minor
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(e)
+remediation: Add a short section listing the participant's responsibilities.

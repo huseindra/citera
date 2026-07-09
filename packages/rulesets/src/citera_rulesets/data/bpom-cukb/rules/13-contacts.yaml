@@ -1,0 +1,17 @@
+id: bpom-4810-contacts
+citation: Pedoman CUKB 4.8.10 (q)
+title: Kontak untuk informasi, hak subjek, dan cedera
+description: Orang yang dapat dihubungi untuk informasi lebih lanjut, hak subjek uji klinik,
+  dan bila terjadi cedera terkait uji klinik.
+retrieval_queries:
+- hubungi dokter peneliti pertanyaan tentang penelitian
+- kontak komite etik hak subjek
+- nomor telepon bila terjadi cedera
+- contact person questions injury
+evaluation_criteria: The PSP must provide contact persons for trial information, for subjects'
+  rights, and for trial-related injury.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf q
+remediation: Cantumkan kontak bernama dengan nomor telepon untuk pertanyaan studi, hak subjek,
+  dan cedera.

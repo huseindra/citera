@@ -1,0 +1,15 @@
+id: hsa-r19-contacts
+citation: HP(CT) Regs 2016, reg 19(1)(q)
+title: Contact persons and subject rights
+description: The persons to contact for further information about the trial and the rights
+  of subjects, and whom to contact in the event of a trial-related injury.
+retrieval_queries:
+- who to contact questions about the study
+- contact person for your rights as a research subject
+- in case of injury contact telephone
+evaluation_criteria: The ICF must provide contact persons for trial information, for questions
+  about subjects' rights, and for trial-related injury.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(q)
+remediation: Provide named contacts with phone numbers for study questions, rights, and injuries.

@@ -1,0 +1,17 @@
+id: hsa-r19-risks
+citation: HP(CT) Regs 2016, reg 19(1)(g)
+title: Reasonably foreseeable risks
+description: The reasonably foreseeable risks or inconveniences to the subject and, where
+  applicable, to an embryo, foetus, or nursing infant.
+retrieval_queries:
+- risks side effects of the study drug
+- pregnancy embryo foetus nursing infant risk
+- discomforts and inconveniences you may experience
+evaluation_criteria: The ICF must describe the reasonably foreseeable risks and inconveniences
+  consistently with the protocol's documented safety profile, including reproductive risks
+  where applicable. Understating documented risks is a conflict.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(g)
+remediation: Align the risk section with the protocol's safety data, including frequencies
+  and monitoring.

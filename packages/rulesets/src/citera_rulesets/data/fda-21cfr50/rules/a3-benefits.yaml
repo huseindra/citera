@@ -1,0 +1,20 @@
+id: fda-50.25-a3-benefits
+citation: 21 CFR 50.25(a)(3)
+title: Reasonably expected benefits
+description: 'A description of any benefits to the subject or to others which may reasonably
+  be expected from the research.
+
+  '
+retrieval_queries:
+- benefits of taking part in this study
+- possible benefit to you or to others future patients
+evaluation_criteria: 'The ICF must describe any reasonably expected benefits to the participant
+  or to others, without overstating them or promising therapeutic benefit that the protocol
+  does not support.
+
+  '
+severity: major
+statutory_refs:
+- 21 CFR 50.25(a)(3)
+remediation: Describe reasonably expected benefits without overstatement; state plainly if
+  no direct benefit is intended.

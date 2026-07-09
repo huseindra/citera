@@ -1,0 +1,17 @@
+id: hsa-r19-research-purpose
+citation: HP(CT) Regs 2016, reg 19(1)(a)–(b)
+title: Research nature and purpose
+description: A statement that the trial involves research and an explanation of the purpose
+  of the trial.
+retrieval_queries:
+- this study is a research clinical trial
+- purpose of the trial why it is being done
+- you are being invited to take part in a research study
+evaluation_criteria: The ICF must state that the trial involves research and explain its purpose,
+  consistent with the study protocol's objectives.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(a)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(b)
+remediation: State explicitly that the study is research and describe its purpose in plain
+  language.

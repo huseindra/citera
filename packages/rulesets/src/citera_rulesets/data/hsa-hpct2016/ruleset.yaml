@@ -1,0 +1,10 @@
+id: hsa-hpct2016
+name: Health Products (Clinical Trials) Regulations 2016 — reg 19(1)
+version: 0.1.0
+authority: HSA Singapore
+jurisdiction: Singapore
+coverage: Informed Consent Review — Drug Clinical Trials
+languages:
+- en
+aliases:
+- hsa

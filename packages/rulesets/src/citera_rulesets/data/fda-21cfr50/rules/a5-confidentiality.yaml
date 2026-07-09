@@ -1,0 +1,21 @@
+id: fda-50.25-a5-confidentiality
+citation: 21 CFR 50.25(a)(5)
+title: Confidentiality of records
+description: 'A statement describing the extent, if any, to which confidentiality of records
+  identifying the subject will be maintained and noting the possibility that the FDA may inspect
+  the records.
+
+  '
+retrieval_queries:
+- confidentiality of your records personal information privacy
+- who may look at study records FDA inspection sponsor monitors
+evaluation_criteria: 'The ICF must describe how the confidentiality of records identifying
+  the participant will be maintained, and must note that the FDA may inspect the records.
+  Omitting the FDA inspection notice is a partial failure.
+
+  '
+severity: major
+statutory_refs:
+- 21 CFR 50.25(a)(5)
+remediation: Explain the extent of record confidentiality and note the possibility of FDA
+  inspection.

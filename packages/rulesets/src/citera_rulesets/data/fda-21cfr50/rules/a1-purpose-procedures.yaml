@@ -1,0 +1,23 @@
+id: fda-50.25-a1-purpose-procedures
+citation: 21 CFR 50.25(a)(1)
+title: Purpose, duration, and procedures
+description: 'A statement that the study involves research, an explanation of the purposes
+  of the research and the expected duration of the subject''s participation, a description
+  of the procedures to be followed, and identification of any procedures which are experimental.
+
+  '
+retrieval_queries:
+- purpose of this research study and why it is being done
+- how long will participation last study duration weeks visits
+- study procedures visits tests blood samples spirometry
+evaluation_criteria: 'The ICF must state that the study is research, explain its purpose,
+  state the expected duration of participation, describe the procedures the participant will
+  undergo, and identify which procedures are experimental. Duration and procedures must be
+  consistent with the study protocol (number and type of visits, sample collection, assessments).
+
+  '
+severity: critical
+statutory_refs:
+- 21 CFR 50.25(a)(1)
+remediation: State that the study is research; describe its purpose, expected duration, full
+  procedure schedule, and label experimental procedures.

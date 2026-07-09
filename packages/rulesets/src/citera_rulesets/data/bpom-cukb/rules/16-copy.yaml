@@ -1,0 +1,17 @@
+id: bpom-4811-copy
+citation: Pedoman CUKB 4.8.11
+title: Salinan PSP untuk subjek
+description: Sebelum ikut serta, subjek atau wakil sahnya harus menerima salinan PSP tertulis
+  yang telah ditandatangani dan diberi tanggal, termasuk pembaruannya.
+retrieval_queries:
+- Anda akan menerima salinan formulir persetujuan ini
+- salinan lembar informasi yang ditandatangani
+- satu salinan untuk disimpan peserta
+- copy of this signed consent form
+evaluation_criteria: The PSP must state that the subject (or legal representative) receives
+  a signed and dated copy of the form and of any updated written information.
+severity: major
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.11
+remediation: Tambahkan pernyataan bahwa peserta menerima salinan formulir yang ditandatangani
+  dan diberi tanggal.

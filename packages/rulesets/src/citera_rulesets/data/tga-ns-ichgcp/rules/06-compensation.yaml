@@ -1,0 +1,18 @@
+id: tga-injury-compensation
+citation: NS 2.2.6(c); E6(R2) 4.8.10(j) / E6(R3) 2.8.10(i)
+title: Injury compensation and services for adverse effects
+description: The compensation and/or treatment available for trial-related injury, and the
+  provision of services to participants adversely affected by the research.
+retrieval_queries:
+- if you are injured compensation medical treatment
+- research related injury who pays
+- services if you are adversely affected
+evaluation_criteria: The ICF must state what treatment and compensation are available for
+  trial-related injury and how adversely affected participants are cared for.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.6(c)
+- ICH E6(R2) 4.8.10(j)
+- ICH E6(R3) Annex 1 2.8.10(i)
+remediation: State who provides and pays for treatment of research injuries and the compensation
+  arrangements.

@@ -1,0 +1,15 @@
+id: bpom-4810-responsibilities
+citation: Pedoman CUKB 4.8.10 (e)
+title: Tanggung jawab subjek
+description: Tanggung jawab subjek selama uji klinik.
+retrieval_queries:
+- tanggung jawab Anda selama penelitian
+- kewajiban subjek mengikuti petunjuk hadir kunjungan
+- hal yang tidak boleh dilakukan selama studi
+- your responsibilities during the study
+evaluation_criteria: The PSP must tell subjects what is expected of them (attending visits,
+  following instructions, reporting symptoms).
+severity: minor
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf e
+remediation: Tambahkan bagian singkat yang merinci tanggung jawab peserta.

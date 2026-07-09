@@ -1,0 +1,19 @@
+id: bpom-4810-treatments-randomization
+citation: Pedoman CUKB 4.8.10 (c), (f)
+title: Perlakuan, alokasi acak, dan aspek eksperimental
+description: Perlakuan dalam uji klinik, kemungkinan alokasi pengobatan secara acak, dan aspek
+  uji klinik yang bersifat eksperimental.
+retrieval_queries:
+- alokasi pengobatan secara acak plasebo
+- kelompok perlakuan randomisasi peluang
+- obat eksperimental belum disetujui
+- random assignment placebo
+evaluation_criteria: The PSP must describe the trial treatments, the probability of random
+  assignment where applicable, and identify experimental aspects, consistent with the protocol
+  design.
+severity: major
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf c
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf f
+remediation: Jelaskan setiap kelompok perlakuan, rasio randomisasi, dan tandai komponen yang
+  eksperimental.

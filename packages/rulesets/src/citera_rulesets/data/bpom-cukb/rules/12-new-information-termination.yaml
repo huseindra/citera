@@ -1,0 +1,18 @@
+id: bpom-4810-new-information-termination
+citation: Pedoman CUKB 4.8.10 (p), (r)
+title: Informasi baru dan penghentian keikutsertaan
+description: Bahwa subjek akan diberitahu tepat waktu bila ada informasi baru yang relevan,
+  dan keadaan yang dapat menyebabkan keikutsertaan dihentikan.
+retrieval_queries:
+- informasi baru yang mempengaruhi kesediaan Anda melanjutkan
+- keikutsertaan Anda dapat dihentikan oleh dokter peneliti
+- alasan penghentian keikutsertaan
+- new information willingness to continue
+evaluation_criteria: The PSP must commit to informing subjects of new relevant information
+  and describe foreseeable circumstances under which participation may be terminated.
+severity: major
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf p
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf r
+remediation: Tambahkan komitmen menyampaikan informasi keselamatan baru dan daftar keadaan
+  penghentian dini.

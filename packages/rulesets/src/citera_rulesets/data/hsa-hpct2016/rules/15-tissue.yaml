@@ -1,0 +1,23 @@
+id: hsa-r19-tissue
+citation: HP(CT) Regs 2016, reg 19(1)(ta)
+title: Tissue collection disclosures
+description: 'Where tissue is collected: that provision is voluntary with renunciation of
+  rights (including intellectual property) in the tissue, whether the tissue will be exported
+  or removed from Singapore, and whether the subject may be re-identified on an incidental
+  finding.'
+retrieval_queries:
+- blood samples tissue stored future research
+- samples sent shipped outside Singapore overseas laboratory
+- incidental findings from your samples re-identified
+evaluation_criteria: If the protocol involves collecting tissue (including blood or other
+  biological samples), the ICF must state that providing tissue is voluntary and involves
+  renouncing rights (including IP) in it, whether tissue will be exported from Singapore,
+  and the re-identification arrangements for incidental findings. If the protocol collects
+  no tissue, report satisfied.
+severity: major
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(ta)(i)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(ta)(ii)
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(ta)(iii)
+remediation: 'Add the three tissue disclosures: voluntariness/IP renunciation, export from
+  Singapore, and incidental-finding re-identification.'

@@ -1,0 +1,17 @@
+id: bpom-4810-benefits
+citation: Pedoman CUKB 4.8.10 (h)
+title: Manfaat yang diharapkan
+description: Manfaat yang diharapkan; jika tidak dimaksudkan adanya manfaat klinik bagi subjek,
+  subjek harus diberitahu.
+retrieval_queries:
+- manfaat yang dapat Anda peroleh dari penelitian
+- mungkin tidak ada manfaat langsung bagi Anda
+- manfaat bagi ilmu pengetahuan orang lain
+- benefits of taking part
+evaluation_criteria: The PSP must describe expected benefits honestly and state plainly when
+  no direct clinical benefit is intended.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf h
+remediation: Nyatakan manfaat yang diharapkan tanpa melebih-lebihkan; sebutkan bila tidak
+  ada manfaat langsung.

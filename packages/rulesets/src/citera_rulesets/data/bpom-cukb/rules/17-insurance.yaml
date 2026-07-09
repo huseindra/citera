@@ -1,0 +1,19 @@
+id: bpom-ku17-insurance
+citation: Pedoman CUKB, Ketentuan Umum butir 17
+title: Pernyataan kompensasi/asuransi sponsor
+description: Semua subjek uji klinik harus diberi kompensasi oleh sponsor, yang dapat berupa
+  asuransi, bila terjadi cedera terkait uji klinik; pernyataan ini harus tercantum dalam informasi
+  untuk calon subjek.
+retrieval_queries:
+- asuransi yang disediakan sponsor untuk peserta
+- sponsor memberikan kompensasi berupa asuransi
+- jaminan asuransi cedera uji klinik
+- sponsor provides insurance compensation
+evaluation_criteria: The subject information must contain an explicit statement that the sponsor
+  provides compensation — which may take the form of insurance — for trial-related injury.
+  A generic treatment promise without the sponsor compensation/insurance statement is partial.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), Ketentuan Umum butir 17
+remediation: Cantumkan pernyataan eksplisit kompensasi/asuransi dari sponsor untuk cedera
+  terkait uji klinik.

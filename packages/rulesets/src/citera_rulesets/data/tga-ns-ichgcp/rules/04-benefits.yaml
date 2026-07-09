@@ -1,0 +1,18 @@
+id: tga-benefits
+citation: NS 2.2.2, 2.2.6(l); E6(R2) 4.8.10(h) / E6(R3) 2.8.10(g)
+title: Expected benefits
+description: The reasonably expected benefits to the participant and to the wider community;
+  if no clinical benefit is intended, the participant must be told.
+retrieval_queries:
+- benefits you may expect from taking part
+- no direct benefit to you
+- benefit to the wider community future patients
+evaluation_criteria: The ICF must describe expected benefits honestly (including community
+  benefit) and state plainly when no direct benefit is intended.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.2
+- National Statement (2025) 2.2.6(l)
+- ICH E6(R2) 4.8.10(h)
+- ICH E6(R3) Annex 1 2.8.10(g)
+remediation: State individual and community benefits without overstatement.

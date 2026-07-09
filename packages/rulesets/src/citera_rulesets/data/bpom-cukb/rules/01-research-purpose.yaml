@@ -1,0 +1,19 @@
+id: bpom-4810-research-purpose
+citation: Pedoman CUKB 4.8.10 (a)–(b)
+title: Sifat penelitian dan tujuan uji klinik
+description: Pernyataan bahwa uji klinik melibatkan penelitian, dan penjelasan tujuan uji
+  klinik.
+retrieval_queries:
+- penelitian uji klinik ini merupakan riset
+- tujuan dari uji klinik penelitian ini
+- Anda diundang untuk ikut serta dalam penelitian
+- this study is a research clinical trial
+evaluation_criteria: The PSP/ICF (typically in Bahasa Indonesia) must state that the trial
+  involves research and explain its purpose, consistent with the protocol. Evaluate the Indonesian
+  text directly.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf a
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf b
+remediation: Nyatakan secara eksplisit bahwa studi ini adalah penelitian dan jelaskan tujuannya
+  dalam bahasa awam.

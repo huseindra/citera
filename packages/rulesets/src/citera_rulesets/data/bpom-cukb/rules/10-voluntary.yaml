@@ -1,0 +1,16 @@
+id: bpom-4810-voluntary
+citation: Pedoman CUKB 4.8.10 (m)
+title: Kesukarelaan dan hak mengundurkan diri
+description: Bahwa keikutsertaan subjek bersifat sukarela dan subjek boleh menolak atau menarik
+  diri setiap saat tanpa hukuman atau kehilangan manfaat yang merupakan haknya.
+retrieval_queries:
+- keikutsertaan bersifat sukarela
+- menarik diri kapan saja tanpa sanksi tanpa kehilangan hak
+- menolak ikut serta tidak mempengaruhi pelayanan kesehatan
+- participation is voluntary withdraw
+evaluation_criteria: The PSP must state that participation is voluntary and that refusal or
+  withdrawal at any time carries no penalty or loss of entitled benefits.
+severity: critical
+statutory_refs:
+- PerBPOM No. 8 Tahun 2024, Lampiran I (Pedoman CUKB), butir 4.8.10 huruf m
+remediation: Tambahkan pernyataan kesukarelaan dan hak menarik diri tanpa hukuman secara eksplisit.

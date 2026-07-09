@@ -1,0 +1,16 @@
+id: hsa-r19-alternatives
+citation: HP(CT) Regs 2016, reg 19(1)(i)
+title: Alternative procedures or treatments
+description: Any alternative procedures or treatments available to the subject, and their
+  potential benefits and risks.
+retrieval_queries:
+- alternatives to taking part other treatment options
+- standard of care treatment instead of the study
+- other therapies available and their risks
+evaluation_criteria: The ICF must disclose available alternative procedures or treatments
+  together with their material benefits and risks.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(i)
+remediation: Describe the standard-of-care and other options, with their key benefits and
+  risks.

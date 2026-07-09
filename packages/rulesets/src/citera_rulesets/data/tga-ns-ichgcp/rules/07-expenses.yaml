@@ -1,0 +1,22 @@
+id: tga-payment-expenses
+citation: NS 2.2.6(j), 2.2.10–2.2.11; E6(R2) 4.8.10(k),(l) / E6(R3) 2.8.10(j),(k)
+title: Payments and expenses
+description: Any payments to participants (which must not amount to an inducement), pro-rated
+  compensation, and anticipated expenses.
+retrieval_queries:
+- payment reimbursement for participation
+- costs you may have to pay expenses
+- compensation for time and travel
+evaluation_criteria: The ICF must disclose payments and expenses; payment terms must not read
+  as a disproportionate inducement. A clear statement that neither applies also satisfies
+  the requirement.
+severity: minor
+statutory_refs:
+- National Statement (2025) 2.2.6(j)
+- National Statement (2025) 2.2.10
+- National Statement (2025) 2.2.11
+- ICH E6(R2) 4.8.10(k)
+- ICH E6(R2) 4.8.10(l)
+- ICH E6(R3) Annex 1 2.8.10(j)
+- ICH E6(R3) Annex 1 2.8.10(k)
+remediation: Explain payment schedule, pro-ration, and any participant-borne costs.

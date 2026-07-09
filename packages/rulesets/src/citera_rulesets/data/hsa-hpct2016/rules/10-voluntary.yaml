@@ -1,0 +1,16 @@
+id: hsa-r19-voluntary
+citation: HP(CT) Regs 2016, reg 19(1)(m)
+title: Voluntary participation and withdrawal
+description: That participation is voluntary and the subject may refuse to participate or
+  withdraw at any time without penalty or loss of benefits to which the subject is otherwise
+  entitled.
+retrieval_queries:
+- participation is voluntary you may withdraw at any time
+- refuse to take part without penalty
+- stopping the study will not affect your medical care
+evaluation_criteria: The ICF must state that participation is voluntary and that refusal or
+  withdrawal at any time carries no penalty or loss of entitled benefits.
+severity: critical
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(m)
+remediation: Add an explicit voluntariness and withdrawal-without-penalty statement.

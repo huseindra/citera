@@ -1,0 +1,24 @@
+id: tga-voluntary-withdrawal
+citation: NS 2.2.1, 2.2.6(g), 2.2.19–2.2.20; E6(R2) 4.8.10(m) / E6(R3) 2.8.10(l),(m)
+title: Voluntary participation and withdrawal
+description: That participation is voluntary and the participant may refuse or withdraw at
+  any time without penalty, with the implications of withdrawal explained (including any follow-up
+  after stopping trial treatment).
+retrieval_queries:
+- participation is voluntary you may withdraw at any time
+- refuse to take part without penalty
+- what happens if you stop the study treatment
+evaluation_criteria: The ICF must state voluntariness and the right to withdraw without penalty,
+  and explain the implications of withdrawal, including follow-up after discontinuing treatment
+  where applicable.
+severity: critical
+statutory_refs:
+- National Statement (2025) 2.2.1
+- National Statement (2025) 2.2.6(g)
+- National Statement (2025) 2.2.19
+- National Statement (2025) 2.2.20
+- ICH E6(R2) 4.8.10(m)
+- ICH E6(R3) Annex 1 2.8.10(l)
+- ICH E6(R3) Annex 1 2.8.10(m)
+remediation: Add a voluntariness statement with withdrawal implications and post-discontinuation
+  follow-up.

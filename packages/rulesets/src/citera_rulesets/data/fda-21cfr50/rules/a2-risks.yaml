@@ -1,0 +1,22 @@
+id: fda-50.25-a2-risks
+citation: 21 CFR 50.25(a)(2)
+title: Reasonably foreseeable risks and discomforts
+description: 'A description of any reasonably foreseeable risks or discomforts to the subject.
+
+  '
+retrieval_queries:
+- risks and discomforts of the study drug side effects
+- adverse events safety liver blood test abnormalities
+- allergic reaction serious side effects
+evaluation_criteria: 'The ICF must describe the reasonably foreseeable risks and discomforts
+  of the study drug and of study procedures. The described risk profile must be consistent
+  with the risks documented in the study protocol; understating, omitting, or contradicting
+  protocol-documented risks (including their frequency or seriousness) is a conflict, not
+  an omission.
+
+  '
+severity: critical
+statutory_refs:
+- 21 CFR 50.25(a)(2)
+remediation: Align the risk section with the protocol's documented safety profile, including
+  frequencies and monitoring.

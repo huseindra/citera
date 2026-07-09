@@ -1,0 +1,23 @@
+id: fda-50.25-a8-voluntary
+citation: 21 CFR 50.25(a)(8)
+title: Voluntary participation and right to withdraw
+description: 'A statement that participation is voluntary, that refusal to participate will
+  involve no penalty or loss of benefits to which the subject is otherwise entitled, and that
+  the subject may discontinue participation at any time without penalty or loss of benefits.
+
+  '
+retrieval_queries:
+- participation is voluntary you may refuse
+- right to withdraw stop participating at any time without penalty
+- leaving the study will not affect your care or benefits
+evaluation_criteria: 'The ICF must state that participation is voluntary, that refusal involves
+  no penalty or loss of benefits, and that the participant may discontinue at any time without
+  penalty or loss of benefits. The complete absence of a voluntary participation statement
+  is a critical omission.
+
+  '
+severity: critical
+statutory_refs:
+- 21 CFR 50.25(a)(8)
+remediation: Add an explicit statement that participation is voluntary and refusal or discontinuation
+  involves no penalty or loss of benefits.

@@ -1,0 +1,14 @@
+id: hsa-r19-enrolment
+citation: HP(CT) Regs 2016, reg 19(1)(t)
+title: Approximate number of subjects
+description: The approximate number of subjects involved in the trial.
+retrieval_queries:
+- how many people will take part in this study
+- approximately participants will be enrolled
+- number of subjects in the trial
+evaluation_criteria: The ICF must state the approximate number of subjects in the trial, consistent
+  with the protocol's planned enrolment.
+severity: minor
+statutory_refs:
+- Health Products (Clinical Trials) Regulations 2016, reg 19(1)(t)
+remediation: State the planned enrolment number from the protocol.
