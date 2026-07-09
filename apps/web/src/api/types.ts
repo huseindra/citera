@@ -121,6 +121,30 @@ export interface FindingAuditOut {
   records: AuditRecordOut[];
 }
 
+export interface ApiKeyOut {
+  id: string;
+  name: string;
+  prefix: string;
+  created_at: string;
+  revoked: boolean;
+}
+
+export interface ApiKeyCreated extends ApiKeyOut {
+  key: string; // full secret — shown exactly once
+}
+
+export interface UsageSummary {
+  plan: string;
+  rate_limit_rpm: number;
+  credits: { total: number; used: number; remaining: number };
+  requests: {
+    period_days: number;
+    total: number;
+    daily: { date: string; count: number }[];
+  };
+  recent: { operation: string; at: string }[];
+}
+
 export interface ReviewSummary {
   id: string;
   document_id: string;

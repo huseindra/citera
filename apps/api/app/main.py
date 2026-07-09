@@ -7,7 +7,10 @@ from sqlalchemy import text
 
 from app import models  # noqa: F401  (registers tables on Base.metadata)
 from app.db import Base, engine
+from fastapi import APIRouter
+
 from app.routers.documents import router as documents_router
+from app.routers.platform import router as platform_router
 from app.routers.retrieval import router as retrieval_router
 from app.routers.reviews import router as reviews_router
 from app.routers.rulesets import router as rulesets_router
@@ -49,6 +52,16 @@ app.include_router(documents_router)
 app.include_router(retrieval_router)
 app.include_router(reviews_router)
 app.include_router(rulesets_router)
+
+# Public v1 surface: the SDK's REST API is the existing resource API,
+# re-included under /v1 (retrieval stays internal). Key enforcement on
+# /v1 is a fast-follow.
+v1 = APIRouter(prefix="/v1")
+v1.include_router(documents_router)
+v1.include_router(reviews_router)
+v1.include_router(rulesets_router)
+v1.include_router(platform_router)
+app.include_router(v1)
 
 
 @app.get("/health")

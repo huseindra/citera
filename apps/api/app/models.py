@@ -99,6 +99,21 @@ class Finding(Base):
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
+class ApiKey(Base):
+    __tablename__ = "api_keys"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    name: Mapped[str] = mapped_column(default="Default key")
+    # display prefix only; the secret is stored as a hash and shown once
+    prefix: Mapped[str]
+    key_hash: Mapped[str] = mapped_column(index=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    revoked_at: Mapped[datetime | None]
+    last_used_at: Mapped[datetime | None]
+
+
 class AuditRecord(Base):
     __tablename__ = "audit_records"
 

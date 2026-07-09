@@ -19,6 +19,11 @@ export async function apiGet<T>(path: string): Promise<T> {
   return handle(await fetch(`/api${path}`), "GET", path);
 }
 
+export async function apiDelete(path: string): Promise<void> {
+  const resp = await fetch(`/api${path}`, { method: "DELETE" });
+  if (!resp.ok) throw new Error(`DELETE ${path} failed (${resp.status})`);
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const resp = await fetch(`/api${path}`, {
     method: "POST",
