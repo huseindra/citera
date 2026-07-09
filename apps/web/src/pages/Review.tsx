@@ -120,14 +120,6 @@ export function ReviewPage() {
               label={rulesetName(data.ruleset_id)}
             />
           </span>
-          {data.evaluator_model && (
-            <span
-              title="The model that evaluated this review (from the audit log)"
-              className="rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[10px] font-medium text-stone-500"
-            >
-              {data.evaluator_model.split(" ")[0]}
-            </span>
-          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <button
@@ -139,7 +131,7 @@ export function ReviewPage() {
                 : "border-stone-300 text-stone-600 hover:bg-stone-50"
             }`}
           >
-            Evidence Coverage
+            Regulatory Readiness
           </button>
           {data.status === "complete" && (
             <>
@@ -238,7 +230,6 @@ export function ReviewPage() {
                 reviewId={data.id}
                 rulesetId={data.ruleset_id}
                 finding={selectedFinding}
-                evaluatorModel={data.evaluator_model}
                 onClose={() => select(selectedFinding.id)}
                 onScrollToOffset={scrollTo}
               />

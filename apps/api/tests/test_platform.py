@@ -78,7 +78,7 @@ async def test_key_lifecycle_secret_shown_once(client):
 async def test_usage_summary_shape(client):
     body = (await client.get("/v1/usage/summary")).json()
     assert body["plan"] == "Free"
-    assert body["credits"]["total"] == 5000
+    assert body["credits"]["total"] == 25_000
     assert body["credits"]["remaining"] == max(
         0, body["credits"]["total"] - body["credits"]["used"]
     )

@@ -26,7 +26,6 @@ interface Props {
   reviewId: string;
   rulesetId: string;
   finding: FindingOut;
-  evaluatorModel: string | null;
   onClose: () => void;
   onScrollToOffset: (offset: number) => void;
 }
@@ -52,7 +51,6 @@ export function Inspector({
   reviewId,
   rulesetId,
   finding,
-  evaluatorModel,
   onClose,
   onScrollToOffset,
 }: Props) {
@@ -122,7 +120,7 @@ export function Inspector({
 
         {/* 3. Evidence */}
         <section>
-          <SectionLabel>Evidence</SectionLabel>
+          <SectionLabel>Evidence Ledger</SectionLabel>
           <div className="space-y-3">
             <EvidencePathStrip
               finding={finding}
@@ -154,11 +152,6 @@ export function Inspector({
           <SectionLabel>
             <span className="inline-flex items-center gap-1.5">
               <Sparkles aria-hidden className="h-3 w-3" /> Analysis
-              {evaluatorModel && (
-                <span className="rounded-full border border-stone-200 bg-stone-50 px-1.5 py-0.5 normal-case text-stone-500">
-                  {evaluatorModel.split(" ")[0]}
-                </span>
-              )}
             </span>
           </SectionLabel>
           <p className="leading-6 text-stone-700">{finding.reasoning}</p>

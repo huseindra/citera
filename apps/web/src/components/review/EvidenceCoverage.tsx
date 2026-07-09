@@ -7,7 +7,7 @@
 import { ArrowRight, X as XIcon } from "lucide-react";
 import { useState } from "react";
 import type { FindingOut, RuleOut } from "../../api/types";
-import { computeCoverage } from "../../lib/coverage";
+import { computeCoverage, readinessVerdict } from "../../lib/coverage";
 import { EvidenceMatrixModal } from "./EvidenceMatrixModal";
 
 interface Props {
@@ -20,13 +20,14 @@ interface Props {
 export function EvidenceCoverage({ rules, findings, onSelect, onClose }: Props) {
   const [matrixOpen, setMatrixOpen] = useState(false);
   const summary = computeCoverage(rules, findings);
+  const verdict = readinessVerdict(summary.rows, summary.passed, summary.total);
 
   return (
     <div className="absolute bottom-3 right-3 top-3 z-20 flex w-80 flex-col rounded-xl border border-stone-200 bg-white shadow-lg shadow-stone-900/5">
       <div className="flex items-start justify-between border-b border-stone-100 px-4 py-3">
         <div>
           <h3 className="text-sm font-semibold text-stone-800">
-            Evidence Coverage
+            Regulatory Readiness
           </h3>
           <p className="text-[11px] text-stone-400">
             Evidence completeness against the ruleset
@@ -41,24 +42,24 @@ export function EvidenceCoverage({ rules, findings, onSelect, onClose }: Props) 
         </button>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 border-b border-stone-100 px-4 py-3">
-        <div>
-          <div className="text-2xl font-semibold tracking-tight text-stone-900">
+      <div className="border-b border-stone-100 px-4 py-3">
+        <div className="flex items-baseline gap-3">
+          <div className="text-3xl font-semibold tracking-tight text-stone-900">
             {summary.percent}%
           </div>
-          <div className="text-[10px] uppercase tracking-wide text-stone-400">
-            Evidence coverage
+          <div>
+            <div className={`text-xs font-semibold ${verdict.tone}`}>
+              {verdict.label}
+            </div>
+            <div className="text-[11px] text-stone-400">
+              {summary.passed} / {summary.total} requirements passed
+            </div>
           </div>
         </div>
-        <div>
-          <div className="text-2xl font-semibold tracking-tight text-stone-900">
-            {summary.passed}
-            <span className="text-stone-400"> / {summary.total}</span>
-          </div>
-          <div className="text-[10px] uppercase tracking-wide text-stone-400">
-            Requirements passed
-          </div>
-        </div>
+      </div>
+
+      <div className="px-4 pt-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+        Evidence Coverage
       </div>
 
       <ol className="min-h-0 flex-1 space-y-2.5 overflow-y-auto px-4 py-3">

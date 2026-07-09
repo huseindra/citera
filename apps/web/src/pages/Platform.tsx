@@ -5,10 +5,13 @@ import { apiGet } from "../api/client";
 import type { ReviewSummary, UsageSummary } from "../api/types";
 import { CodeTabs } from "../components/platform/CodeTabs";
 import { displayName, timeAgo } from "../lib/format";
+import type { RulesetInfo } from "../api/types";
+import { RulesetBadge } from "../components/RulesetBadge";
 import {
   CURL_EXAMPLE,
   INSTALL_NPM,
-  PY_EXAMPLE,
+  PYTHON_COMING_SOON,
+  REST_EXAMPLE,
   TS_EXAMPLE,
 } from "../lib/snippets";
 
@@ -60,6 +63,12 @@ export function PlatformHome() {
           >
             Open Playground
           </Link>
+          <Link
+            to="/reference"
+            className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50"
+          >
+            View API Reference
+          </Link>
         </div>
       </section>
 
@@ -74,8 +83,9 @@ export function PlatformHome() {
         <CodeTabs
           tabs={[
             { label: "TypeScript", code: TS_EXAMPLE },
-            { label: "Python", code: PY_EXAMPLE },
-            { label: "curl", code: CURL_EXAMPLE },
+            { label: "REST", code: REST_EXAMPLE },
+            { label: "cURL", code: CURL_EXAMPLE },
+            { label: "Python", code: PYTHON_COMING_SOON },
           ]}
         />
       </section>
@@ -106,6 +116,17 @@ export function PlatformHome() {
             </div>
           ))}
         </div>
+      </section>
+
+      {/* Rulesets */}
+      <section>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-stone-800">Rulesets</h2>
+          <span className="text-[11px] text-stone-400">
+            Regulatory requirements are pluggable, versioned packs
+          </span>
+        </div>
+        <RulesetsStrip />
       </section>
 
       {/* Usage + activity */}
@@ -185,7 +206,7 @@ export function PlatformHome() {
           <h2 className="text-sm font-semibold text-stone-800">Resources</h2>
           <ul className="mt-2 space-y-1.5 text-xs">
             {[
-              ["API Reference", "http://localhost:8000/docs", true],
+              ["API Reference", "/reference", false],
               ["Documentation", "https://github.com/huseindra/citera/tree/main/docs", true],
               ["SDK & examples", "/keys", false],
               ["Playground", "/playground", false],
@@ -213,6 +234,37 @@ export function PlatformHome() {
           </ul>
         </div>
       </section>
+    </div>
+  );
+}
+
+function RulesetsStrip() {
+  const rulesets = useQuery({
+    queryKey: ["rulesets"],
+    queryFn: () => apiGet<RulesetInfo[]>("/rulesets"),
+    staleTime: Infinity,
+  });
+  const entries = rulesets.data ?? [];
+  const available = entries.filter((r) => r.status === "available");
+  const roadmap = entries.filter((r) => r.status === "roadmap");
+
+  return (
+    <div className="mt-3 rounded-xl border border-stone-200 bg-white p-4">
+      <div className="flex flex-wrap gap-1.5">
+        {available.map((r) => (
+          <RulesetBadge
+            key={r.id}
+            rulesetId={r.id}
+            status={r.status}
+            label={`${r.authority} · ${r.version}`}
+          />
+        ))}
+      </div>
+      {roadmap.length > 0 && (
+        <p className="mt-2 text-[11px] text-stone-400">
+          Roadmap: {roadmap.map((r) => r.authority).join(" · ")}
+        </p>
+      )}
     </div>
   );
 }

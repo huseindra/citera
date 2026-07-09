@@ -7,8 +7,8 @@ import { timeAgo } from "../lib/format";
 import {
   CURL_EXAMPLE,
   INSTALL_NPM,
-  INSTALL_PIP,
-  PY_EXAMPLE,
+  PYTHON_COMING_SOON,
+  REST_EXAMPLE,
   TS_EXAMPLE,
 } from "../lib/snippets";
 
@@ -227,28 +227,17 @@ export function ApiKeysPage() {
       {/* Install + examples */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-stone-800">Use the SDK</h2>
-        <div className="grid grid-cols-2 gap-3">
-          {[INSTALL_NPM, INSTALL_PIP].map((cmd) => (
-            <code
-              key={cmd}
-              className="rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 font-mono text-xs text-stone-700"
-            >
-              $ {cmd}
-            </code>
-          ))}
-        </div>
+        <code className="block rounded-lg border border-stone-200 bg-stone-50 px-3 py-2 font-mono text-xs text-stone-700">
+          $ {INSTALL_NPM}
+        </code>
         <CodeTabs
           tabs={[
-            { label: "curl", code: CURL_EXAMPLE },
             { label: "TypeScript", code: TS_EXAMPLE },
-            { label: "Python", code: PY_EXAMPLE },
+            { label: "REST", code: REST_EXAMPLE },
+            { label: "cURL", code: CURL_EXAMPLE },
+            { label: "Python", code: PYTHON_COMING_SOON },
           ]}
         />
-        <p className="text-[11px] text-stone-400">
-          Supported models: <span className="font-medium">claude-sonnet-5</span>{" "}
-          (default) · claude-opus-4-8 — configurable per request; every finding
-          is span-verified regardless of model.
-        </p>
       </section>
     </div>
   );

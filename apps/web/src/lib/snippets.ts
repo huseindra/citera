@@ -27,7 +27,7 @@ const icf      = await citera.documents.upload({ file: icfPdf, kind: "icf" });
 const review = await citera.reviews.create({
   document: icf.id,
   protocol: protocol.id,
-  ruleset: "fda-21cfr50",
+  ruleset: "fda",
 });
 
 const result = await citera.reviews.waitUntilComplete(review.id);
@@ -35,6 +35,36 @@ for (const finding of result.findings) {
   // every quote is span-verified against the source document
   console.log(finding.status, finding.rule_title, finding.verbatim_quote);
 }`;
+
+export const REST_EXAMPLE = `POST /v1/documents
+Authorization: Bearer ${KEY}
+Content-Type: multipart/form-data
+  file=@icf.pdf  kind=icf
+
+POST /v1/reviews
+Authorization: Bearer ${KEY}
+Content-Type: application/json
+{
+  "ruleset": "fda",
+  "document_id": "<icf-id>",
+  "protocol_document_id": "<protocol-id>",
+  "generate_suggested_revision": true
+}
+
+GET /v1/reviews/{review_id}
+-> { "status": "complete", "findings": [ ... ] }`;
+
+export const PYTHON_COMING_SOON = `# Python SDK — coming soon.
+#
+# The REST API works from Python today:
+#
+#   import requests
+#   requests.post(
+#       "http://localhost:8000/v1/reviews",
+#       headers={"Authorization": f"Bearer {KEY}"},
+#       json={"ruleset": "fda", "document_id": icf_id,
+#             "protocol_document_id": protocol_id},
+#   )`;
 
 export const PY_EXAMPLE = `from citera import Citera
 
@@ -44,7 +74,7 @@ protocol = citera.documents.upload(file="protocol.pdf", kind="protocol")
 icf = citera.documents.upload(file="icf.pdf", kind="icf")
 
 review = citera.reviews.create(
-    document=icf.id, protocol=protocol.id, ruleset="fda-21cfr50",
+    document=icf.id, protocol=protocol.id, ruleset="fda",
 )
 result = review.wait_until_complete()
 
