@@ -145,12 +145,15 @@ export function PlaygroundPage() {
     }
   }, []);
 
+  const rulesetAlias =
+    (rulesets.data ?? []).find((r) => r.id === ruleset)?.aliases[0] ?? ruleset;
+
   const startReview = useMutation({
     mutationFn: async () => {
       const body = {
         document_id: slots.icf.documentId!,
         protocol_document_id: slots.protocol.documentId!,
-        ruleset_id: ruleset,
+        ruleset: rulesetAlias,
         generate_suggested_revision: withRevision,
       };
       const review = await apiPost<ReviewOut>("/reviews", body);
@@ -159,7 +162,7 @@ export function PlaygroundPage() {
         method: "POST",
         path: "/v1/reviews",
         request: {
-          ruleset,
+          ruleset: rulesetAlias,
           document_id: body.document_id,
           protocol_document_id: body.protocol_document_id,
           generate_suggested_revision: withRevision,
@@ -184,11 +187,13 @@ export function PlaygroundPage() {
   });
 
   const selectedRuleset = (rulesets.data ?? []).find((r) => r.id === ruleset);
-  const previewSelected = selectedRuleset?.status === "preview";
+  // the selector only offers available packs, but the API status gate is
+  // still mirrored here as a belt-and-braces guard
+  const runnable = selectedRuleset ? selectedRuleset.status === "available" : true;
   const canRun =
     slots.protocol.state === "ready" &&
     slots.icf.state === "ready" &&
-    !previewSelected &&
+    runnable &&
     !startReview.isPending;
   const review = activeReview.data ?? null;
   const running =
@@ -342,7 +347,7 @@ export function PlaygroundPage() {
         </div>
 
         {/* RIGHT — API Response */}
-        <ApiSidebar log={apiLog} liveSnippet={buildSnippet(ruleset, withRevision, slots, review)} />
+        <ApiSidebar log={apiLog} liveSnippet={buildSnippet(rulesetAlias, withRevision, slots, review)} />
       </div>
     </div>
   );

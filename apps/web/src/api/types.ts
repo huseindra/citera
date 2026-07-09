@@ -66,6 +66,8 @@ export interface RuleOut {
   title: string;
   description: string;
   severity: string;
+  statutory_refs: string[];
+  remediation: string | null;
 }
 
 export interface RuleSetOut {
@@ -81,9 +83,11 @@ export interface RulesetInfo {
   name: string;
   jurisdiction: string;
   coverage: string | null;
-  status: "available" | "preview" | "roadmap";
+  status: "available" | "in_development" | "roadmap";
   version: string | null;
   rule_count: number | null;
+  languages: string[];
+  aliases: string[];
 }
 
 export interface EvidenceChunkOut {

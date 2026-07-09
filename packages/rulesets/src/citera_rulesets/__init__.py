@@ -9,8 +9,15 @@ from citera_rulesets.loader import (
     available_rulesets,
     load_ruleset,
     registry,
+    resolve_ruleset_id,
 )
 
-__all__ = ["RulesetError", "available_rulesets", "load_ruleset", "registry"]
+__all__ = [
+    "RulesetError",
+    "available_rulesets",
+    "load_ruleset",
+    "registry",
+    "resolve_ruleset_id",
+]
 
 __version__ = "0.1.0"

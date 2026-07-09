@@ -15,6 +15,9 @@ export function timeAgo(iso: string): string {
 
 export const RULESET_NAMES: Record<string, string> = {
   "fda-21cfr50": "FDA 21 CFR 50.25 — Informed Consent",
+  "hsa-hpct2016": "HSA HP(CT) Regs 2016 — reg 19(1)",
+  "bpom-cukb": "BPOM PerBPOM 8/2024 — CUKB 4.8.10",
+  "tga-ns-ichgcp": "TGA National Statement + ICH GCP",
 };
 
 export function rulesetName(id: string): string {

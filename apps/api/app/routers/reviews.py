@@ -17,6 +17,10 @@ router = APIRouter(prefix="/reviews", tags=["reviews"])
 class ReviewCreate(BaseModel):
     document_id: UUID
     protocol_document_id: UUID
+    # accepts a pack id ("fda-21cfr50") or its short alias ("fda");
+    # `ruleset` is the canonical SDK spelling, `ruleset_id` is honored
+    # for backward compatibility
+    ruleset: str | None = None
     ruleset_id: str = "fda-21cfr50"
     # draft an AI revision for every non-satisfied finding (labeled draft)
     generate_suggested_revision: bool = True
@@ -82,21 +86,22 @@ async def create_review(
     session: AsyncSession = Depends(get_session),
 ):
     # ruleset first: configuration errors should fail before upload checks
-    try:
-        ruleset = load_ruleset(body.ruleset_id)
-    except RulesetError as exc:
-        # honest message for known-but-not-yet-shipped jurisdictions
-        from citera_rulesets import registry
+    from citera_rulesets import registry, resolve_ruleset_id
 
-        entry = next(
-            (e for e in registry() if e["id"] == body.ruleset_id), None
+    ruleset_id = resolve_ruleset_id(body.ruleset or body.ruleset_id)
+    # a pack may exist (shipped, versioned) without being runnable yet —
+    # the registry status is the gate, never the pack's loadability
+    entry = next((e for e in registry() if e["id"] == ruleset_id), None)
+    if entry and entry["status"] != "available":
+        raise HTTPException(
+            status_code=422,
+            detail=f"Ruleset '{entry['authority']}' ({entry['jurisdiction']}) "
+            f"is {entry['status'].replace('_', ' ')} — reviews cannot run "
+            "against it yet.",
         )
-        if entry and entry["status"] != "available":
-            raise HTTPException(
-                status_code=422,
-                detail=f"Ruleset '{entry['authority']}' ({entry['jurisdiction']}) "
-                f"is {entry['status']} — support is currently in development.",
-            ) from exc
+    try:
+        ruleset = load_ruleset(ruleset_id)
+    except RulesetError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
     await _require_ready_document(session, body.document_id, "target")
