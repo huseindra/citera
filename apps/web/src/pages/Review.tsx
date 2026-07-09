@@ -8,8 +8,8 @@ import type { DocumentText, ReviewOut, RuleSetOut } from "../api/types";
 import { CoverageMatrix } from "../components/matrix/CoverageMatrix";
 import { VerdictStrip } from "../components/matrix/VerdictStrip";
 import { DocumentViewer } from "../components/document/DocumentViewer";
-import { SemanticMap } from "../components/document/SemanticMap";
 import { Inspector } from "../components/inspector/Inspector";
+import { EvidenceCoverage } from "../components/review/EvidenceCoverage";
 import { RulesetBadge } from "../components/RulesetBadge";
 import { displayName, rulesetName } from "../lib/format";
 
@@ -21,7 +21,7 @@ export function ReviewPage() {
     offset: number;
     nonce: number;
   } | null>(null);
-  const [showMap, setShowMap] = useState(false);
+  const [showCoverage, setShowCoverage] = useState(false);
   // playback: re-animate a completed review, one finding per beat
   const [playbackIndex, setPlaybackIndex] = useState<number | null>(null);
 
@@ -131,15 +131,15 @@ export function ReviewPage() {
         </div>
         <div className="flex shrink-0 items-center gap-2">
           <button
-            onClick={() => setShowMap((v) => !v)}
-            aria-pressed={showMap}
+            onClick={() => setShowCoverage((v) => !v)}
+            aria-pressed={showCoverage}
             className={`rounded-md border px-3 py-1 text-xs font-medium ${
-              showMap
+              showCoverage
                 ? "border-blue-600 bg-blue-600 text-white"
                 : "border-stone-300 text-stone-600 hover:bg-stone-50"
             }`}
           >
-            Semantic map
+            Evidence Coverage
           </button>
           {data.status === "complete" && (
             <>
@@ -208,13 +208,14 @@ export function ReviewPage() {
           </Allotment.Pane>
           <Allotment.Pane minSize={380}>
             <div className="relative h-full">
-              {showMap && (
-                <SemanticMap
-                  documentId={data.document_id}
+              {showCoverage && (
+                <EvidenceCoverage
+                  rules={ruleset.data?.rules ?? []}
                   findings={data.findings}
-                  selectedId={selectedId}
-                  onScrollToOffset={scrollTo}
-                  onClose={() => setShowMap(false)}
+                  onSelect={(id) => {
+                    if (id !== selectedId) select(id);
+                  }}
+                  onClose={() => setShowCoverage(false)}
                 />
               )}
               <DocumentViewer

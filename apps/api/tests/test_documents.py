@@ -98,19 +98,3 @@ async def test_unsupported_and_empty_uploads_rejected(client):
 async def test_unknown_document_404(client):
     resp = await client.get("/documents/00000000-0000-0000-0000-000000000000")
     assert resp.status_code == 404
-
-
-async def test_semantic_map_projects_all_chunks_deterministically(client):
-    doc = (await _upload(client, "icf-b.md", "icf")).json()
-    detail = (await client.get(f"/documents/{doc['id']}")).json()
-    assert detail["status"] == "ready"
-
-    first = (await client.get(f"/documents/{doc['id']}/semantic-map")).json()
-    second = (await client.get(f"/documents/{doc['id']}/semantic-map")).json()
-    assert first == second  # deterministic projection
-
-    assert len(first["points"]) == detail["chunk_count"]
-    for p in first["points"]:
-        assert 0.0 <= p["x"] <= 1.0 and 0.0 <= p["y"] <= 1.0
-        assert p["char_end"] > p["char_start"]
-        assert p["preview"]
