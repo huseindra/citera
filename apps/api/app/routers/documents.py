@@ -126,7 +126,26 @@ async def list_documents(session: AsyncSession = Depends(get_session)):
     docs = (
         await session.scalars(select(Document).order_by(Document.created_at.desc()))
     ).all()
-    return [await _to_out(session, d) for d in docs]
+    # one grouped query — this endpoint is polled by the upload wizard
+    counts = dict(
+        (
+            await session.execute(
+                select(Chunk.document_id, func.count()).group_by(Chunk.document_id)
+            )
+        ).all()
+    )
+    return [
+        DocumentOut(
+            id=d.id,
+            filename=d.filename,
+            kind=d.kind,
+            status=d.status,
+            status_reason=d.status_reason,
+            chunk_count=counts.get(d.id, 0),
+            created_at=d.created_at,
+        )
+        for d in docs
+    ]
 
 
 @router.get("/{document_id}", response_model=DocumentOut)

@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useCallback, useState, type DragEvent } from "react";
+import { useCallback, useEffect, useState, type DragEvent } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { apiGet, apiPost, apiUploadWithProgress } from "../api/client";
 import type { DocumentOut, ReviewOut, ReviewSummary } from "../api/types";
@@ -34,26 +34,34 @@ export function HomePage() {
       Object.values(slots).some((s) => s.state === "processing") ? 1200 : false,
   });
 
-  // promote processing slots to ready once the poll sees them
-  const docById = new Map((documents.data ?? []).map((d) => [d.id, d]));
-  for (const kind of ["protocol", "icf"] as SlotKind[]) {
-    const slot = slots[kind];
-    if (slot.state === "processing" && slot.documentId) {
-      const doc = docById.get(slot.documentId);
-      if (doc?.status === "ready") {
-        queueMicrotask(() =>
-          setSlots((prev) => ({ ...prev, [kind]: { ...prev[kind], state: "ready" } })),
-        );
-      } else if (doc?.status === "failed") {
-        queueMicrotask(() =>
-          setSlots((prev) => ({
-            ...prev,
-            [kind]: { ...prev[kind], state: "failed", error: doc.status_reason ?? "" },
-          })),
-        );
+  // promote processing slots once the poll sees a terminal document state
+  // (an effect, never render-time state updates)
+  const docs = documents.data;
+  useEffect(() => {
+    if (!docs) return;
+    const docById = new Map(docs.map((d) => [d.id, d]));
+    setSlots((prev) => {
+      let changed = false;
+      const next = { ...prev };
+      for (const kind of ["protocol", "icf"] as SlotKind[]) {
+        const slot = prev[kind];
+        if (slot.state !== "processing" || !slot.documentId) continue;
+        const doc = docById.get(slot.documentId);
+        if (doc?.status === "ready") {
+          next[kind] = { ...slot, state: "ready" };
+          changed = true;
+        } else if (doc?.status === "failed") {
+          next[kind] = {
+            ...slot,
+            state: "failed",
+            error: doc.status_reason ?? "",
+          };
+          changed = true;
+        }
       }
-    }
-  }
+      return changed ? next : prev;
+    });
+  }, [docs]);
 
   const reviews = useQuery({
     queryKey: ["reviews"],

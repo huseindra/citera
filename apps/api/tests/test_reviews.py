@@ -275,6 +275,33 @@ async def test_finding_audit_chain_is_ordered_and_verbatim(client):
     assert resp.status_code == 404
 
 
+async def test_review_never_sticks_in_running_when_evaluator_explodes(
+    client, monkeypatch
+):
+    """Regression: a poisoned/failing evaluation must end in per-rule
+    evaluation_failed findings and a terminal review status — polling
+    clients must never wait forever."""
+
+    class ExplodingEvaluator:
+        model = "exploding"
+
+        async def evaluate(self, rule, evidence, protocol_text):
+            raise RuntimeError("boom")
+
+    from app.services import review as review_service
+
+    monkeypatch.setattr(review_service, "get_evaluator", lambda: ExplodingEvaluator())
+
+    protocol_id = await _ingest(client, "protocol.md", "protocol")
+    icf_id = await _ingest(client, "icf-a.md", "icf")
+    review = await _run_review(client, icf_id, protocol_id)  # asserts terminal
+
+    assert review["status"] == "complete"  # per-rule isolation held
+    assert len(review["findings"]) == 8
+    assert all(f["status"] == "evaluation_failed" for f in review["findings"])
+    assert all("boom" in f["reasoning"] for f in review["findings"])
+
+
 async def test_review_requires_ready_documents(client):
     protocol_id = await _ingest(client, "protocol.md", "protocol")
     resp = await client.post(

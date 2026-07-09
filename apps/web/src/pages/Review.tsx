@@ -51,15 +51,18 @@ export function ReviewPage() {
       replace: true,
     });
 
+  // depend on the COUNT, not the data object — a background refetch must
+  // not reset the playback timer
+  const totalFindings = review.data?.findings.length ?? 0;
   useEffect(() => {
-    if (playbackIndex === null || !review.data) return;
-    if (playbackIndex >= review.data.findings.length) {
+    if (playbackIndex === null || totalFindings === 0) return;
+    if (playbackIndex >= totalFindings) {
       const done = setTimeout(() => setPlaybackIndex(null), 700);
       return () => clearTimeout(done);
     }
     const tick = setTimeout(() => setPlaybackIndex((i) => (i ?? 0) + 1), 850);
     return () => clearTimeout(tick);
-  }, [playbackIndex, review.data]);
+  }, [playbackIndex, totalFindings]);
 
   if (review.isError) {
     return (

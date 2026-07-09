@@ -42,6 +42,8 @@ export function apiUploadWithProgress<T>(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open("POST", `/api${path}`);
+    xhr.timeout = 120_000; // a stalled connection must not hang the wizard
+    xhr.ontimeout = () => reject(new Error(`POST ${path} failed (timeout)`));
     xhr.upload.onprogress = (event) => {
       if (event.lengthComputable) {
         onProgress(Math.round((event.loaded / event.total) * 100));
