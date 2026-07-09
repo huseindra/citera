@@ -20,6 +20,7 @@ import {
   ApiSidebar,
   type ApiLogEntry,
 } from "../components/playground/ApiSidebar";
+import { RulesetBadge } from "../components/RulesetBadge";
 import { RulesetSelector } from "../components/playground/RulesetSelector";
 import { displayName, timeAgo } from "../lib/format";
 import { STATUS_META } from "../lib/status";
@@ -220,14 +221,20 @@ export function PlaygroundPage() {
           </div>
         </div>
         <div className="flex items-center gap-4 text-[11px]">
-          <HeaderStat
-            label="Ruleset"
-            value={
-              selectedRuleset
-                ? `${selectedRuleset.authority} ${selectedRuleset.name.split(" — ")[0]}`
-                : "—"
-            }
-          />
+          <div>
+            <div className="text-[9px] uppercase tracking-wide text-stone-400">
+              Ruleset
+            </div>
+            {selectedRuleset ? (
+              <RulesetBadge
+                rulesetId={selectedRuleset.id}
+                status={selectedRuleset.status}
+                label={`${selectedRuleset.authority} ${selectedRuleset.name.split(" — ")[0]}`}
+              />
+            ) : (
+              <div className="font-medium text-stone-700">—</div>
+            )}
+          </div>
           <HeaderStat label="Engine" value="Citera Review Engine v1" />
           <HeaderStat
             label="Status"
@@ -239,7 +246,7 @@ export function PlaygroundPage() {
       <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr_360px]">
         {/* LEFT — review configuration: ruleset, documents, run. One
             screen, no scrolling — everything else belongs to the SDK. */}
-        <div className="flex flex-col gap-4 overflow-y-auto border-r border-stone-200 bg-white p-4">
+        <div className="flex flex-col gap-4 overflow-y-auto border-r border-stone-200 bg-sidebar p-4">
           <RulesetSelector value={ruleset} onChange={setRuleset} />
 
           <div key={docsNonce} className={docsNonce > 0 ? "evidence-pulse rounded-xl" : ""}>
@@ -262,7 +269,7 @@ export function PlaygroundPage() {
                   key={capability}
                   className="flex items-center gap-2 text-xs text-stone-700"
                 >
-                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-stone-800 text-white">
+                  <span className="flex h-3.5 w-3.5 items-center justify-center rounded-sm bg-blue-600 text-white">
                     <Check aria-hidden className="h-2.5 w-2.5" />
                   </span>
                   {capability}
@@ -279,7 +286,7 @@ export function PlaygroundPage() {
                   <span
                     className={`flex h-3.5 w-3.5 items-center justify-center rounded-sm border transition-colors ${
                       withRevision
-                        ? "border-stone-800 bg-stone-800 text-white"
+                        ? "border-blue-600 bg-blue-600 text-white"
                         : "border-stone-300 bg-white text-transparent"
                     }`}
                   >
@@ -299,7 +306,7 @@ export function PlaygroundPage() {
             <button
               disabled={!canRun}
               onClick={() => startReview.mutate()}
-              className="w-full rounded-lg bg-stone-900 px-4 py-2.5 text-xs font-semibold text-white transition-opacity disabled:opacity-30"
+              className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-xs font-semibold text-white transition-colors hover:bg-blue-700 disabled:opacity-30"
             >
               {startReview.isPending ? "Starting…" : "Run Review"}
             </button>
@@ -425,7 +432,7 @@ function ReviewResults({
         <div className="mt-2 h-1 overflow-hidden rounded-full bg-stone-100">
           <div
             className={`h-full rounded-full transition-all duration-700 ${
-              running ? "bg-sky-500" : counts.critical > 0 ? "bg-red-400" : "bg-emerald-500"
+              running ? "bg-sky-500" : counts.critical > 0 ? "bg-red-400" : "bg-green-500"
             }`}
             style={{ width: `${running ? Math.max(4, progress) : 100}%` }}
           />
@@ -496,13 +503,13 @@ function ResultActions({
       <Link
         to={`/playground/reviews/${review.id}/report`}
         onClick={onExportLogged}
-        className="rounded-md bg-stone-900 px-3 py-1.5 font-medium text-white"
+        className="rounded-lg bg-blue-600 px-3 py-1.5 font-medium text-white hover:bg-blue-700"
       >
         Export PDF
       </Link>
       <button
         onClick={() => downloadJson(review)}
-        className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
+        className="rounded-lg border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
       >
         Download JSON
       </button>
@@ -512,15 +519,15 @@ function ResultActions({
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         }}
-        className="inline-flex items-center gap-1 rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
+        className="inline-flex items-center gap-1 rounded-lg border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
       >
-        {copied && <Check aria-hidden className="h-3 w-3 text-emerald-600" />}
+        {copied && <Check aria-hidden className="h-3 w-3 text-green-600" />}
         {copied ? "Copied" : "Copy API Response"}
       </button>
       {firstIssue && (
         <Link
           to={`/playground/reviews/${review.id}?finding=${firstIssue.id}`}
-          className="rounded-md border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
+          className="rounded-lg border border-stone-300 px-3 py-1.5 font-medium text-stone-600 hover:bg-stone-50"
         >
           Open Finding
         </Link>
@@ -648,7 +655,7 @@ function Metric({
 }) {
   const toneClass =
     tone === "good"
-      ? "text-emerald-700"
+      ? "text-green-700"
       : tone === "warn"
         ? "text-amber-700"
         : tone === "bad"
@@ -702,7 +709,7 @@ function EmptyState({
         <button
           onClick={onLoadSample}
           disabled={loading}
-          className="rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white disabled:opacity-40"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
         >
           {loading ? "Loading sample…" : "Load Sample Study"}
         </button>
@@ -759,7 +766,7 @@ function DropZone({
       onDrop={onDrop}
       className={`block cursor-pointer rounded-xl border-2 border-dashed p-3 text-center transition-colors ${
         slot.state === "ready"
-          ? "border-emerald-300 bg-emerald-50/50"
+          ? "border-green-300 bg-green-50/50"
           : slot.state === "failed"
             ? "border-red-300 bg-red-50/50"
             : dragging
@@ -785,7 +792,7 @@ function DropZone({
         )}
         {slot.state === "processing" && <span className="text-sky-600">indexing…</span>}
         {slot.state === "ready" && (
-          <span className="inline-flex items-center gap-1 font-medium text-emerald-700"><Check aria-hidden className="h-3 w-3" /> {displayName(slot.filename)}</span>
+          <span className="inline-flex items-center gap-1 font-medium text-green-700"><Check aria-hidden className="h-3 w-3" /> {displayName(slot.filename)}</span>
         )}
         {slot.state === "failed" && (
           <span className="text-red-600">failed — {slot.error}</span>

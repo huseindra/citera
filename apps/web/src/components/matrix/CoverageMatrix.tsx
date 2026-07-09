@@ -136,8 +136,8 @@ function FindingRow({
           onMove(-1);
         }
       }}
-      className={`cursor-pointer border-b border-stone-100 align-top outline-none transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-stone-400 ${
-        isSelected ? "bg-white shadow-sm" : ""
+      className={`cursor-pointer border-b border-stone-100 align-top outline-none transition-colors hover:bg-white focus-visible:ring-2 focus-visible:ring-blue-600 ${
+        isSelected ? "bg-white shadow-sm ring-1 ring-inset ring-blue-200" : ""
       }`}
     >
       <td className="px-4 py-3">
@@ -157,7 +157,7 @@ function FindingRow({
           {finding.severity ? ` · ${finding.severity}` : ""}
         </div>
         {finding.status === "not_found" && finding.queries_executed && (
-          <div className="mt-1 text-xs text-violet-700">
+          <div className="mt-1 text-xs text-sky-700">
             Searched {finding.queries_executed.length} queries — no relevant
             evidence found.
           </div>

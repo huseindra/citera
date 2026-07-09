@@ -95,7 +95,7 @@ export function SemanticMap({
           <span className="h-2 w-2 rounded-full bg-stone-200" /> no evidence
         </span>
         <span className="inline-flex items-center gap-1">
-          <span className="h-2 w-2 rounded-full bg-emerald-500" /> satisfied
+          <span className="h-2 w-2 rounded-full bg-green-500" /> satisfied
         </span>
         <span className="inline-flex items-center gap-1">
           <span className="h-2 w-2 rounded-full bg-amber-600" /> partial

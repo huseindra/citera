@@ -34,7 +34,7 @@ export const STATUS_META: Record<FindingStatus, StatusMeta> = {
   not_found: {
     label: "Not found",
     Icon: SearchX,
-    chip: "bg-violet-50 text-violet-700 border-violet-200",
+    chip: "bg-sky-50 text-sky-700 border-sky-200",
     mark: "",
     order: 1,
   },
@@ -55,8 +55,8 @@ export const STATUS_META: Record<FindingStatus, StatusMeta> = {
   satisfied: {
     label: "Satisfied",
     Icon: Check,
-    chip: "bg-emerald-50 text-emerald-700 border-emerald-200",
-    mark: "bg-emerald-50 border-b-2 border-emerald-300",
+    chip: "bg-green-50 text-green-700 border-green-200",
+    mark: "bg-green-50 border-b-2 border-green-300",
     order: 4,
   },
 };

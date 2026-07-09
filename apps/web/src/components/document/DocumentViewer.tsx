@@ -64,7 +64,7 @@ export function DocumentViewer({
     <div className="relative h-full">
       <div ref={containerRef} className="h-full overflow-y-auto bg-white pr-4">
         {spanless && (
-          <div className="sticky top-0 z-10 border-b border-violet-200 bg-violet-50 px-6 py-2 text-xs text-violet-700">
+          <div className="sticky top-0 z-10 border-b border-sky-200 bg-sky-50 px-6 py-2 text-xs text-sky-700">
             {spanless}
           </div>
         )}

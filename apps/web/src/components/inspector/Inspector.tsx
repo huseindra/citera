@@ -17,6 +17,7 @@ import type {
   RuleSetOut,
 } from "../../api/types";
 import { STATUS_META } from "../../lib/status";
+import { EvidenceBlock } from "../EvidenceBlock";
 import { AuditReplay } from "../finding/AuditReplay";
 import { EvidencePathStrip } from "./EvidencePathStrip";
 import { StrengthMeter } from "./StrengthMeter";
@@ -71,6 +72,16 @@ export function Inspector({
     staleTime: Infinity,
   });
   const rule = ruleset.data?.rules.find((r) => r.id === finding.rule_id);
+  const groundedSection =
+    finding.span != null
+      ? (evidence.data?.results.find(
+          (r) =>
+            r.char_start !== null &&
+            r.char_end !== null &&
+            r.char_start <= finding.span!.char_start &&
+            r.char_end >= finding.span!.char_start,
+        )?.section_title ?? null)
+      : null;
 
   return (
     <aside className="flex h-full flex-col border-l border-stone-200 bg-white">
@@ -118,7 +129,11 @@ export function Inspector({
               evidence={evidence.data ?? null}
               onScrollToOffset={onScrollToOffset}
             />
-            <EvidenceCards finding={finding} onScrollToOffset={onScrollToOffset} />
+            <EvidenceCards
+              finding={finding}
+              section={groundedSection}
+              onScrollToOffset={onScrollToOffset}
+            />
             <StrengthMeter strength={finding.evidence_strength} />
           </div>
         </section>
@@ -174,7 +189,7 @@ export function Inspector({
           </p>
           <Link
             to={`/playground/reviews/${reviewId}/report`}
-            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-stone-700 underline-offset-2 hover:underline"
+            className="mt-2 inline-flex items-center gap-1.5 text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
           >
             <FileCheck2 aria-hidden className="h-3 w-3" /> Open sign-off report
           </Link>
@@ -243,15 +258,17 @@ function SuggestedRevision({ text }: { text: string }) {
 
 function EvidenceCards({
   finding,
+  section,
   onScrollToOffset,
 }: {
   finding: FindingOut;
+  section: string | null;
   onScrollToOffset: (offset: number) => void;
 }) {
   if (finding.status === "not_found") {
     return (
-      <div className="rounded-lg border border-violet-200 bg-violet-50 px-3 py-2 text-violet-800">
-        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide">
+      <div className="rounded-lg border border-sky-100 border-l-4 border-l-sky-500 bg-sky-50/50 px-3 py-2.5 text-stone-700">
+        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-500">
           Evidence of absence
         </div>
         Searched and found no relevant evidence:
@@ -265,33 +282,32 @@ function EvidenceCards({
   }
   if (!finding.verbatim_quote) return null;
 
-  const conflicting = finding.status === "conflicting";
   return (
     <div className="space-y-2">
-      <blockquote
-        onClick={() => finding.span && onScrollToOffset(finding.span.char_start)}
-        className={`cursor-pointer rounded-lg border-l-4 bg-stone-50 px-3 py-2 text-stone-700 ${
-          conflicting ? "border-red-300" : "border-stone-300"
-        }`}
-        title="Click to locate in the document"
-      >
-        <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
-          Document says{" "}
-          {finding.span && (
-            <span className="normal-case">
-              (chars {finding.span.char_start}–{finding.span.char_end}, verified)
-            </span>
-          )}
-        </div>
-        “{finding.verbatim_quote}”
-      </blockquote>
-      {conflicting && finding.protocol_reference && (
-        <blockquote className="rounded-lg border-l-4 border-sky-300 bg-sky-50/50 px-3 py-2 text-stone-700">
-          <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-sky-500">
-            Protocol says
-          </div>
-          {finding.protocol_reference}
-        </blockquote>
+      <EvidenceBlock
+        quote={finding.verbatim_quote}
+        source="Informed Consent Form"
+        page={finding.span?.page}
+        section={section}
+        chars={
+          finding.span
+            ? { start: finding.span.char_start, end: finding.span.char_end }
+            : null
+        }
+        verified={!!finding.span}
+        onClick={
+          finding.span
+            ? () => onScrollToOffset(finding.span!.char_start)
+            : undefined
+        }
+      />
+      {finding.status === "conflicting" && finding.protocol_reference && (
+        <EvidenceBlock
+          label="Protocol says"
+          accent="conflict"
+          quote={finding.protocol_reference}
+          source="Study Protocol"
+        />
       )}
     </div>
   );

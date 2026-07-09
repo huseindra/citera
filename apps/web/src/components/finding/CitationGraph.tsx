@@ -19,8 +19,8 @@ const KIND_STYLES: Record<NodeKind, string> = {
   regulation: "border-stone-400 bg-white",
   protocol: "border-sky-300 bg-sky-50",
   chunk: "border-stone-300 bg-stone-50",
-  queries: "border-violet-300 bg-violet-50",
-  no_match: "border-violet-300 bg-white border-dashed",
+  queries: "border-sky-300 bg-sky-50",
+  no_match: "border-sky-300 bg-white border-dashed",
   finding: "border-stone-800 bg-stone-900 text-white",
 };
 

@@ -3,6 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut } from "../api/types";
+import { EvidenceBlock } from "../components/EvidenceBlock";
 import { displayName, rulesetName } from "../lib/format";
 import { STATUS_META } from "../lib/status";
 import { SEVERITY_ORDER } from "../lib/status";
@@ -51,7 +52,7 @@ export function ReportPage() {
         </Link>
         <button
           onClick={() => window.print()}
-          className="rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white"
+          className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
         >
           Print / Save as PDF
         </button>
@@ -146,15 +147,19 @@ export function ReportPage() {
                 </div>
 
                 {f.verbatim_quote && (
-                  <blockquote className="mt-3 border-l-2 border-stone-300 pl-3 italic text-stone-700">
-                    “{f.verbatim_quote}”
-                    {f.span && (
-                      <span className="not-italic text-[10px] text-stone-400">
-                        {" "}
-                        [chars {f.span.char_start}–{f.span.char_end}, verified]
-                      </span>
-                    )}
-                  </blockquote>
+                  <div className="mt-3">
+                    <EvidenceBlock
+                      quote={f.verbatim_quote}
+                      source="Informed Consent Form"
+                      page={f.span?.page}
+                      chars={
+                        f.span
+                          ? { start: f.span.char_start, end: f.span.char_end }
+                          : null
+                      }
+                      verified={!!f.span}
+                    />
+                  </div>
                 )}
                 {f.status === "not_found" && f.queries_executed && (
                   <p className="mt-3 text-[12px] text-stone-600">

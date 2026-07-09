@@ -13,7 +13,7 @@ function HealthDot() {
     <span
       title={ok ? "Platform operational" : "Platform degraded"}
       className={`inline-block h-1.5 w-1.5 rounded-full ${
-        ok ? "bg-emerald-500" : "bg-amber-500"
+        ok ? "bg-green-500" : "bg-amber-500"
       }`}
     />
   );
@@ -27,7 +27,7 @@ const NAV = [
 
 export default function App() {
   return (
-    <div className="flex h-screen flex-col bg-stone-50/40 text-stone-900 antialiased">
+    <div className="flex h-screen flex-col bg-stone-50 text-stone-900 antialiased">
       <header className="flex h-11 shrink-0 items-center justify-between border-b border-stone-200/80 bg-white/80 px-4 backdrop-blur">
         <div className="flex items-center gap-6">
           <Link to="/" className="flex items-baseline gap-2">
@@ -45,8 +45,8 @@ export default function App() {
                 className={({ isActive }) =>
                   `rounded-md px-2.5 py-1 text-xs font-medium ${
                     isActive
-                      ? "bg-stone-100 text-stone-900"
-                      : "text-stone-500 hover:text-stone-800"
+                      ? "bg-blue-100/60 text-blue-700"
+                      : "text-stone-500 hover:bg-stone-100 hover:text-stone-800"
                   }`
                 }
               >

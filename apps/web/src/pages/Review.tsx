@@ -10,6 +10,7 @@ import { VerdictStrip } from "../components/matrix/VerdictStrip";
 import { DocumentViewer } from "../components/document/DocumentViewer";
 import { SemanticMap } from "../components/document/SemanticMap";
 import { Inspector } from "../components/inspector/Inspector";
+import { RulesetBadge } from "../components/RulesetBadge";
 import { displayName, rulesetName } from "../lib/format";
 
 export function ReviewPage() {
@@ -113,8 +114,11 @@ export function ReviewPage() {
           <h2 className="truncate text-sm font-semibold text-stone-800">
             {displayName(documentText.data.filename)}
           </h2>
-          <span className="hidden text-[11px] text-stone-400 sm:block">
-            {rulesetName(data.ruleset_id)}
+          <span className="hidden sm:block">
+            <RulesetBadge
+              rulesetId={data.ruleset_id}
+              label={rulesetName(data.ruleset_id)}
+            />
           </span>
           {data.evaluator_model && (
             <span
@@ -131,7 +135,7 @@ export function ReviewPage() {
             aria-pressed={showMap}
             className={`rounded-md border px-3 py-1 text-xs font-medium ${
               showMap
-                ? "border-stone-800 bg-stone-900 text-white"
+                ? "border-blue-600 bg-blue-600 text-white"
                 : "border-stone-300 text-stone-600 hover:bg-stone-50"
             }`}
           >
@@ -158,7 +162,7 @@ export function ReviewPage() {
               </button>
               <Link
                 to={`/playground/reviews/${data.id}/report`}
-                className="rounded-md border border-stone-300 px-3 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
+                className="rounded-lg border border-stone-300 px-3 py-1 text-xs font-medium text-stone-600 hover:bg-stone-50"
               >
                 Export report
               </Link>
@@ -169,7 +173,7 @@ export function ReviewPage() {
               running
                 ? "bg-sky-50 text-sky-700"
                 : data.status === "complete"
-                  ? "bg-emerald-50 text-emerald-700"
+                  ? "bg-green-50 text-green-700"
                   : "bg-red-50 text-red-700"
             }`}
           >

@@ -31,7 +31,7 @@ export const STEP_META: Record<string, StepMeta> = {
   retrieve: { label: "Hybrid retrieval", Icon: Search, tone: "text-sky-600" },
   "evaluate.prompt": { label: "Prompt sent", Icon: ArrowRight, tone: "text-stone-700" },
   "evaluate.response": { label: "Model response", Icon: ArrowLeft, tone: "text-stone-700" },
-  "grounding.passed": { label: "Quote grounded", Icon: Check, tone: "text-emerald-600" },
+  "grounding.passed": { label: "Quote grounded", Icon: Check, tone: "text-green-600" },
   "grounding.failed": { label: "Grounding rejected", Icon: X, tone: "text-red-600" },
   "finding.persisted": { label: "Finding persisted", Icon: Database, tone: "text-stone-800" },
 };
