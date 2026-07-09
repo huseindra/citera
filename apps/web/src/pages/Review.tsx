@@ -64,6 +64,18 @@ export function ReviewPage() {
     return () => clearTimeout(tick);
   }, [playbackIndex, totalFindings]);
 
+  // ALL hooks must live above the early returns (Rules of Hooks) — this
+  // useMemo previously sat below them and crashed every review page the
+  // moment data finished loading.
+  const findings = review.data?.findings;
+  const orderedFindings = useMemo(
+    () =>
+      [...(findings ?? [])].sort((a, b) =>
+        a.created_at.localeCompare(b.created_at),
+      ),
+    [findings],
+  );
+
   if (review.isError) {
     return (
       <div className="p-8 text-sm text-red-700">
@@ -86,12 +98,6 @@ export function ReviewPage() {
   const scrollTo = (offset: number) =>
     setScrollOffset((prev) => ({ offset, nonce: (prev?.nonce ?? 0) + 1 }));
 
-  // findings in evaluation order (persisted sequentially by the orchestrator)
-  const orderedFindings = useMemo(
-    () =>
-      [...data.findings].sort((a, b) => a.created_at.localeCompare(b.created_at)),
-    [data.findings],
-  );
   const visibleFindings = playing
     ? orderedFindings.slice(0, playbackIndex)
     : data.findings;
