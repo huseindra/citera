@@ -1,3 +1,11 @@
+import {
+  Check,
+  CircleAlert,
+  SearchX,
+  TriangleAlert,
+  X,
+  type LucideIcon,
+} from "lucide-react";
 import type { FindingStatus } from "../api/types";
 
 // Colors carry information, never decoration — and never color alone:
@@ -6,7 +14,7 @@ import type { FindingStatus } from "../api/types";
 // "contradicts the protocol" are different facts for a reviewer.
 export interface StatusMeta {
   label: string;
-  icon: string;
+  Icon: LucideIcon;
   /** matrix chip */
   chip: string;
   /** document highlight; empty = this status never has a span */
@@ -18,35 +26,35 @@ export interface StatusMeta {
 export const STATUS_META: Record<FindingStatus, StatusMeta> = {
   conflicting: {
     label: "Conflicting",
-    icon: "✗",
+    Icon: X,
     chip: "bg-red-50 text-red-700 border-red-200",
     mark: "bg-red-100 border-b-2 border-red-400",
     order: 0,
   },
   not_found: {
     label: "Not found",
-    icon: "∅",
+    Icon: SearchX,
     chip: "bg-violet-50 text-violet-700 border-violet-200",
     mark: "",
     order: 1,
   },
   partial: {
     label: "Partial",
-    icon: "△",
+    Icon: TriangleAlert,
     chip: "bg-amber-50 text-amber-700 border-amber-200",
     mark: "bg-amber-100 border-b-2 border-amber-400",
     order: 2,
   },
   evaluation_failed: {
     label: "Not evaluated",
-    icon: "!",
+    Icon: CircleAlert,
     chip: "bg-stone-100 text-stone-600 border-stone-300",
     mark: "",
     order: 3,
   },
   satisfied: {
     label: "Satisfied",
-    icon: "✓",
+    Icon: Check,
     chip: "bg-emerald-50 text-emerald-700 border-emerald-200",
     mark: "bg-emerald-50 border-b-2 border-emerald-300",
     order: 4,

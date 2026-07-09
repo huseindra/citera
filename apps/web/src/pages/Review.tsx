@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Allotment } from "allotment";
 import { useEffect, useMemo, useState } from "react";
+import { ArrowLeft, Play, Square } from "lucide-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut, RuleSetOut } from "../api/types";
@@ -107,7 +108,7 @@ export function ReviewPage() {
       <div className="flex items-center justify-between border-b border-stone-200 bg-white px-4 py-2">
         <div className="flex min-w-0 items-baseline gap-3">
           <Link to="/playground" className="text-stone-400 hover:text-stone-600" aria-label="Back">
-            ←
+            <ArrowLeft aria-hidden className="h-4 w-4" />
           </Link>
           <h2 className="truncate text-sm font-semibold text-stone-800">
             {displayName(documentText.data.filename)}
@@ -149,7 +150,11 @@ export function ReviewPage() {
                     : "border-stone-300 text-stone-600 hover:bg-stone-50"
                 }`}
               >
-                {playing ? "■ Stop" : "▶ Replay"}
+                {playing ? (
+                  <span className="inline-flex items-center gap-1"><Square aria-hidden className="h-3 w-3" /> Stop</span>
+                ) : (
+                  <span className="inline-flex items-center gap-1"><Play aria-hidden className="h-3 w-3" /> Replay</span>
+                )}
               </button>
               <Link
                 to={`/playground/reviews/${data.id}/report`}

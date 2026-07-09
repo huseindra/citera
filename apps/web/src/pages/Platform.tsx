@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { ReviewSummary, UsageSummary } from "../api/types";
@@ -123,7 +124,7 @@ export function PlatformHome() {
             to="/keys"
             className="mt-2 inline-block text-[11px] font-medium text-stone-600 underline"
           >
-            Manage keys →
+            <span className="inline-flex items-center gap-0.5">Manage keys <ArrowRight aria-hidden className="h-3 w-3" /></span>
           </Link>
         </div>
         <div className="col-span-2 rounded-xl border border-stone-200 bg-white p-4">
@@ -197,14 +198,14 @@ export function PlatformHome() {
                     rel="noreferrer"
                     className="flex items-center justify-between rounded-lg border border-stone-200 bg-white px-3 py-2 text-stone-700 hover:bg-stone-50"
                   >
-                    {label} <span aria-hidden>↗</span>
+                    {label} <ArrowUpRight aria-hidden className="h-3 w-3" />
                   </a>
                 ) : (
                   <Link
                     to={href as string}
                     className="flex items-center justify-between rounded-lg border border-stone-200 bg-white px-3 py-2 text-stone-700 hover:bg-stone-50"
                   >
-                    {label} <span aria-hidden>→</span>
+                    {label} <ArrowRight aria-hidden className="h-3 w-3" />
                   </Link>
                 )}
               </li>

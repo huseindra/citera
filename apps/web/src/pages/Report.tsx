@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ArrowLeft } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../api/client";
 import type { DocumentText, ReviewOut } from "../api/types";
@@ -42,8 +43,11 @@ export function ReportPage() {
     <div className="min-h-screen bg-white text-stone-900">
       {/* screen-only toolbar */}
       <div className="flex items-center justify-between border-b border-stone-200 px-8 py-3 print:hidden">
-        <Link to={`/playground/reviews/${data.id}`} className="text-sm text-stone-500 hover:text-stone-800">
-          ← Back to review
+        <Link
+          to={`/playground/reviews/${data.id}`}
+          className="inline-flex items-center gap-1 text-sm text-stone-500 hover:text-stone-800"
+        >
+          <ArrowLeft aria-hidden className="h-3.5 w-3.5" /> Back to review
         </Link>
         <button
           onClick={() => window.print()}
@@ -104,9 +108,13 @@ export function ReportPage() {
               ).map(([status, count]) => (
                 <span
                   key={status}
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_META[status as keyof typeof STATUS_META].chip}`}
+                  className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${STATUS_META[status as keyof typeof STATUS_META].chip}`}
                 >
-                  {STATUS_META[status as keyof typeof STATUS_META].icon}{" "}
+                  {(() => {
+                    const StatusIcon =
+                      STATUS_META[status as keyof typeof STATUS_META].Icon;
+                    return <StatusIcon aria-hidden className="h-3 w-3" />;
+                  })()}
                   {count} {STATUS_META[status as keyof typeof STATUS_META].label.toLowerCase()}
                 </span>
               ))}
@@ -126,9 +134,9 @@ export function ReportPage() {
                     {index + 1}. {f.rule_title ?? f.rule_id}
                   </h3>
                   <span
-                    className={`shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.chip}`}
+                    className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.chip}`}
                   >
-                    {meta.icon} {meta.label}
+                    <meta.Icon aria-hidden className="h-3 w-3" /> {meta.label}
                   </span>
                 </div>
                 <div className="mt-0.5 text-[11px] text-stone-400">

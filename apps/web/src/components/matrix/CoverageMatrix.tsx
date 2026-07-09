@@ -144,7 +144,7 @@ function FindingRow({
         <span
           className={`inline-flex items-center gap-1 whitespace-nowrap rounded-full border px-2 py-0.5 text-xs font-medium ${meta.chip}`}
         >
-          <span aria-hidden>{meta.icon}</span>
+          <meta.Icon aria-hidden className="h-3 w-3" />
           {meta.label}
         </span>
       </td>

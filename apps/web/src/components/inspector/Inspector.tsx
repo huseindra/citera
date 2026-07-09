@@ -4,6 +4,7 @@
 // sections, one click away.
 
 import { useQuery } from "@tanstack/react-query";
+import { Sparkles, X as XIcon } from "lucide-react";
 import { apiGet } from "../../api/client";
 import type { FindingEvidenceOut, FindingOut } from "../../api/types";
 import { STATUS_META } from "../../lib/status";
@@ -43,7 +44,7 @@ export function Inspector({
           <span
             className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium ${meta.chip}`}
           >
-            <span aria-hidden>{meta.icon}</span>
+            <meta.Icon aria-hidden className="h-3 w-3" />
             {meta.label}
           </span>
           <h3 className="mt-1.5 text-sm font-semibold leading-5 text-stone-800">
@@ -59,7 +60,7 @@ export function Inspector({
           aria-label="Close inspector"
           className="rounded-md px-2 py-1 text-stone-400 hover:bg-stone-100"
         >
-          ✕
+          <XIcon aria-hidden className="h-3.5 w-3.5" />
         </button>
       </div>
 
@@ -77,7 +78,7 @@ export function Inspector({
         {/* 2. Claude's reasoning, clearly attributed */}
         <section>
           <div className="mb-1 flex items-center gap-2 text-[10px] font-medium uppercase tracking-wide text-stone-400">
-            ✦ Claude's assessment
+            <Sparkles aria-hidden className="h-3 w-3" /> Claude's assessment
             {evaluatorModel && (
               <span className="rounded-full border border-stone-200 bg-stone-50 px-1.5 py-0.5 normal-case text-stone-500">
                 {evaluatorModel.split(" ")[0]}

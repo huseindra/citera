@@ -40,7 +40,7 @@ export function VerdictStrip({
                 key={f.id}
                 className={`inline-flex items-center gap-0.5 rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${meta.chip}`}
               >
-                <span aria-hidden>{meta.icon}</span>
+                <meta.Icon aria-hidden className="h-3 w-3" />
                 {f.rule_title ?? f.rule_id}
               </span>
             );

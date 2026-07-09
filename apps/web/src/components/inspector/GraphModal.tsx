@@ -1,3 +1,4 @@
+import { X as XIcon } from "lucide-react";
 import { Suspense, lazy, useEffect } from "react";
 import type { FindingEvidenceOut, FindingOut } from "../../api/types";
 
@@ -46,7 +47,7 @@ export function GraphModal({
             aria-label="Close"
             className="rounded-md px-2 py-1 text-stone-400 hover:bg-stone-100"
           >
-            ✕
+            <XIcon aria-hidden className="h-3.5 w-3.5" />
           </button>
         </div>
         <div className="flex min-h-0 flex-1 flex-col">

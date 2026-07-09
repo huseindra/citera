@@ -67,9 +67,9 @@ function TimelineStep({ record }: { record: AuditRecordOut }) {
     <li className="relative">
       <span
         aria-hidden
-        className={`absolute -left-[27px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-stone-200 bg-white text-[9px] ${meta.tone}`}
+        className={`absolute -left-[27px] top-1.5 flex h-4 w-4 items-center justify-center rounded-full border border-stone-200 bg-white ${meta.tone}`}
       >
-        {meta.icon}
+        <meta.Icon className="h-2.5 w-2.5" />
       </span>
       <details className="group rounded-md">
         <summary className="flex cursor-pointer items-baseline gap-2 rounded-md px-2 py-1 hover:bg-stone-50">

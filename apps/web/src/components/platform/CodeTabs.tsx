@@ -1,3 +1,4 @@
+import { Check } from "lucide-react";
 import { useState } from "react";
 
 export interface CodeTab {
@@ -37,7 +38,13 @@ export function CodeTabs({ tabs }: { tabs: CodeTab[] }) {
           onClick={copy}
           className="rounded-md px-2 py-1 text-[11px] text-stone-400 hover:text-stone-200"
         >
-          {copied ? "Copied ✓" : "Copy"}
+          {copied ? (
+            <span className="inline-flex items-center gap-1">
+              Copied <Check aria-hidden className="h-3 w-3" />
+            </span>
+          ) : (
+            "Copy"
+          )}
         </button>
       </div>
       <pre className="overflow-x-auto p-4 text-[12px] leading-5 text-stone-100">

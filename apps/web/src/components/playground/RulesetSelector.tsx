@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { Construction } from "lucide-react";
 import { useState } from "react";
 import { apiGet } from "../../api/client";
 import type { RulesetInfo } from "../../api/types";
@@ -70,8 +71,8 @@ export function RulesetSelector({ value, onChange }: Props) {
             className="w-full rounded-lg border border-dashed border-stone-200 bg-stone-50/60 p-2.5 text-left opacity-75 hover:opacity-100"
           >
             <div className="flex items-center justify-between">
-              <span className="text-xs font-medium text-stone-600">
-                🚧 {r.authority}
+              <span className="inline-flex items-center gap-1 text-xs font-medium text-stone-600">
+                <Construction aria-hidden className="h-3 w-3" /> {r.authority}
               </span>
               <span className="rounded-full bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
                 Preview
