@@ -57,7 +57,7 @@ export function buildCitationGraph(
   const findingNode: GraphNode = {
     id: "finding",
     kind: "finding",
-    label: `${STATUS_META[finding.status].icon} ${STATUS_META[finding.status].label}`,
+    label: STATUS_META[finding.status].label,
     sublabel: finding.evidence_strength
       ? `evidence: ${finding.evidence_strength}`
       : undefined,
@@ -75,7 +75,7 @@ export function buildCitationGraph(
     nodes.push({
       id: "no_match",
       kind: "no_match",
-      label: "∅ no relevant evidence",
+      label: "No relevant evidence",
       sublabel: "evidence of absence",
     });
     nodes.push(findingNode);

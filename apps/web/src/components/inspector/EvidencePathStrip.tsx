@@ -3,6 +3,7 @@
 // the finding changes — the "watch the reasoning path light up" moment.
 // Expand opens the full React Flow graph in a modal.
 
+import { ArrowRight, Maximize2 } from "lucide-react";
 import { useState } from "react";
 import type { FindingEvidenceOut, FindingOut } from "../../api/types";
 import { buildCitationGraph, type NodeKind } from "../../lib/citationGraph";
@@ -58,7 +59,7 @@ export function EvidencePathStrip({
           onClick={() => setExpanded(true)}
           className="rounded-md px-1.5 py-0.5 text-[10px] font-medium text-stone-400 hover:bg-stone-100 hover:text-stone-600"
         >
-          Expand graph ↗
+          <span className="inline-flex items-center gap-1">Expand graph <Maximize2 aria-hidden className="h-3 w-3" /></span>
         </button>
       </div>
       {/* key on finding id restarts the stagger animation per selection */}
@@ -89,7 +90,7 @@ export function EvidencePathStrip({
                 style={{ animationDelay: `${i * 140 + 70}ms` }}
                 className="path-node-in px-0.5 text-stone-300 opacity-0"
               >
-                →
+                <ArrowRight className="h-3 w-3" />
               </span>
             )}
           </li>

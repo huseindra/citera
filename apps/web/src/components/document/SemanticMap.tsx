@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { X as XIcon } from "lucide-react";
 import { apiGet } from "../../api/client";
 import type { FindingOut, SemanticMapOut } from "../../api/types";
 import { classifyPoint } from "../../lib/semanticMap";
@@ -54,7 +55,7 @@ export function SemanticMap({
           aria-label="Close semantic map"
           className="rounded-md px-2 py-1 text-stone-400 hover:bg-stone-100"
         >
-          ✕
+          <XIcon aria-hidden className="h-3.5 w-3.5" />
         </button>
       </div>
       <svg

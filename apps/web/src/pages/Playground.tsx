@@ -5,6 +5,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
+import { Check, FlaskConical, Zap } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet, apiPost, apiUploadWithProgress } from "../api/client";
 import type {
@@ -193,8 +194,8 @@ export function PlaygroundPage() {
       {/* Header */}
       <div className="flex items-center justify-between border-b border-stone-200 bg-white px-5 py-2.5">
         <div>
-          <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
-            ⚡ Clinical Regulatory Intelligence Playground
+          <div className="flex items-center gap-1 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+            <Zap aria-hidden className="h-3 w-3" /> Clinical Regulatory Intelligence Playground
           </div>
           <div className="text-[11px] text-stone-500">
             Run AI-powered regulatory review before integrating the SDK.
@@ -467,7 +468,7 @@ function TheaterRows({
           <span
             className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium ${meta.chip}`}
           >
-            <span aria-hidden>{meta.icon}</span>
+            <meta.Icon aria-hidden className="h-3 w-3" />
             {meta.label}
           </span>
         </Link>
@@ -590,9 +591,7 @@ function EmptyState({
 }) {
   return (
     <div className="mx-auto max-w-md pt-14 text-center">
-      <div className="text-3xl" aria-hidden>
-        ⚗️
-      </div>
+      <FlaskConical aria-hidden className="mx-auto h-8 w-8 text-stone-300" />
       <p className="mt-3 text-sm leading-6 text-stone-600">
         Upload a protocol and an informed consent form to experience the
         Clinical Regulatory Intelligence SDK — or run one of our sample
@@ -683,7 +682,7 @@ function DropZone({
         )}
         {slot.state === "processing" && <span className="text-sky-600">indexing…</span>}
         {slot.state === "ready" && (
-          <span className="font-medium text-emerald-700">✓ {displayName(slot.filename)}</span>
+          <span className="inline-flex items-center gap-1 font-medium text-emerald-700"><Check aria-hidden className="h-3 w-3" /> {displayName(slot.filename)}</span>
         )}
         {slot.state === "failed" && (
           <span className="text-red-600">failed — {slot.error}</span>

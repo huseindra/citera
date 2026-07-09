@@ -2,6 +2,8 @@
 // (retrieval rank + grounding method), deliberately NOT a percentage:
 // tiers are honest, percentages are false precision.
 
+import { Info } from "lucide-react";
+
 const TIERS: Record<string, { filled: number; label: string; tone: string }> = {
   strong: { filled: 3, label: "Strong evidence", tone: "bg-emerald-500" },
   moderate: { filled: 2, label: "Moderate evidence", tone: "bg-amber-500" },
@@ -32,10 +34,10 @@ export function StrengthMeter({ strength }: { strength: string | null }) {
       </div>
       <span className="text-[11px] text-stone-500">{tier.label}</span>
       <span
-        className="cursor-help text-[10px] text-stone-300"
+        className="cursor-help text-stone-300"
         title="Derived from retrieval rank and grounding method — never from model self-confidence."
       >
-        ⓘ
+        <Info aria-hidden className="h-3 w-3" />
       </span>
     </div>
   );
