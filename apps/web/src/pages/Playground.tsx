@@ -5,7 +5,7 @@
 
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
-import { Activity, Check, FlaskConical, HeartPulse, Stethoscope, Wind, Zap, type LucideIcon } from "lucide-react";
+import { Activity, Check, Dna, FlaskConical, HeartPulse, Microscope, Stethoscope, Wind, Zap, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet, apiPost, apiUploadWithProgress } from "../api/client";
 import type {
@@ -57,6 +57,13 @@ const SAMPLE_STUDIES: SampleStudy[] = [
     Icon: Wind,
   },
   {
+    base: "fda-onc",
+    ruleset: "fda-21cfr50",
+    title: "Oncology Phase III (ONC-450)",
+    detail: "Phase 3 · FDA 21 CFR 50.25 · English",
+    Icon: Dna,
+  },
+  {
     base: "hsa",
     ruleset: "hsa-hpct2016",
     title: "COPD Study (SGR-204)",
@@ -69,6 +76,13 @@ const SAMPLE_STUDIES: SampleStudy[] = [
     title: "Studi Asma (KBR-107)",
     detail: "Fase 2 · BPOM Indonesia · Bahasa Indonesia",
     Icon: Activity,
+  },
+  {
+    base: "bpom-tb",
+    ruleset: "bpom-cukb",
+    title: "Studi Tuberkulosis (TBC-311)",
+    detail: "Fase 2 · BPOM Indonesia · Bahasa Indonesia",
+    Icon: Microscope,
   },
   {
     base: "tga",
