@@ -9,6 +9,7 @@ import { Check, ChevronDown, Construction } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { apiGet } from "../../api/client";
 import type { RulesetInfo } from "../../api/types";
+import { rulesetTone } from "../RulesetBadge";
 
 interface Props {
   value: string;
@@ -59,11 +60,17 @@ export function RulesetSelector({ value, onChange }: Props) {
         aria-haspopup="listbox"
         aria-expanded={open}
         className={`mt-1.5 flex w-full items-center justify-between gap-2 rounded-lg border bg-white px-3 py-2 text-left transition-colors ${
-          open ? "border-stone-800 ring-1 ring-stone-800" : "border-stone-300 hover:border-stone-500"
+          open ? "border-blue-600 ring-1 ring-blue-600" : "border-stone-300 hover:border-stone-500"
         }`}
       >
         <span className="min-w-0">
           <span className="flex items-center gap-1.5">
+            {selected && (
+              <span
+                aria-hidden
+                className={`h-1.5 w-1.5 shrink-0 rounded-full ${rulesetTone(selected.id, selected.status).dot}`}
+              />
+            )}
             <span className="truncate text-xs font-semibold text-stone-800">
               {selected ? selected.authority : "Select a ruleset"}
             </span>
@@ -174,9 +181,10 @@ function Option({
     >
       <span className="min-w-0">
         <span className="flex items-center gap-1.5">
-          {isPreview && (
-            <Construction aria-hidden className="h-3 w-3 shrink-0 text-amber-600" />
-          )}
+          <span
+            aria-hidden
+            className={`h-1.5 w-1.5 shrink-0 rounded-full ${rulesetTone(ruleset.id, ruleset.status).dot}`}
+          />
           <span
             className={`truncate text-xs font-semibold ${isPreview ? "text-stone-600" : "text-stone-800"}`}
           >
@@ -193,7 +201,7 @@ function Option({
         </span>
       </span>
       {selected && (
-        <Check aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-stone-800" />
+        <Check aria-hidden className="mt-0.5 h-3.5 w-3.5 shrink-0 text-blue-600" />
       )}
     </button>
   );
@@ -202,7 +210,7 @@ function Option({
 function StatusBadge({ status }: { status: RulesetInfo["status"] }) {
   if (status === "available") {
     return (
-      <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9px] font-medium text-emerald-700">
+      <span className="shrink-0 rounded-full bg-green-50 px-1.5 py-0.5 text-[9px] font-medium text-green-700">
         Available
       </span>
     );

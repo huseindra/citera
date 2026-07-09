@@ -18,13 +18,13 @@ export function VerdictStrip({
       role="status"
       className={`border-b px-4 py-3 ${
         clean
-          ? "border-emerald-100 bg-emerald-50/70"
+          ? "border-green-100 bg-green-50/70"
           : "border-red-100 bg-red-50/60"
       }`}
     >
       <div
         className={`text-sm font-semibold ${
-          clean ? "text-emerald-800" : "text-red-800"
+          clean ? "text-green-800" : "text-red-800"
         }`}
       >
         {clean

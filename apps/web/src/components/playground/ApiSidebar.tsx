@@ -34,7 +34,7 @@ function CopyButton({ text }: { text: string }) {
     >
       {copied ? (
         <>
-          <Check aria-hidden className="h-3 w-3 text-emerald-600" /> copied
+          <Check aria-hidden className="h-3 w-3 text-green-600" /> copied
         </>
       ) : (
         <>
@@ -58,7 +58,7 @@ export function ApiSidebar({
     : "";
 
   return (
-    <aside className="flex h-full flex-col gap-4 overflow-y-auto border-l border-stone-200 bg-stone-50/60 p-4">
+    <aside className="flex h-full flex-col gap-4 overflow-y-auto border-l border-stone-200 bg-sidebar p-4">
       <div>
         <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
           SDK Console
@@ -92,7 +92,7 @@ export function ApiSidebar({
                 </span>
                 <CopyButton text={JSON.stringify(last.response, null, 2)} />
               </div>
-              <pre className="max-h-56 overflow-auto rounded-lg bg-stone-900 p-3 text-[11px] leading-4 text-emerald-100/90">
+              <pre className="max-h-56 overflow-auto rounded-lg bg-stone-900 p-3 text-[11px] leading-4 text-green-100/90">
                 {pretty(last.response)}
               </pre>
             </div>

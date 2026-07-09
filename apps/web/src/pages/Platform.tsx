@@ -50,7 +50,7 @@ export function PlatformHome() {
         <div className="mt-5 flex gap-2">
           <Link
             to="/keys"
-            className="rounded-lg bg-stone-900 px-4 py-2 text-xs font-semibold text-white hover:bg-stone-800"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-xs font-semibold text-white hover:bg-blue-700"
           >
             Get API key
           </Link>
@@ -122,7 +122,7 @@ export function PlatformHome() {
           </div>
           <Link
             to="/keys"
-            className="mt-2 inline-block text-[11px] font-medium text-stone-600 underline"
+            className="mt-2 inline-block text-[11px] font-medium text-blue-600 underline-offset-2 hover:text-blue-700 hover:underline"
           >
             <span className="inline-flex items-center gap-0.5">Manage keys <ArrowRight aria-hidden className="h-3 w-3" /></span>
           </Link>

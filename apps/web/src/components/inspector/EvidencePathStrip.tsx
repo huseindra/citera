@@ -13,8 +13,8 @@ const NODE_STYLE: Record<NodeKind, string> = {
   regulation: "border-stone-400 bg-white text-stone-700",
   protocol: "border-sky-300 bg-sky-50 text-sky-800",
   chunk: "border-stone-300 bg-stone-50 text-stone-600",
-  queries: "border-violet-300 bg-violet-50 text-violet-800",
-  no_match: "border-violet-300 border-dashed bg-white text-violet-700",
+  queries: "border-sky-300 bg-sky-50 text-sky-800",
+  no_match: "border-sky-300 border-dashed bg-white text-sky-700",
   finding: "border-stone-800 bg-stone-900 text-white",
 };
 

@@ -5,7 +5,7 @@
 import { Info } from "lucide-react";
 
 const TIERS: Record<string, { filled: number; label: string; tone: string }> = {
-  strong: { filled: 3, label: "Strong evidence", tone: "bg-emerald-500" },
+  strong: { filled: 3, label: "Strong evidence", tone: "bg-green-500" },
   moderate: { filled: 2, label: "Moderate evidence", tone: "bg-amber-500" },
   weak: { filled: 1, label: "Weak evidence", tone: "bg-red-400" },
 };

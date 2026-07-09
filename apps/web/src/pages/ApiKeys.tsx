@@ -114,7 +114,7 @@ export function ApiKeysPage() {
             </code>
             <button
               onClick={() => navigator.clipboard.writeText(revealed.key)}
-              className="rounded-md bg-stone-900 px-3 py-2 text-xs font-medium text-white"
+              className="rounded-lg bg-blue-600 px-3 py-2 text-xs font-medium text-white hover:bg-blue-700"
             >
               Copy
             </button>
@@ -135,7 +135,7 @@ export function ApiKeysPage() {
           <button
             onClick={() => createKey.mutate()}
             disabled={createKey.isPending}
-            className="rounded-lg bg-stone-900 px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-40"
+            className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-40"
           >
             + Create key
           </button>

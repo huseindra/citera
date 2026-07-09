@@ -1,4 +1,43 @@
+@import "@fontsource-variable/geist";
 @import "tailwindcss";
+
+/* ── Citera Design System v1 ─────────────────────────────────────────
+   Warm neutrals (stone), blue reserved for actions, evidence palette
+   as the visual identity. Every color communicates meaning — never
+   decoration. Exact spec hexes pinned over Tailwind's oklch defaults. */
+@theme {
+  --font-sans: "Geist Variable", "Inter", ui-sans-serif, system-ui, sans-serif;
+
+  /* neutrals */
+  --color-stone-50: #fafaf9; /* background */
+  --color-stone-100: #f5f5f4; /* hover */
+  --color-stone-200: #e7e5e4; /* border / selected */
+  --color-stone-400: #a8a29e; /* muted text */
+  --color-stone-500: #78716c; /* secondary text */
+  --color-stone-900: #1c1917; /* primary text */
+  --color-sidebar: #fcfcfb;
+
+  /* brand — actions only, never page backgrounds */
+  --color-blue-600: #2563eb;
+  --color-blue-700: #1d4ed8;
+  --color-blue-100: #dbeafe;
+
+  /* evidence palette */
+  --color-green-600: #16a34a; /* verified */
+  --color-green-50: #f0fdf4;
+  --color-amber-600: #ca8a04; /* weak evidence */
+  --color-amber-50: #fefce8;
+  --color-red-600: #dc2626; /* missing / conflicting */
+  --color-red-50: #fef2f2;
+  --color-sky-600: #0284c7; /* information */
+  --color-sky-50: #f0f9ff;
+}
+
+/* focused inputs carry the brand blue — one of its five permitted uses */
+:where(input, select, textarea):focus-visible {
+  outline: 2px solid var(--color-blue-600);
+  outline-offset: 1px;
+}
 
 /* Subtle, fast, explanatory motion (design-principles.md → Motion):
    pulse once when an evidence span is selected, then settle. */
