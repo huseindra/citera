@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="220" height="64">
+<rect x="10" y="8" width="12" height="48" rx="2" fill="#1C1917"/>
+<rect x="30" y="16" width="8" height="32" rx="2" fill="#2563EB"/>
+<text x="52" y="40" font-family="Arial, Helvetica, sans-serif" font-size="28" fill="#1C1917">Citera</text>
+</svg>

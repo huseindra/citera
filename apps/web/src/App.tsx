@@ -32,8 +32,8 @@ export default function App() {
     <div className="flex h-screen flex-col bg-stone-50 text-stone-900 antialiased">
       <header className="flex h-11 shrink-0 items-center justify-between border-b border-stone-200/80 bg-white/80 px-4 backdrop-blur">
         <div className="flex items-center gap-6">
-          <Link to="/" className="flex items-baseline gap-2">
-            <span className="text-sm font-bold tracking-tight">Citera</span>
+          <Link to="/" className="flex items-center gap-2">
+            <img src="/images/logo.svg" alt="Citera" className="h-6 w-auto" />
             <span className="hidden text-[10px] font-medium uppercase tracking-widest text-stone-400 sm:block">
               Clinical Regulatory Intelligence
             </span>
