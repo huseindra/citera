@@ -116,8 +116,9 @@ export function buildCitationGraph(
     nodes.push({
       id,
       kind: "chunk",
-      label: chunk.section_title ?? `chunk #${chunk.rank}`,
-      sublabel: `rank ${chunk.rank} · fused ${chunk.fused_score.toFixed(4)}`,
+      label: chunk.section_title ?? `Evidence passage ${chunk.rank}`,
+      // reviewer language only — retrieval scores stay in the audit log
+      sublabel: isGrounded ? "grounded quote" : "supporting passage",
       offset: chunk.char_start ?? undefined,
       emphasis: isGrounded,
     });

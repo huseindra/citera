@@ -1,7 +1,12 @@
+// The dossier's audit trail shows WHAT happened and WHEN — step, model,
+// timestamp — replayed from the append-only log. Payload internals
+// (prompts, retrieval scores, embeddings) are never rendered here; they
+// remain in the audit log itself, retrievable through the API.
+
 import { useQuery } from "@tanstack/react-query";
 import { apiGet } from "../../api/client";
 import type { AuditRecordOut, FindingAuditOut } from "../../api/types";
-import { extractPromptBlocks, recordedModel, stepMeta } from "../../lib/audit";
+import { recordedModel, stepMeta } from "../../lib/audit";
 
 interface Props {
   reviewId: string;
@@ -60,8 +65,6 @@ export function AuditReplay({ reviewId, findingId }: Props) {
 
 function TimelineStep({ record }: { record: AuditRecordOut }) {
   const meta = stepMeta(record.step);
-  const promptBlocks =
-    record.step === "evaluate.prompt" ? extractPromptBlocks(record.payload) : [];
 
   return (
     <li className="relative">
@@ -71,42 +74,15 @@ function TimelineStep({ record }: { record: AuditRecordOut }) {
       >
         <meta.Icon className="h-2.5 w-2.5" />
       </span>
-      <details className="group rounded-md">
-        <summary className="flex cursor-pointer items-baseline gap-2 rounded-md px-2 py-1 hover:bg-stone-50">
-          <span className={`text-xs font-medium ${meta.tone}`}>{meta.label}</span>
-          <span className="font-mono text-[10px] text-stone-400">
-            {record.step}
-          </span>
-          <span className="ml-auto text-[10px] text-stone-400">
-            {new Date(record.created_at).toLocaleTimeString()}
-          </span>
-        </summary>
-        <div className="mb-2 ml-2 mt-1 space-y-2">
-          {promptBlocks.length > 0 && (
-            <div className="space-y-2">
-              {promptBlocks.map((block, i) => (
-                <div key={i}>
-                  <div className="mb-0.5 text-[10px] uppercase tracking-wide text-stone-400">
-                    {block.role}
-                    {block.cached && " · cache breakpoint"}
-                  </div>
-                  <pre className="max-h-48 overflow-auto rounded-md bg-stone-900 p-3 text-[11px] leading-4 text-stone-100 whitespace-pre-wrap">
-                    {block.text}
-                  </pre>
-                </div>
-              ))}
-            </div>
-          )}
-          <details className="rounded-md border border-stone-100">
-            <summary className="cursor-pointer px-2 py-1 text-[10px] text-stone-400">
-              raw payload
-            </summary>
-            <pre className="max-h-48 overflow-auto p-2 text-[10px] leading-4 text-stone-600 whitespace-pre-wrap">
-              {JSON.stringify(record.payload, null, 2)}
-            </pre>
-          </details>
-        </div>
-      </details>
+      <div className="flex items-baseline gap-2 rounded-md px-2 py-1">
+        <span className={`text-xs font-medium ${meta.tone}`}>{meta.label}</span>
+        <span className="font-mono text-[10px] text-stone-400">
+          {record.step}
+        </span>
+        <span className="ml-auto text-[10px] text-stone-400">
+          {new Date(record.created_at).toLocaleTimeString()}
+        </span>
+      </div>
     </li>
   );
 }

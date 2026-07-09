@@ -40,49 +40,6 @@ export function stepMeta(step: string): StepMeta {
   return STEP_META[step] ?? { label: step, Icon: Circle, tone: "text-stone-500" };
 }
 
-interface PromptBlock {
-  role: string;
-  text: string;
-  cached: boolean;
-}
-
-/** Flatten the recorded prompt payload into displayable blocks. Text is
- *  passed through untouched — what renders is what was sent. */
-export function extractPromptBlocks(
-  payload: Record<string, unknown>,
-): PromptBlock[] {
-  const prompt = payload["prompt"] as
-    | {
-        system?: { text?: string; cache_control?: unknown }[];
-        messages?: {
-          role?: string;
-          content?: { text?: string; cache_control?: unknown }[];
-        }[];
-      }
-    | undefined
-    | null;
-  if (!prompt) return [];
-
-  const blocks: PromptBlock[] = [];
-  for (const b of prompt.system ?? []) {
-    if (typeof b.text === "string") {
-      blocks.push({ role: "system", text: b.text, cached: !!b.cache_control });
-    }
-  }
-  for (const message of prompt.messages ?? []) {
-    for (const b of message.content ?? []) {
-      if (typeof b.text === "string") {
-        blocks.push({
-          role: message.role ?? "user",
-          text: b.text,
-          cached: !!b.cache_control,
-        });
-      }
-    }
-  }
-  return blocks;
-}
-
 /** The model stamp for the replay header, from the recorded evaluation. */
 export function recordedModel(records: AuditRecordOut[]): string | null {
   const evaluation = records.find((r) => r.step === "evaluate.prompt");
