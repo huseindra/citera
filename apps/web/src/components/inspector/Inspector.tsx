@@ -6,7 +6,8 @@
 // the machinery.
 
 import { useQuery } from "@tanstack/react-query";
-import { FileCheck2, Sparkles, X as XIcon } from "lucide-react";
+import { Check, Copy, FileCheck2, Sparkles, X as XIcon } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { apiGet } from "../../api/client";
 import type {
@@ -159,6 +160,9 @@ export function Inspector({
           <p className="text-xs leading-5 text-stone-700">
             {RECOMMENDED_ACTION[finding.status]}
           </p>
+          {finding.suggested_revision && (
+            <SuggestedRevision text={finding.suggested_revision} />
+          )}
         </section>
 
         {/* 7. Reviewer decision — the human signs off, on the report */}
@@ -194,6 +198,45 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   return (
     <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-stone-400">
       {children}
+    </div>
+  );
+}
+
+/** AI-drafted replacement text. Generated, not quoted — labeled as a
+ *  draft so it is never mistaken for verified document evidence. */
+function SuggestedRevision({ text }: { text: string }) {
+  const [copied, setCopied] = useState(false);
+  return (
+    <div className="mt-2 rounded-lg border border-sky-200 bg-sky-50/50 px-3 py-2">
+      <div className="flex items-center justify-between">
+        <span className="inline-flex items-center gap-1 text-[10px] font-medium uppercase tracking-wide text-sky-600">
+          <Sparkles aria-hidden className="h-3 w-3" /> Suggested revision — AI
+          draft
+        </span>
+        <button
+          onClick={() => {
+            navigator.clipboard.writeText(text);
+            setCopied(true);
+            setTimeout(() => setCopied(false), 1600);
+          }}
+          className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[10px] text-sky-600 hover:bg-sky-100"
+        >
+          {copied ? (
+            <>
+              <Check aria-hidden className="h-3 w-3" /> copied
+            </>
+          ) : (
+            <>
+              <Copy aria-hidden className="h-3 w-3" /> copy
+            </>
+          )}
+        </button>
+      </div>
+      <p className="mt-1 text-xs leading-5 text-stone-700">{text}</p>
+      <p className="mt-1.5 text-[10px] leading-4 text-stone-400">
+        Drafted by the review engine from the protocol — verify before use;
+        the reviewer owns the final wording.
+      </p>
     </div>
   );
 }

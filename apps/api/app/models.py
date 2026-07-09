@@ -70,6 +70,10 @@ class Review(Base):
     ruleset_id: Mapped[str]
     ruleset_version: Mapped[str]
     status: Mapped[str] = mapped_column(default="pending")  # pending|running|complete|failed
+    # review option: draft AI revisions for non-satisfied findings
+    generate_suggested_revision: Mapped[bool] = mapped_column(
+        default=True, server_default="true"
+    )
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
@@ -92,6 +96,8 @@ class Finding(Base):
     evidence_strength: Mapped[str | None]
     protocol_reference: Mapped[str | None] = mapped_column(Text)
     queries_executed: Mapped[list | None] = mapped_column(JSONB, nullable=True)
+    # AI-drafted replacement text — generated, never grounded, shown as draft
+    suggested_revision: Mapped[str | None] = mapped_column(Text)
     # links the finding to the audit record of the retrieval that fed it
     retrieval_audit_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True

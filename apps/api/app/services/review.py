@@ -60,6 +60,7 @@ async def run_review(review_id: UUID) -> None:
         document_id = document.id
         canonical_text = document.canonical_text
         protocol_text = protocol.canonical_text if protocol else None
+        include_revision = review.generate_suggested_revision
 
         # Pre-warm the (cached) query embeddings in ONE batched call —
         # per-rule retrieval then hits the cache instead of a rate-limited
@@ -88,6 +89,7 @@ async def run_review(review_id: UUID) -> None:
                         protocol_text,
                         rule,
                         evaluator,
+                        include_revision,
                     )
                 except Exception as exc:
                     logger.exception(
@@ -143,12 +145,18 @@ async def _evaluate_rule(
     protocol_text: str | None,
     rule: Rule,
     evaluator: Evaluator,
+    include_revision: bool,
 ) -> Finding:
     retrieval = await hybrid_search(
         session, document_id, rule.retrieval_queries, review_id=review_id
     )
 
-    outcome = await evaluator.evaluate(rule, retrieval.results, protocol_text)
+    outcome = await evaluator.evaluate(
+        rule,
+        retrieval.results,
+        protocol_text,
+        include_suggested_revision=include_revision,
+    )
     session.add(
         AuditRecord(
             step=AuditStep.EVALUATE_PROMPT,
@@ -183,6 +191,7 @@ async def _evaluate_rule(
                 status=FindingStatus.NOT_FOUND,
                 reasoning=outcome.reasoning,
                 queries_executed=retrieval.queries_executed,
+                suggested_revision=outcome.suggested_revision,
             ),
             retrieval_audit_id=retrieval.audit_record_id,
         )
@@ -244,6 +253,11 @@ async def _evaluate_rule(
             ),
             evidence_strength=derive_strength(source_rank, grounding.method),
             protocol_reference=outcome.protocol_reference,
+            suggested_revision=(
+                outcome.suggested_revision
+                if outcome.status != FindingStatus.SATISFIED
+                else None
+            ),
         ),
         retrieval_audit_id=retrieval.audit_record_id,
     )
@@ -282,6 +296,7 @@ def _to_model(
         ),
         protocol_reference=finding.protocol_reference,
         queries_executed=finding.queries_executed or None,
+        suggested_revision=finding.suggested_revision,
         retrieval_audit_id=retrieval_audit_id,
     )
 

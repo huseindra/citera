@@ -20,35 +20,41 @@ from citera_pipeline.findings.prompt import build_prompt
 
 _NULLABLE_STRING = {"anyOf": [{"type": "string"}, {"type": "null"}]}
 
-FINDING_TOOL: dict[str, Any] = {
-    "name": "report_finding",
-    "description": (
-        "Report the compliance finding for the requirement under review. "
-        "verbatim_quote must be copied exactly from one evidence chunk."
-    ),
-    "strict": True,
-    "input_schema": {
-        "type": "object",
-        "properties": {
-            "status": {
-                "type": "string",
-                "enum": ["satisfied", "partial", "not_found", "conflicting"],
-            },
-            "reasoning": {"type": "string"},
-            "verbatim_quote": _NULLABLE_STRING,
-            "source_chunk_id": _NULLABLE_STRING,
-            "protocol_reference": _NULLABLE_STRING,
+
+def finding_tool(include_suggested_revision: bool = False) -> dict[str, Any]:
+    """The forced tool schema. strict=True lists every property as
+    required, so suggested_revision only exists when the review asked
+    for it — the model cannot emit (and we never bill) an unused draft."""
+    properties: dict[str, Any] = {
+        "status": {
+            "type": "string",
+            "enum": ["satisfied", "partial", "not_found", "conflicting"],
         },
-        "required": [
-            "status",
-            "reasoning",
-            "verbatim_quote",
-            "source_chunk_id",
-            "protocol_reference",
-        ],
-        "additionalProperties": False,
-    },
-}
+        "reasoning": {"type": "string"},
+        "verbatim_quote": _NULLABLE_STRING,
+        "source_chunk_id": _NULLABLE_STRING,
+        "protocol_reference": _NULLABLE_STRING,
+    }
+    if include_suggested_revision:
+        properties["suggested_revision"] = _NULLABLE_STRING
+    return {
+        "name": "report_finding",
+        "description": (
+            "Report the compliance finding for the requirement under review. "
+            "verbatim_quote must be copied exactly from one evidence chunk."
+        ),
+        "strict": True,
+        "input_schema": {
+            "type": "object",
+            "properties": properties,
+            "required": list(properties),
+            "additionalProperties": False,
+        },
+    }
+
+
+# retained name for callers/tests that want the default schema
+FINDING_TOOL: dict[str, Any] = finding_tool()
 
 _MAX_ATTEMPTS = 2  # one retry on malformed output; API errors retry in the SDK
 
@@ -63,9 +69,14 @@ class ClaudeEvaluator:
         rule: Rule,
         evidence: list[RetrievedChunk],
         protocol_text: str | None,
+        *,
+        include_suggested_revision: bool = False,
     ) -> EvaluationOutcome:
-        system, messages = build_prompt(rule, evidence, protocol_text)
+        system, messages = build_prompt(
+            rule, evidence, protocol_text, include_suggested_revision
+        )
         prompt_payload = {"system": system, "messages": messages}
+        tool = finding_tool(include_suggested_revision)
 
         last_problem = "no attempts made"
         for _ in range(_MAX_ATTEMPTS):
@@ -76,7 +87,7 @@ class ClaudeEvaluator:
                     thinking={"type": "disabled"},
                     system=system,
                     messages=messages,
-                    tools=[FINDING_TOOL],
+                    tools=[tool],
                     tool_choice={"type": "tool", "name": "report_finding"},
                 )
             except APIStatusError as exc:
@@ -90,12 +101,16 @@ class ClaudeEvaluator:
             if tool_use is not None:
                 data = tool_use.input
                 if isinstance(data, dict) and data.get("status") in CLAIMABLE_STATUSES:
+                    revision = data.get("suggested_revision")
+                    if data["status"] == "satisfied":
+                        revision = None  # drafts only where action is needed
                     return EvaluationOutcome(
                         status=data["status"],
                         reasoning=data.get("reasoning") or "",
                         verbatim_quote=data.get("verbatim_quote"),
                         source_chunk_id=data.get("source_chunk_id"),
                         protocol_reference=data.get("protocol_reference"),
+                        suggested_revision=revision,
                         model=f"{self.model} ({response.model})",
                         prompt_payload=prompt_payload,
                         raw_response=response.model_dump(mode="json"),

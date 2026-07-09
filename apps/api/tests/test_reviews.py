@@ -105,6 +105,32 @@ async def test_icf_b_reproduces_the_answer_key(client):
     others = set(by_rule) - set(ANSWER_KEY)
     assert all(by_rule[r]["status"] == "satisfied" for r in others)
 
+    # suggested revisions (default option): drafted exactly where action
+    # is needed, never on satisfied findings
+    assert review["generate_suggested_revision"] is True
+    for rule_id in ANSWER_KEY:
+        assert by_rule[rule_id]["suggested_revision"], rule_id
+    assert all(by_rule[r]["suggested_revision"] is None for r in others)
+
+
+async def test_suggested_revision_can_be_disabled(client):
+    protocol_id = await _ingest(client, "protocol.md", "protocol")
+    icf_b_id = await _ingest(client, "icf-b.md", "icf")
+
+    resp = await client.post(
+        "/reviews",
+        json={
+            "document_id": icf_b_id,
+            "protocol_document_id": protocol_id,
+            "generate_suggested_revision": False,
+        },
+    )
+    assert resp.status_code == 202, resp.text
+    review = (await client.get(f"/reviews/{resp.json()['id']}")).json()
+    assert review["status"] == "complete"
+    assert review["generate_suggested_revision"] is False
+    assert all(f["suggested_revision"] is None for f in review["findings"])
+
 
 async def test_finding_spans_roundtrip_against_canonical_text(client):
     from app.db import session_factory
@@ -285,7 +311,7 @@ async def test_review_never_sticks_in_running_when_evaluator_explodes(
     class ExplodingEvaluator:
         model = "exploding"
 
-        async def evaluate(self, rule, evidence, protocol_text):
+        async def evaluate(self, rule, evidence, protocol_text, **kwargs):
             raise RuntimeError("boom")
 
     from app.services import review as review_service

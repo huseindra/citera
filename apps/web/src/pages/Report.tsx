@@ -171,6 +171,14 @@ export function ReportPage() {
                   </p>
                 )}
                 <p className="mt-2 text-stone-700">{f.reasoning}</p>
+                {f.suggested_revision && (
+                  <div className="mt-3 rounded-md border border-stone-200 bg-stone-50 px-3 py-2 text-[12px] leading-5 text-stone-700">
+                    <span className="font-medium">
+                      Suggested revision (AI draft — verify before use):
+                    </span>{" "}
+                    {f.suggested_revision}
+                  </div>
+                )}
                 <div className="mt-2 font-mono text-[9px] text-stone-400">
                   finding {f.id}
                 </div>
