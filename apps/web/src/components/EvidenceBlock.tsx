@@ -6,6 +6,7 @@
 // simply shows no verification claim.
 
 import { BadgeCheck } from "lucide-react";
+import { stripMarkdownMarkers } from "../lib/format";
 
 interface Props {
   label?: string;
@@ -48,7 +49,7 @@ export function EvidenceBlock({
         {label}
       </figcaption>
       <blockquote className="mt-1 text-sm leading-6 text-stone-900">
-        “{quote}”
+        “{stripMarkdownMarkers(quote)}”
       </blockquote>
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-stone-500">
         <span className="font-medium text-stone-500">{source}</span>

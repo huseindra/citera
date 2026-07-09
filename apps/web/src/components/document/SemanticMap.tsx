@@ -3,6 +3,7 @@ import { X as XIcon } from "lucide-react";
 import { apiGet } from "../../api/client";
 import type { FindingOut, SemanticMapOut } from "../../api/types";
 import { classifyPoint } from "../../lib/semanticMap";
+import { stripMarkdownMarkers } from "../../lib/format";
 
 // SVG fill per status — parallel to STATUS_META colors (tailwind classes
 // don't reach SVG fills without config, so explicit hex here).
@@ -84,7 +85,7 @@ export function SemanticMap({
               onClick={() => onScrollToOffset(p.char_start)}
             >
               <title>
-                {(p.section_title ?? "…") + "\n" + p.preview + "…"}
+                {(p.section_title ?? "…") + "\n" + stripMarkdownMarkers(p.preview) + "…"}
               </title>
             </circle>
           );

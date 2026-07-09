@@ -16,7 +16,7 @@ const LINE_STYLES: Record<DocLine["kind"], string> = {
   h1: "mt-8 mb-2 font-sans text-xl font-semibold tracking-tight text-stone-900",
   h2: "mt-7 mb-1.5 font-sans text-base font-semibold tracking-tight text-stone-900",
   h3: "mt-5 mb-1 font-sans text-sm font-semibold text-stone-800",
-  hr: "my-5 text-stone-200 select-none leading-none",
+  hr: "my-5 border-t border-stone-200 leading-none",
   bullet: "pl-5 leading-7",
   blank: "h-3",
   text: "leading-7",
@@ -97,19 +97,22 @@ function renderLine(
 ) {
   if (line.kind === "blank") return null;
   let markerBudget = line.markerLen;
+  // emphasis state survives across highlight-segment boundaries in a line
+  const emphasis = { bold: false, italic: false };
 
   return line.segments.map((seg, i) => {
-    // dim leading structural markers ("## ") without removing characters
-    let dimmed: string | null = null;
+    // hide leading structural markers ("## ") without removing characters:
+    // they stay in the DOM so canonical offsets are preserved
+    let marker: string | null = null;
     let rest = seg.text;
     if (markerBudget > 0) {
-      dimmed = seg.text.slice(0, markerBudget);
+      marker = seg.text.slice(0, markerBudget);
       rest = seg.text.slice(markerBudget);
-      markerBudget -= dimmed.length;
+      markerBudget -= marker.length;
     }
     if (line.kind === "hr") {
       return (
-        <span key={i} className="text-stone-200">
+        <span key={i} className="hidden">
           {seg.text}
         </span>
       );
@@ -117,8 +120,8 @@ function renderLine(
 
     const content = (
       <>
-        {dimmed && <span className="opacity-25">{dimmed}</span>}
-        {rest}
+        {marker && <span className="hidden">{marker}</span>}
+        {renderInline(rest, emphasis)}
       </>
     );
 
@@ -138,6 +141,46 @@ function renderLine(
       >
         {content}
       </mark>
+    );
+  });
+}
+
+/** Inline markdown emphasis, offset-preserving: `**`/`*` tokens stay in
+ *  the DOM (hidden), the text between them is styled. The reader sees a
+ *  clean document; the evidence-span contract sees every character. */
+function renderInline(
+  text: string,
+  emphasis: { bold: boolean; italic: boolean },
+) {
+  const parts = text.split(/(\*\*|\*)/);
+  return parts.map((part, j) => {
+    if (part === "**") {
+      emphasis.bold = !emphasis.bold;
+      return (
+        <span key={j} className="hidden">
+          {part}
+        </span>
+      );
+    }
+    if (part === "*") {
+      emphasis.italic = !emphasis.italic;
+      return (
+        <span key={j} className="hidden">
+          {part}
+        </span>
+      );
+    }
+    if (!part) return null;
+    if (!emphasis.bold && !emphasis.italic) return <span key={j}>{part}</span>;
+    return (
+      <span
+        key={j}
+        className={`${emphasis.bold ? "font-semibold" : ""} ${
+          emphasis.italic ? "italic" : ""
+        }`.trim()}
+      >
+        {part}
+      </span>
     );
   });
 }

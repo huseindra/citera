@@ -23,3 +23,10 @@ export const RULESET_NAMES: Record<string, string> = {
 export function rulesetName(id: string): string {
   return RULESET_NAMES[id] ?? id;
 }
+
+/** Display-only cleanup of markdown emphasis/heading markers in quoted
+ *  text. Never applied to stored data — the verbatim quote and its span
+ *  remain exact; only the rendering is cleaned for the reader. */
+export function stripMarkdownMarkers(text: string): string {
+  return text.replace(/\*\*/g, "").replace(/^#{1,3} /gm, "");
+}
