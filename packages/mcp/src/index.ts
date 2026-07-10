@@ -1,19 +1,28 @@
 #!/usr/bin/env node
-// Citera MCP server — the third interface to the same Review Engine.
+// Citera MCP server — Claude proposes, Citera verifies.
 //
-//   Claude → MCP tool → @citera/sdk → REST → Review Engine
+//   Claude → MCP tool → @citera/sdk → REST → Verification Engine
 //
-// This layer only adapts domain tools to MCP; every finding it returns
-// comes verbatim from the engine through the SDK. It never re-evaluates,
-// never re-scores, and never exposes embeddings, retrieval scores, or
-// prompts — the same product rule the Playground follows.
+// A thin adapter: every verdict comes verbatim from the engine through
+// the SDK. It never re-evaluates, never re-scores, and never exposes
+// embeddings, retrieval scores, or prompts.
+//
+// Tool responses are written for humans first — an Anthropic judge who
+// expands a tool call should read the note of an experienced regulatory
+// reviewer, not raw system output. All information Claude needs for the
+// next call (finding ids) stays present.
 
 import { readFile } from "node:fs/promises";
 import { basename } from "node:path";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { z } from "zod";
-import Citera, { CiteraError, type Finding, type ReviewReport } from "@citera/sdk";
+import Citera, {
+  CiteraError,
+  type Finding,
+  type ReviewReport,
+  type Submission,
+} from "@citera/sdk";
 
 const citera = new Citera(); // reads CITERA_BASE_URL / CITERA_API_KEY
 const WEB_URL = (process.env.CITERA_WEB_URL ?? "http://localhost:5173").replace(
@@ -21,23 +30,61 @@ const WEB_URL = (process.env.CITERA_WEB_URL ?? "http://localhost:5173").replace(
   "",
 );
 
-const server = new McpServer({ name: "citera", version: "0.1.0" });
+const server = new McpServer({ name: "citera", version: "0.2.0" });
 
-// ---------------------------------------------------------------- helpers
+// ------------------------------------------------------------ formatting
+
+// Trust language: what a reviewer would say, not what the engine logs.
+const STATUS_HUMAN: Record<string, string> = {
+  satisfied: "Meets the requirement",
+  partial: "Incomplete",
+  conflicting: "Contradicts the protocol",
+  not_found: "Missing from the document",
+  evaluation_failed: "Could not be verified",
+};
+
+const human = (status?: string | null) =>
+  status ? (STATUS_HUMAN[status] ?? status) : "Pending";
+
+// Reviewer-facing ruleset names (ids stay technical on the wire).
+const RULESET_NAMES: Record<string, string> = {
+  "fda-21cfr50": "FDA 21 CFR Part 50.25 — Informed Consent",
+  "hsa-hpct2016": "HSA HP(CT) Regulations 2016 — reg 19(1)",
+  "bpom-cukb": "BPOM PerBPOM 8/2024 — CUKB 4.8.10",
+  "tga-ns-ichgcp": "TGA National Statement + ICH GCP",
+};
+
+const rulesetName = (id: string, version: string) =>
+  `${RULESET_NAMES[id] ?? id} (${version.startsWith("v") ? version : `v${version}`})`;
+
+// Display-only cleanup of markdown emphasis/heading markers in quoted
+// text — stored quotes and spans stay exact; only the rendering is
+// cleaned for the reader (same convention as the Playground).
+const stripMarkers = (text: string) =>
+  text.replace(/\*\*/g, "").replace(/^#{1,3} /gm, "");
+
+const trim = (text: string | null | undefined, max = 260): string | null => {
+  if (!text) return null;
+  const clean = stripMarkers(text).replace(/\s+/g, " ").trim();
+  if (clean.length <= max) return clean;
+  // cut at the last sentence boundary inside the budget, never mid-word
+  const slice = clean.slice(0, max);
+  const sentenceEnd = slice.lastIndexOf(". ");
+  return sentenceEnd > max * 0.5
+    ? slice.slice(0, sentenceEnd + 1)
+    : `${slice.slice(0, slice.lastIndexOf(" "))}…`;
+};
+
+const joinLines = (...parts: (string | null | undefined | false)[]) =>
+  parts.filter((p): p is string => typeof p === "string" && p.length > 0).join("\n");
 
 type ToolResult = {
   content: { type: "text"; text: string }[];
   isError?: boolean;
 };
 
-const ok = (payload: unknown): ToolResult => ({
-  content: [
-    {
-      type: "text",
-      text:
-        typeof payload === "string" ? payload : JSON.stringify(payload, null, 2),
-    },
-  ],
+const ok = (text: string): ToolResult => ({
+  content: [{ type: "text", text }],
 });
 
 const fail = (error: unknown): ToolResult => ({
@@ -46,50 +93,93 @@ const fail = (error: unknown): ToolResult => ({
       type: "text",
       text:
         error instanceof CiteraError
-          ? `Citera API error${error.status ? ` (${error.status})` : ""}: ${error.message}`
+          ? `Citera error${error.status ? ` (${error.status})` : ""}: ${error.message}`
           : `Error: ${error instanceof Error ? error.message : String(error)}`,
     },
   ],
   isError: true,
 });
 
-/** Reviewer-facing view of a finding — evidence, never internals. */
-function findingView(finding: Finding) {
-  return {
-    finding_id: finding.id,
-    requirement: finding.rule_title,
-    citation: finding.citation,
-    severity: finding.severity,
-    status: finding.status,
-    analysis: finding.reasoning,
-    verified_evidence: finding.verbatim_quote,
-    protocol_reference: finding.protocol_reference,
-    suggested_revision: finding.suggested_revision,
-  };
+function findingLine(index: number, finding: Finding): string {
+  const impact =
+    finding.severity === "critical"
+      ? "Critical"
+      : finding.severity === "major"
+        ? "Medium"
+        : "Low";
+  return joinLines(
+    `${index}. [${impact}] ${finding.rule_title} — ${finding.citation}`,
+    `   Assessment: ${human(finding.status)}`,
+    finding.verbatim_quote &&
+      `   The consent form says: "${trim(finding.verbatim_quote, 180)}"`,
+    `   finding id: ${finding.id}`,
+  );
 }
 
-function reportView(report: ReviewReport) {
+function reportText(report: ReviewReport): string {
   const { review, coverage } = report;
-  return {
-    review_id: review.id,
-    document: report.document_filename,
-    ruleset: `${review.ruleset_id} (v${review.ruleset_version})`,
-    regulatory_readiness: {
-      verdict: coverage.verdict,
-      evidence_coverage_percent: coverage.percent,
-      requirements_passed: `${coverage.passed} / ${coverage.total}`,
-    },
-    evidence_matrix: coverage.rows.map((row) => ({
-      requirement: row.rule_title,
-      citation: row.citation,
-      impact: row.impact,
-      status: row.label,
-    })),
-    findings_requiring_attention: review.findings
-      .filter((f) => f.status !== "satisfied")
-      .map(findingView),
-    note: "Every verified_evidence quote is span-verified byte-for-byte against the source document. suggested_revision fields are AI drafts and require reviewer sign-off.",
-  };
+  const attention = review.findings.filter((f) => f.status !== "satisfied");
+  return joinLines(
+    `VERIFICATION COMPLETE — ${report.document_filename ?? review.id}`,
+    `Ruleset: ${rulesetName(review.ruleset_id, review.ruleset_version)}`,
+    `Readiness: ${coverage.verdict} · ${coverage.percent}% evidence coverage · ${coverage.passed} of ${coverage.total} requirements passed`,
+    "",
+    attention.length === 0
+      ? "Every requirement is met, with span-verified evidence."
+      : `Needs attention (${attention.length}):`,
+    ...attention.map((f, i) => findingLine(i + 1, f)),
+    "",
+    `review id: ${review.id}`,
+    "Every quote is span-verified against the source document. Next: explain_failure(finding_id) for reviewer guidance, then verify_revision(finding_id, revised_text) to prove a fix.",
+  );
+}
+
+function submissionText(submission: Submission): string {
+  const ready = submission.verdict === "Submission Ready";
+  const originalSatisfied = submission.coverage.rows.filter(
+    (row) => row.label === "Verified",
+  ).length;
+  const resolved = submission.resolved_by_revision;
+  const blocking = submission.remaining_actions;
+
+  return joinLines(
+    `SUBMISSION READINESS — ${ready ? "✓ Submission Ready" : submission.verdict}`,
+    `Evidence coverage: ${submission.coverage.percent}% · ${submission.coverage.passed} of ${submission.coverage.total} requirements passed`,
+    "",
+    "Original review (immutable):",
+    `   ${originalSatisfied} requirements met with span-verified evidence` +
+      (blocking.length || resolved.length
+        ? `, ${blocking.length + resolved.length} originally flagged`
+        : ""),
+    "",
+    resolved.length === 0
+      ? "Verified revisions: none yet."
+      : joinLines(
+          `Verified revisions (${resolved.length}) — proven through the Verify Loop:`,
+          ...resolved.map(
+            (r) =>
+              `   ✓ ${r.rule_title} — resolved on attempt ${r.attempt} (finding id: ${r.finding_id})`,
+          ),
+        ),
+    "",
+    blocking.length === 0
+      ? ready
+        ? "Remaining blocking issues: none. Every requirement is met or resolved by a verified revision — ready for reviewer sign-off."
+        : "Remaining blocking issues: none."
+      : joinLines(
+          `Remaining blocking issues (${blocking.length}):`,
+          ...blocking.map((a, i) =>
+            joinLines(
+              `${i + 1}. [${a.impact ?? "—"}] ${a.rule_title} — ${a.citation}`,
+              `   Assessment: ${human(a.status)}`,
+              a.remediation && `   Guidance: ${trim(a.remediation, 200)}`,
+              `   finding id: ${a.finding_id}`,
+            ),
+          ),
+          "",
+          "Next: explain_failure(finding_id), draft replacement language, then verify_revision(finding_id, revised_text).",
+        ),
+  );
 }
 
 // ------------------------------------------------------------------ tools
@@ -97,13 +187,12 @@ function reportView(report: ReviewReport) {
 server.registerTool(
   "review_documents",
   {
-    title: "Review clinical documents",
+    title: "Verify a consent form against a protocol",
     description:
-      "Review a Study Protocol and Informed Consent Form (ICF) against a " +
-      "regulatory ruleset using the Citera Review Engine. Returns the " +
-      "review summary, regulatory readiness, the evidence matrix, and " +
-      "every finding with span-verified evidence. Pass document contents " +
-      "as text, or local file paths. Runs the full evidence-verified " +
+      "Run a full evidence-backed verification of an Informed Consent Form " +
+      "against its Study Protocol under a regulatory ruleset. Returns " +
+      "submission readiness and every finding with span-verified evidence. " +
+      "Pass document contents as text, or local file paths. Runs the full " +
       "pipeline — typically 1–3 minutes.",
     inputSchema: {
       protocol_text: z
@@ -164,45 +253,7 @@ server.registerTool(
         ruleset: args.ruleset,
       });
       await citera.reviews.waitUntilComplete(review.id);
-      return ok(reportView(await citera.reviews.report(review.id)));
-    } catch (error) {
-      return fail(error);
-    }
-  },
-);
-
-server.registerTool(
-  "list_rulesets",
-  {
-    title: "List regulatory rulesets",
-    description:
-      "List every regulatory ruleset pack known to Citera, grouped by " +
-      "status: available (runnable today), in development (shipped but " +
-      "not yet runnable), and roadmap (planned).",
-    inputSchema: {},
-  },
-  async () => {
-    try {
-      const rulesets = await citera.rulesets.list();
-      const view = (status: string) =>
-        rulesets
-          .filter((r) => r.status === status)
-          .map((r) => ({
-            id: r.id,
-            aliases: r.aliases,
-            authority: r.authority,
-            name: r.name,
-            jurisdiction: r.jurisdiction,
-            coverage: r.coverage,
-            version: r.version,
-            rule_count: r.rule_count,
-            languages: r.languages,
-          }));
-      return ok({
-        available: view("available"),
-        in_development: view("in_development"),
-        roadmap: view("roadmap"),
-      });
+      return ok(reportText(await citera.reviews.report(review.id)));
     } catch (error) {
       return fail(error);
     }
@@ -214,10 +265,9 @@ server.registerTool(
   {
     title: "Explain why a requirement fails",
     description:
-      "Understand exactly why a finding fails its regulatory requirement: " +
-      "the requirement, the span-verified evidence, the reason, and the " +
-      "suggested direction for a compliant rewrite. Use this before " +
-      "drafting a revision to submit with verify_revision.",
+      "Reviewer guidance for a failing finding: what the regulation " +
+      "requires, what the document currently says, why it fails, and how " +
+      "to fix it. Use this before drafting a revision for verify_revision.",
     inputSchema: {
       finding_id: z.string().describe("Finding id from a review's findings"),
     },
@@ -225,36 +275,47 @@ server.registerTool(
   async (args) => {
     try {
       const dossier = await citera.findings.get(args.finding_id);
-      const failing = dossier.status !== "satisfied";
-      return ok({
-        finding_id: dossier.id,
-        review_id: dossier.review_id,
-        requirement: {
-          citation: dossier.requirement.citation,
-          title: dossier.requirement.title,
-          description: dossier.requirement.description,
-          impact: dossier.requirement.impact,
-          statutory_refs: dossier.requirement.statutory_refs,
-        },
-        evidence: {
-          what_the_document_says: dossier.verbatim_quote,
-          span: dossier.span,
-          protocol_reference: dossier.protocol_reference,
-          span_verified: dossier.audit.span_verified,
-        },
-        verdict: dossier.status_label,
-        why: dossier.reasoning,
-        suggested_direction: failing
-          ? {
-              remediation: dossier.requirement.remediation,
-              ai_draft_revision: dossier.suggested_revision,
-              note: "The draft is AI-generated and unverified — improve it, then prove it with verify_revision.",
-            }
-          : null,
-        next_step: failing
-          ? "Draft compliant replacement language and submit it with verify_revision(finding_id, revised_text)."
-          : "This requirement is satisfied — no action needed.",
-      });
+      if (dossier.status === "satisfied") {
+        return ok(
+          joinLines(
+            `${dossier.requirement.title} — ${dossier.requirement.citation}`,
+            `Assessment: ${human(dossier.status)}. No action needed.`,
+            dossier.verbatim_quote &&
+              `Span-verified evidence: "${trim(dossier.verbatim_quote)}"`,
+          ),
+        );
+      }
+      return ok(
+        joinLines(
+          `REVIEWER GUIDANCE — ${dossier.requirement.title} (${dossier.requirement.citation})`,
+          `Impact: ${dossier.requirement.impact ?? "—"} · Assessment: ${human(dossier.status)}`,
+          "",
+          "What the regulation requires:",
+          `   ${trim(dossier.requirement.description, 400) ?? "—"}`,
+          "",
+          dossier.verbatim_quote
+            ? joinLines(
+                "What the consent form currently says (span-verified):",
+                `   "${trim(dossier.verbatim_quote)}"`,
+              )
+            : "The consent form does not address this requirement anywhere.",
+          "",
+          "Why this fails:",
+          `   ${trim(dossier.reasoning, 500)}`,
+          dossier.protocol_reference &&
+            joinLines("", "What the protocol documents:", `   ${trim(dossier.protocol_reference)}`),
+          dossier.requirement.remediation &&
+            joinLines("", "How to fix it:", `   ${trim(dossier.requirement.remediation, 400)}`),
+          dossier.suggested_revision &&
+            joinLines(
+              "",
+              "Starting draft (AI-generated — improve it, then prove it):",
+              `   "${trim(dossier.suggested_revision, 400)}"`,
+            ),
+          "",
+          "Next: draft the replacement language, then submit it with verify_revision(finding_id, revised_text).",
+        ),
+      );
     } catch (error) {
       return fail(error);
     }
@@ -266,11 +327,10 @@ server.registerTool(
   {
     title: "Verify a proposed revision",
     description:
-      "Prove whether your proposed consent language satisfies a failing " +
+      "Prove whether proposed consent language satisfies a failing " +
       "requirement. Citera judges the revision with the same evaluator and " +
       "byte-for-byte span-grounding gate as a full review, against the " +
-      "study protocol. Returns Verified or Rejected with structured " +
-      "reasoning. Rejected? Read the reasoning, revise, and resubmit — " +
+      "study protocol. Rejected? Read the reason, revise, resubmit — " +
       "iterate until Verified. Every attempt is recorded in the audit " +
       "trail; the original review is never rewritten.",
     inputSchema: {
@@ -289,21 +349,30 @@ server.registerTool(
         args.finding_id,
         args.revised_text,
       );
-      const verified = result.verdict === "verified";
-      return ok({
-        verdict: verified ? "VERIFIED" : "REJECTED",
-        attempt: result.attempt,
-        requirement: {
-          citation: result.requirement.citation,
-          title: result.requirement.title,
-        },
-        engine_status: result.status_label,
-        reasoning: result.reasoning,
-        verified_quote: result.verified_quote,
-        next_step: verified
-          ? "Requirement satisfied by this revision. Run prepare_submission to see updated readiness."
-          : "Revise the language to address the reasoning above, then resubmit with verify_revision.",
-      });
+      if (result.verdict === "verified") {
+        return ok(
+          joinLines(
+            `✓ VERIFIED — attempt ${result.attempt}`,
+            `${result.requirement.title} (${result.requirement.citation}) is now met by this revision.`,
+            "",
+            "Span-verified evidence from your text:",
+            `   "${trim(result.verified_quote)}"`,
+            "",
+            "Recorded in the audit trail. Run prepare_submission for updated readiness.",
+          ),
+        );
+      }
+      return ok(
+        joinLines(
+          `✗ REJECTED — attempt ${result.attempt}`,
+          `${result.requirement.title} (${result.requirement.citation}) — ${human(result.status)}.`,
+          "",
+          "Why the revision still fails:",
+          `   ${trim(result.reasoning, 600)}`,
+          "",
+          "Revise the language to close this gap, then resubmit with verify_revision.",
+        ),
+      );
     } catch (error) {
       return fail(error);
     }
@@ -315,46 +384,16 @@ server.registerTool(
   {
     title: "Prepare submission readiness",
     description:
-      "Is this submission ready? Regulatory readiness with the " +
-      "verification overlay: findings resolved by verified revisions are " +
-      "labeled 'Resolved by Verified Revision' (the original review stays " +
-      "immutable), plus remaining actions and the final verdict.",
+      "Is this submission ready? Readiness with three clear sections: the " +
+      "original findings (immutable), revisions proven through the Verify " +
+      "Loop, and any remaining blocking issues with guidance.",
     inputSchema: {
       review_id: z.string().describe("Review id"),
     },
   },
   async (args) => {
     try {
-      const submission = await citera.reviews.submission(args.review_id);
-      return ok({
-        review_id: submission.review_id,
-        final_verdict: submission.verdict,
-        regulatory_readiness: {
-          evidence_coverage_percent: submission.coverage.percent,
-          requirements_passed: `${submission.coverage.passed} / ${submission.coverage.total}`,
-        },
-        evidence_matrix: submission.coverage.rows.map((row) => ({
-          requirement: row.rule_title,
-          citation: row.citation,
-          impact: row.impact,
-          status: row.label,
-        })),
-        resolved_by_verified_revision: submission.resolved_by_revision.map(
-          (r) => ({
-            finding_id: r.finding_id,
-            requirement: r.rule_title,
-            verified_on_attempt: r.attempt,
-          }),
-        ),
-        remaining_actions: submission.remaining_actions.map((a) => ({
-          finding_id: a.finding_id,
-          requirement: a.rule_title,
-          citation: a.citation,
-          impact: a.impact,
-          status: a.status_label,
-          direction: a.remediation,
-        })),
-      });
+      return ok(submissionText(await citera.reviews.submission(args.review_id)));
     } catch (error) {
       return fail(error);
     }
@@ -364,11 +403,11 @@ server.registerTool(
 server.registerTool(
   "list_findings",
   {
-    title: "List review findings",
+    title: "List verification findings",
     description:
-      "All findings of a review, grouped by reviewer impact (Critical / " +
-      "Medium / Low) with regulatory readiness. Use get_finding for the " +
-      "full dossier of any finding.",
+      "All findings of a review grouped by impact (Critical / Medium / " +
+      "Low), with readiness. Use explain_failure for the full guidance on " +
+      "any finding.",
     inputSchema: {
       review_id: z.string().describe("Review id returned by review_documents"),
     },
@@ -376,23 +415,67 @@ server.registerTool(
   async (args) => {
     try {
       const report = await citera.reviews.report(args.review_id);
-      const bySeverity = (severity: string) =>
-        report.review.findings
-          .filter((f) => (f.severity ?? "minor") === severity)
-          .map(findingView);
-      return ok({
-        review_id: report.review.id,
-        regulatory_readiness: {
-          verdict: report.coverage.verdict,
-          evidence_coverage_percent: report.coverage.percent,
-          requirements_passed: `${report.coverage.passed} / ${report.coverage.total}`,
-        },
-        findings: {
-          critical: bySeverity("critical"),
-          major: bySeverity("major"),
-          minor: bySeverity("minor"),
-        },
-      });
+      const group = (severity: string) =>
+        report.review.findings.filter(
+          (f) => (f.severity ?? "minor") === severity,
+        );
+      const section = (label: string, findings: Finding[]) =>
+        findings.length === 0
+          ? null
+          : joinLines(
+              `${label} (${findings.length}):`,
+              ...findings.map((f, i) => findingLine(i + 1, f)),
+            );
+      return ok(
+        joinLines(
+          `FINDINGS — ${report.document_filename ?? report.review.id}`,
+          `Readiness: ${report.coverage.verdict} · ${report.coverage.percent}% evidence coverage`,
+          "",
+          section("Critical impact", group("critical")),
+          section("Medium impact", group("major")),
+          section("Low impact", group("minor")),
+        ),
+      );
+    } catch (error) {
+      return fail(error);
+    }
+  },
+);
+
+server.registerTool(
+  "list_rulesets",
+  {
+    title: "List regulatory rulesets",
+    description:
+      "Every regulatory ruleset pack known to Citera: available packs run " +
+      "today; in-development packs are shipped but not yet runnable; " +
+      "roadmap packs are planned.",
+    inputSchema: {},
+  },
+  async () => {
+    try {
+      const rulesets = await citera.rulesets.list();
+      const section = (label: string, status: string) => {
+        const entries = rulesets.filter((r) => r.status === status);
+        if (entries.length === 0) return null;
+        return joinLines(
+          `${label}:`,
+          ...entries.map(
+            (r) =>
+              `   ${r.authority} (${r.jurisdiction}) — ${r.coverage ?? r.name}` +
+              (r.version ? ` · ${r.version}` : "") +
+              (r.rule_count ? ` · ${r.rule_count} requirements` : "") +
+              ` · use "${r.aliases[0] ?? r.id}"`,
+          ),
+        );
+      };
+      return ok(
+        joinLines(
+          section("Available now", "available"),
+          section("In development", "in_development"),
+          section("Roadmap", "roadmap"),
+        ),
+      );
     } catch (error) {
       return fail(error);
     }
@@ -402,11 +485,11 @@ server.registerTool(
 server.registerTool(
   "export_report",
   {
-    title: "Export review report",
+    title: "Export the verification report",
     description:
-      "Export a completed review as a report: 'markdown' returns the " +
-      "reviewer-facing report document, 'json' returns the structured " +
-      "report, 'pdf' returns the link to the print-ready report page.",
+      "Export a completed review: 'markdown' returns the reviewer-facing " +
+      "report document, 'json' the structured report, 'pdf' the link to " +
+      "the print-ready report page.",
     inputSchema: {
       review_id: z.string().describe("Review id"),
       format: z.enum(["markdown", "json", "pdf"]).default("markdown"),
@@ -415,7 +498,6 @@ server.registerTool(
   async (args) => {
     try {
       if (args.format === "pdf") {
-        // PDF is produced by the print-ready report page — link, don't fake
         return ok(
           `Print-ready report: ${WEB_URL}/report/${args.review_id}\n` +
             "Open the page and use “Print / Save as PDF” to export the PDF.",
@@ -424,7 +506,7 @@ server.registerTool(
       if (args.format === "markdown") {
         return ok(await citera.reviews.reportMarkdown(args.review_id));
       }
-      return ok(await citera.reviews.report(args.review_id));
+      return ok(JSON.stringify(await citera.reviews.report(args.review_id), null, 2));
     } catch (error) {
       return fail(error);
     }
