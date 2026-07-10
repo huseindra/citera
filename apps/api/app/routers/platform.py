@@ -15,7 +15,7 @@ def _utcnow_naive() -> datetime:
     """DB timestamps are TIMESTAMP WITHOUT TIME ZONE (UTC by convention)."""
     return datetime.now(timezone.utc).replace(tzinfo=None)
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -114,6 +114,17 @@ async def revoke_key(key_id: UUID, session: AsyncSession = Depends(get_session))
     if key.revoked_at is None:
         key.revoked_at = _utcnow_naive()
         await session.commit()
+
+
+@router.get("/auth/status")
+async def auth_status(
+    request: Request, session: AsyncSession = Depends(get_session)
+):
+    """Lets the Playground show 'Authenticated' instead of 'Public Demo'
+    when a valid API key is presented. Never discloses limit internals."""
+    from app.services.demo import is_authenticated
+
+    return {"authenticated": await is_authenticated(session, request)}
 
 
 @router.get("/usage/summary")

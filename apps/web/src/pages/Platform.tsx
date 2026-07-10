@@ -172,6 +172,10 @@ export function PlatformHome() {
               </span>
             ))}
           </div>
+          <p className="mt-3 text-[11px] text-stone-500">
+            Try Citera instantly. No signup required — a Public Sandbox is
+            available.
+          </p>
           {/* Built for — one honest line, no logos */}
           <p className="mt-4 text-[11px] text-stone-400">
             Designed for{" "}

@@ -18,6 +18,7 @@ from fastapi import (
     Depends,
     Form,
     HTTPException,
+    Request,
     Response,
     UploadFile,
 )
@@ -28,6 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_session
 from app.serializers import UTCDateTime
 from app.models import AuditRecord, Chunk, Document
+from app.services.demo import enforce_demo_upload_limit
 from app.services.ingestion import run_chunking
 
 router = APIRouter(prefix="/documents", tags=["documents"])
@@ -64,11 +66,14 @@ async def _to_out(session: AsyncSession, doc: Document) -> DocumentOut:
 async def upload_document(
     background: BackgroundTasks,
     response: Response,
+    request: Request,
     file: UploadFile,
     kind: DocumentKind = Form("other"),
     session: AsyncSession = Depends(get_session),
 ):
     data = await file.read()
+    # Public Demo fair-usage cap (API keys and local development bypass)
+    await enforce_demo_upload_limit(session, request, len(data))
     filename = file.filename or "upload"
     try:
         extraction = extract(filename, data)
