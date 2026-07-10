@@ -185,7 +185,7 @@ function submissionText(submission: Submission): string {
 // ------------------------------------------------------------------ tools
 
 server.registerTool(
-  "review_documents",
+  "verify_consent",
   {
     title: "Verify a consent form against a protocol",
     description:
@@ -409,7 +409,7 @@ server.registerTool(
       "Low), with readiness. Use explain_failure for the full guidance on " +
       "any finding.",
     inputSchema: {
-      review_id: z.string().describe("Review id returned by review_documents"),
+      review_id: z.string().describe("Review id returned by verify_consent"),
     },
   },
   async (args) => {

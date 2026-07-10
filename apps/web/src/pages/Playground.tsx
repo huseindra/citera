@@ -298,7 +298,7 @@ export function PlaygroundPage() {
               <div className="font-medium text-stone-700">—</div>
             )}
           </div>
-          <HeaderStat label="Engine" value="Citera Review Engine v1" />
+          <HeaderStat label="Engine" value="Citera Verification Engine v1" />
           <HeaderStat
             label="Status"
             value={running ? "Reviewing…" : review ? review.status : canRun ? "Ready" : "Waiting for documents"}

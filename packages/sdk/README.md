@@ -3,12 +3,12 @@
 TypeScript SDK for **Citera — Clinical Regulatory Intelligence**.
 
 A thin, typed client over the canonical REST API. Business logic lives in
-the Review Engine; the SDK only moves bytes. The Playground, the REST API,
+the Verification Engine; the SDK only moves bytes. The Playground, the REST API,
 and the MCP server all return identical findings — only the transport
 changes.
 
 ```
-your app → @citera/sdk → REST → Review Engine
+your app → @citera/sdk → REST → Verification Engine
 ```
 
 ## Install

@@ -1,48 +1,29 @@
 # Roadmap
 
-Build order for Citera. Mirrors the checklist in the [README](../README.md).
+## Purpose
 
-> For the hackathon MVP slice of this roadmap, see [roadmap-mvp.md](roadmap-mvp.md).
-> **Status: the MVP (M0–M9) is complete** — phases 1–3 below are done for
-> text-based documents; OCR, audit-replay hardening beyond the MVP, and the
-> Common Rule set are the next frontier.
+What ships next, in order. Short by design — this reflects committed
+direction, not brainstorming.
 
-## Phase 1 — Ingestion Foundation
+## Near term
 
-- [ ] Document ingestion (upload, storage, metadata)
-- [ ] OCR pipeline
-- [ ] Chunking pipeline
-- [ ] Embedding pipeline
+1. **Production hardening** — durable review workers (replacing
+   in-process background tasks), API-key enforcement on `/v1`,
+   pagination and enforced rate limits.
+2. **MCP progress notifications** — live progress inside long
+   `verify_consent` calls.
+3. **Ruleset expansion** — EMA, PMDA, MHRA, Health Canada, NMPA packs,
+   each gated by the same live-validation bar as the first four.
 
-## Phase 2 — Retrieval & Rules
+## Later
 
-- [ ] Hybrid Retrieval (dense + sparse + fusion)
-- [ ] Explainable Retrieval (score/rank transparency contract)
-- [ ] Regulation Engine (modular rule sets)
+- Document types beyond informed consent (protocol amendments,
+  investigator brochures).
+- Verification for arbitrary regulatory claims (only once a validated
+  judgment path exists — the engine never fakes capability).
+- Additional agent integrations (Cursor, OpenAI Agents, LangGraph,
+  CrewAI, n8n) on top of the same MCP surface.
 
-## Phase 3 — Evidence Surfaces
+## References
 
-- [ ] Evidence Heatmap
-- [ ] Semantic Evidence Map
-- [ ] Citation Graph
-- [ ] Regulation Coverage Matrix
-
-## Phase 4 — Trust & Compliance
-
-- [ ] Audit Replay
-- [ ] Protocol vs ICF Alignment
-- [ ] AI-assisted compliant language drafting
-
-## Phase 5 — Rule Sets
-
-Initial (see [product.md](product.md) — Regulation Validation):
-
-- [ ] FDA 21 CFR Part 50 Rule Set
-- [ ] Common Rule (45 CFR 46) Rule Set
-
-Future:
-
-- [ ] ICH-GCP Rule Set
-- [ ] EMA Rule Set
-- [ ] WHO Rule Set
-- [ ] BPOM Rule Set
+- [Overview](overview.md) for current scope
