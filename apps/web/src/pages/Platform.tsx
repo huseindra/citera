@@ -10,13 +10,11 @@ import { ArrowRight, ArrowUpRight, Check, X as XIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiGet, type HealthResponse } from "../api/client";
 import type { RulesetInfo } from "../api/types";
-import { CodeTabs } from "../components/platform/CodeTabs";
 import { RulesetBadge } from "../components/RulesetBadge";
-import { CURL_EXAMPLE, PYTHON_COMING_SOON, REST_EXAMPLE } from "../lib/snippets";
 
 const GITHUB = "https://github.com/huseindra/citera";
 
-const HERO_BADGES = ["FDA", "Claude MCP", "REST API", "SDK", "Evidence-backed"] as const;
+const HERO_BADGES = ["FDA 21 CFR 50.25", "Claude MCP", "Verify Loop", "Evidence-backed"] as const;
 
 const BUILT_FOR = [
   "Clinical Research Organizations",
@@ -70,7 +68,7 @@ const CITERA_WAY = [
   "Protocol ↔ consent validation",
   "Compliant language drafts",
   "Replayable audit trail",
-  "SDK + MCP ready",
+  "Verify Loop via Claude MCP",
 ] as const;
 
 const CAPABILITIES = [
@@ -84,19 +82,6 @@ const CAPABILITIES = [
 
 const MCP_COMPATIBLE = ["Claude Desktop", "Claude Code"] as const;
 const MCP_FUTURE = ["Cursor", "OpenAI Agents", "LangGraph", "CrewAI", "n8n"] as const;
-
-// Quick start, homepage-length (the full example lives in the Reference).
-const TS_SHORT = `import Citera from "@citera/sdk";
-
-const citera = new Citera({ apiKey: process.env.CITERA_API_KEY });
-
-const review = await citera.reviews.create({
-  document: icf.id,
-  protocol: protocol.id,
-  ruleset: "fda",
-});
-const { findings } = await citera.reviews.waitUntilComplete(review.id);
-// every quote is span-verified against the source document`;
 
 const FOOTER_COLUMNS: { title: string; links: [string, string, boolean][] }[] = [
   {
@@ -138,9 +123,10 @@ export function PlatformHome() {
             Clinical Regulatory Intelligence Infrastructure
           </h1>
           <p className="mt-3 max-w-xl text-sm leading-6 text-stone-500">
-            Embed evidence-backed clinical regulatory review into
-            applications, workflows, and AI agents. One engine — served
-            through the Playground, REST, SDK, and Claude MCP.
+            Claude proposes; Citera verifies. Evidence-backed regulatory
+            verification for clinical documents — every finding
+            source-verifiable, every revision proven, until the submission
+            is ready.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link
@@ -248,9 +234,9 @@ export function PlatformHome() {
             <div className="grid grid-cols-3">
               {(
                 [
-                  ["REST", ["Applications", "Developers"]],
-                  ["SDK", ["TypeScript", "Node & browser"]],
-                  ["MCP", ["Claude", "AI agents"]],
+                  ["Playground", ["Reviewers"]],
+                  ["REST API", ["Applications", "Developers"]],
+                  ["Claude MCP", ["Claude", "AI agents"]],
                 ] as const
               ).map(([iface, consumers]) => (
                 <div key={iface} className="flex flex-col items-center">
@@ -300,9 +286,10 @@ claude mcp add citera -- \\
             </pre>
             <div className="flex flex-col justify-between rounded-xl border border-stone-200 bg-white p-4">
               <p className="text-xs leading-5 text-stone-500">
-                Five domain tools — review documents, list rulesets, finding
-                dossiers, findings by impact, report export. Claude explains
-                the compliance issues; the engine verifies every quote.
+                Claude drafts the consent language; Citera proves it.
+                verify_revision returns Verified or Rejected with the
+                regulation that still fails — Claude revises and resubmits
+                until prepare_submission says Submission Ready.
               </p>
               <div className="mt-3 space-y-1.5">
                 <div className="flex flex-wrap items-center gap-1.5">
@@ -403,30 +390,6 @@ claude mcp add citera -- \\
           <CoverageSection />
         </section>
 
-        {/* Quick start — short */}
-        <section className="space-y-3">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-stone-800">Quick start</h2>
-            <code className="font-mono text-[11px] text-stone-400">
-              $ npm install @citera/sdk
-            </code>
-          </div>
-          <CodeTabs
-            tabs={[
-              { label: "TypeScript", code: TS_SHORT },
-              { label: "REST", code: REST_EXAMPLE },
-              { label: "cURL", code: CURL_EXAMPLE },
-              { label: "Python", code: PYTHON_COMING_SOON },
-            ]}
-          />
-          <p className="text-[11px] text-stone-400">
-            Full request/response shapes in the{" "}
-            <Link to="/reference" className="text-blue-600 hover:text-blue-700">
-              API Reference
-            </Link>
-            . Free plan — 25,000 credits, 60 requests/min.
-          </p>
-        </section>
       </div>
 
       {/* Footer — expanded, dark */}
