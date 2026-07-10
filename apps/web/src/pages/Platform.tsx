@@ -109,12 +109,14 @@ const FOOTER_COLUMNS: { title: string; links: [string, string, boolean][] }[] = 
     ],
   },
   {
-    title: "Developers",
+    title: "Developer",
     links: [
-      ["GitHub", GITHUB, true],
-      ["Claude MCP", `${GITHUB}/tree/main/packages/mcp`, true],
-      ["Documentation", `${GITHUB}/tree/main/docs`, true],
+      ["Documentation", "/docs", false],
       ["API Reference", "/reference", false],
+      ["API Keys", "/keys", false],
+      ["SDK", `${GITHUB}/tree/main/packages/sdk`, true],
+      ["GitHub", GITHUB, true],
+      ["MCP", `${GITHUB}/tree/main/packages/mcp`, true],
     ],
   },
   {
@@ -148,10 +150,10 @@ export function PlatformHome() {
               Open Playground
             </Link>
             <Link
-              to="/keys"
+              to="/docs"
               className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50"
             >
-              Get API Key
+              Documentation
             </Link>
             <a
               href={GITHUB}

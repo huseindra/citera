@@ -376,23 +376,21 @@ export function PlaygroundPage() {
             {startReview.isError &&
               (isDemoLimit(startReview.error) ? (
                 <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
-                  <p className="text-[11px] leading-4 text-stone-600">
+                  <div className="text-xs font-semibold text-stone-800">
+                    Public Demo Limit Reached
+                  </div>
+                  <p className="mt-0.5 text-[11px] leading-4 text-stone-500">
                     {demoLimitMessage(startReview.error)}
                   </p>
-                  <div className="mt-2 flex gap-2">
-                    <Link
-                      to="/keys"
-                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-700"
-                    >
-                      Get API Key
-                    </Link>
-                    <Link
-                      to="/reference"
-                      className="rounded-lg border border-stone-300 px-3 py-1.5 text-[11px] font-semibold text-stone-700 hover:bg-white"
-                    >
-                      View API Reference
-                    </Link>
-                  </div>
+                  <p className="mt-1.5 text-[11px] text-stone-600">
+                    Need more usage?
+                  </p>
+                  <Link
+                    to="/keys"
+                    className="mt-1.5 inline-block rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-700"
+                  >
+                    Get an API Key
+                  </Link>
                 </div>
               ) : (
                 <p className="mt-2 text-[11px] text-red-700">
@@ -1012,16 +1010,8 @@ function SandboxBanner() {
         <span className="font-semibold text-stone-700">Public Demo</span>
         {" — no signup required. This sandbox is rate-limited to ensure fair access for everyone."}
       </span>
-      <span className="flex shrink-0 items-center gap-2">
-        <span className="rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[10px] font-medium text-stone-500">
-          Public Sandbox · Rate limited
-        </span>
-        <Link
-          to="/keys"
-          className="font-medium text-blue-600 hover:text-blue-700"
-        >
-          Need higher limits? Get an API Key →
-        </Link>
+      <span className="shrink-0 rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[10px] font-medium text-stone-500">
+        Public Sandbox · Rate limited
       </span>
     </div>
   );
