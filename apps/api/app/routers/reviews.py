@@ -2,7 +2,7 @@ from datetime import datetime
 from uuid import UUID
 
 from citera_rulesets import RulesetError, load_ruleset
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel
 from sqlalchemy import and_, func, or_, select
@@ -12,6 +12,7 @@ from app.db import get_session
 from app.serializers import UTCDateTime, as_utc
 from app.models import AuditRecord, Chunk, Document, Finding, Review
 from app.services.coverage import COVERAGE_LABEL, IMPACT_LABEL, compute_coverage
+from app.services.demo import enforce_demo_limits, record_demo_usage
 from app.services.review import run_review
 
 router = APIRouter(prefix="/reviews", tags=["reviews"])
@@ -86,8 +87,13 @@ async def _require_ready_document(
 async def create_review(
     body: ReviewCreate,
     background: BackgroundTasks,
+    request: Request,
     session: AsyncSession = Depends(get_session),
 ):
+    # Public Demo fair-usage limits — API keys and local development
+    # bypass; friendly 429s, never internal limit details
+    is_demo, demo_ip = await enforce_demo_limits(session, request)
+
     # ruleset first: configuration errors should fail before upload checks
     from citera_rulesets import registry, resolve_ruleset_id
 
@@ -119,6 +125,9 @@ async def create_review(
         generate_suggested_revision=body.generate_suggested_revision,
     )
     session.add(review)
+    await session.flush()
+    if is_demo:
+        record_demo_usage(session, demo_ip, review.id)
     await session.commit()
 
     background.add_task(run_review, review.id)

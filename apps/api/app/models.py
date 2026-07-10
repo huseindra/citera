@@ -120,6 +120,24 @@ class ApiKey(Base):
     last_used_at: Mapped[datetime | None]
 
 
+class DemoUsage(Base):
+    """One Public Demo review per row — the operational log behind the
+    sandbox's fair-usage limits (IP, timestamp, review). Rows for
+    authenticated reviews are never created; demo reviews are removed
+    after 24 hours (cascade cleans these rows with them)."""
+
+    __tablename__ = "demo_usage"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    ip: Mapped[str] = mapped_column(index=True)
+    review_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reviews.id", ondelete="CASCADE"), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
 class AuditRecord(Base):
     __tablename__ = "audit_records"
 

@@ -7,7 +7,7 @@ import { useMutation, useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
 import { Activity, Check, Dna, FlaskConical, HeartPulse, Microscope, Stethoscope, Wind, Zap, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { apiGet, apiPost, apiUploadWithProgress } from "../api/client";
+import { apiGet, apiPost, apiUploadWithProgress, storedApiKey } from "../api/client";
 import type {
   DocumentOut,
   FindingOut,
@@ -272,6 +272,7 @@ export function PlaygroundPage() {
 
   return (
     <div className="flex h-full flex-col">
+      <SandboxBanner />
       {/* Header */}
       <div className="flex items-center justify-between border-b border-stone-200 bg-white px-5 py-2.5">
         <div>
@@ -372,9 +373,32 @@ export function PlaygroundPage() {
             >
               {startReview.isPending ? "Starting…" : "Run Review"}
             </button>
-            {startReview.isError && (
-              <p className="mt-2 text-[11px] text-red-700">{(startReview.error as Error).message}</p>
-            )}
+            {startReview.isError &&
+              (isDemoLimit(startReview.error) ? (
+                <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50 p-3">
+                  <p className="text-[11px] leading-4 text-stone-600">
+                    {demoLimitMessage(startReview.error)}
+                  </p>
+                  <div className="mt-2 flex gap-2">
+                    <Link
+                      to="/keys"
+                      className="rounded-lg bg-blue-600 px-3 py-1.5 text-[11px] font-semibold text-white hover:bg-blue-700"
+                    >
+                      Get API Key
+                    </Link>
+                    <Link
+                      to="/reference"
+                      className="rounded-lg border border-stone-300 px-3 py-1.5 text-[11px] font-semibold text-stone-700 hover:bg-white"
+                    >
+                      View API Reference
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-2 text-[11px] text-red-700">
+                  {(startReview.error as Error).message}
+                </p>
+              ))}
           </div>
         </div>
 
@@ -948,4 +972,57 @@ function downloadJson(review: ReviewOut) {
   anchor.download = `citera-review-${review.id.slice(0, 8)}.json`;
   anchor.click();
   URL.revokeObjectURL(url);
+}
+
+// ---- Public Demo Mode ------------------------------------------------
+
+function isDemoLimit(error: unknown): boolean {
+  return error instanceof Error && error.message.includes("(429:");
+}
+
+function demoLimitMessage(error: unknown): string {
+  const message = (error as Error).message;
+  const match = message.match(/\(429: (.*)\)$/);
+  return match ? match[1] : message;
+}
+
+/** Subtle sandbox banner — fair-usage framing, never alarming. Shows
+ *  "Authenticated" when an API key from the Keys page is present. */
+function SandboxBanner() {
+  const hasKey = !!storedApiKey();
+  const auth = useQuery({
+    queryKey: ["auth-status"],
+    queryFn: () => apiGet<{ authenticated: boolean }>("/v1/auth/status"),
+    enabled: hasKey,
+    staleTime: 60_000,
+  });
+  const authenticated = hasKey && auth.data?.authenticated !== false;
+
+  if (authenticated) {
+    return (
+      <div className="border-b border-stone-200 bg-stone-50 px-5 py-1.5 text-[11px] text-stone-500">
+        <span className="font-semibold text-stone-700">Authenticated</span>
+        {" — Public Demo limits don't apply to this browser."}
+      </div>
+    );
+  }
+  return (
+    <div className="flex items-center justify-between gap-3 border-b border-stone-200 bg-stone-50 px-5 py-1.5 text-[11px] text-stone-500">
+      <span className="min-w-0 truncate">
+        <span className="font-semibold text-stone-700">Public Demo</span>
+        {" — no signup required. This sandbox is rate-limited to ensure fair access for everyone."}
+      </span>
+      <span className="flex shrink-0 items-center gap-2">
+        <span className="rounded-full border border-stone-200 bg-white px-2 py-0.5 text-[10px] font-medium text-stone-500">
+          Public Sandbox · Rate limited
+        </span>
+        <Link
+          to="/keys"
+          className="font-medium text-blue-600 hover:text-blue-700"
+        >
+          Need higher limits? Get an API Key →
+        </Link>
+      </span>
+    </div>
+  );
 }

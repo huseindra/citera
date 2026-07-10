@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { apiDelete, apiGet, apiPost } from "../api/client";
+import { API_KEY_STORAGE, apiDelete, apiGet, apiPost } from "../api/client";
 import type { ApiKeyCreated, ApiKeyOut, UsageSummary } from "../api/types";
 import { CodeTabs } from "../components/platform/CodeTabs";
 import { timeAgo } from "../lib/format";
@@ -11,6 +11,15 @@ import {
   REST_EXAMPLE,
   TS_EXAMPLE,
 } from "../lib/snippets";
+
+// The Playground picks this up automatically and runs as Authenticated.
+function rememberKey(key: string) {
+  try {
+    localStorage.setItem(API_KEY_STORAGE, key);
+  } catch {
+    /* private browsing — the key is still shown for manual copy */
+  }
+}
 
 export function ApiKeysPage() {
   const queryClient = useQueryClient();
@@ -33,6 +42,7 @@ export function ApiKeysPage() {
     mutationFn: () => apiPost<ApiKeyCreated>("/v1/keys", { name: "Default key" }),
     onSuccess: (created) => {
       setRevealed(created);
+      rememberKey(created.key);
       invalidate();
     },
   });
@@ -40,6 +50,7 @@ export function ApiKeysPage() {
     mutationFn: (id: string) => apiPost<ApiKeyCreated>(`/v1/keys/${id}/rotate`, {}),
     onSuccess: (created) => {
       setRevealed(created);
+      rememberKey(created.key);
       invalidate();
     },
   });
@@ -107,6 +118,9 @@ export function ApiKeysPage() {
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-4">
           <div className="text-xs font-semibold text-amber-800">
             Copy your key now — it will not be shown again.
+          </div>
+          <div className="mt-0.5 text-[11px] text-amber-700">
+            Saved to this browser — the Playground now runs as Authenticated.
           </div>
           <div className="mt-2 flex items-center gap-2">
             <code className="flex-1 overflow-x-auto rounded-md bg-white px-3 py-2 font-mono text-xs text-stone-800">
