@@ -1,214 +1,133 @@
 # Citera
 
-> **Clinical Regulatory Intelligence SDK** — embed AI-powered clinical
-> review into any workflow with a single SDK. Every finding is
-> evidence-verified, explainable, and audit-replayable.
+Clinical Regulatory Intelligence Infrastructure that verifies
+AI-generated regulatory documents using evidence-backed reasoning.
 
-Citera is SDK-first: the primary product is the platform API
-(`/v1` — Documents, Reviews, Findings, Evidence, Reports, Rulesets).
-The bundled reviewer application is the **Interactive Playground**, the
-reference app demonstrating the SDK.
+> **Claude proposes. Citera verifies.**
 
-```ts
-const citera = new Citera({ apiKey });
-const review = await citera.reviews.create({
-  document: icf.id, protocol: protocol.id, ruleset: "fda-21cfr50",
-});
-const result = await citera.reviews.waitUntilComplete(review.id);
-```
+Large language models will happily write compliant-*sounding* clinical
+documents. In regulated clinical research, compliant-sounding gets
+studies suspended. Citera is the trust layer: a Verification Engine that
+proves — with span-verified evidence and a replayable audit trail —
+whether a document satisfies each regulatory requirement, and verifies
+proposed fixes until the submission is ready.
 
-## Vision
+All demo corpora in this repository are fully synthetic — no real
+clinical data anywhere.
 
-Citera helps regulatory teams review clinical trial documents faster by making AI reasoning transparent, explainable, and auditable.
+## Features
 
-Unlike traditional Retrieval-Augmented Generation (RAG) systems that only return answers with citations, this platform exposes the complete evidence path behind every AI-generated conclusion.
+- **Playground** — interactive reviewer workspace; public sandbox, no
+  signup, sample studies included
+- **Verification Loop** — failing requirements become Submission Ready
+  through verified iteration
+- **Claude MCP** — the Verification Loop inside Claude Desktop and
+  Claude Code
+- **REST API** — the canonical interface for applications and workflows
+- **Evidence-backed Findings** — every quote round-trips byte-for-byte
+  against the source document; unverifiable claims are rejected, never
+  shown
+- **Rulesets** — regulations as pluggable, versioned packs: FDA (US),
+  HSA (Singapore), BPOM (Indonesia, Bahasa Indonesia), TGA (Australia)
 
-Every finding is backed by regulations, study protocols, semantic similarity, and an observable audit trail.
-
----
-
-## Problem
-
-Reviewing an Informed Consent Form (ICF) is a manual and time-consuming process.
-
-Regulatory reviewers must verify that every consent form:
-
-- Includes all required regulatory elements
-- Matches the study protocol
-- Contains no conflicting information
-- Uses compliant language
-
-This often requires hours of cross-referencing between multiple documents.
-
-Current AI tools generate answers.
-
-This platform generates evidence.
-
----
-
-## Key Features
-
-- 📄 Clinical document ingestion
-- 🧠 Hybrid Retrieval (Dense + Sparse Search)
-- 📚 Regulation-aware reasoning
-- 🔎 Explainable Retrieval
-- 🗺️ Semantic Evidence Map
-- 🌡️ Evidence Heatmap
-- 🔗 Citation Graph
-- 📊 Regulation Coverage Matrix
-- ⚖️ Protocol vs ICF Alignment
-- 📝 AI-assisted compliant language drafting
-- 📜 Complete audit replay
-- 🛡️ Modular regulatory rule engine
-
----
-
-## Design Principles
-
-The platform follows four core principles.
-
-### Evidence First
-
-Every conclusion must be supported by verifiable evidence.
-
-### Explainability
-
-Users should understand how every AI decision was made.
-
-### Auditability
-
-Every retrieval, prompt, and generated finding must be reproducible.
-
-### Human-in-the-Loop
-
-The platform assists reviewers rather than replacing them.
-
----
-
-## Planned Architecture
-
-See [docs/architecture.md](docs/architecture.md) for the authoritative technical architecture.
+## Architecture
 
 ```
-Frontend
-React + Vite
-
-        │
-
-        ▼
-
-FastAPI Backend
-
-        │
-
-        ▼
-
-Document Processing
-
-OCR
-↓
-
-Chunking
-↓
-
-Embedding
-↓
-
-Hybrid Retrieval
-↓
-
-Rule Engine
-↓
-
-Claude
-↓
-
-Evidence Graph
-↓
-
-Audit Log
+Claude / Playground / Applications
+        ↓
+   MCP  ·  Web  ·  SDK
+        ↓
+     REST /v1 (canonical)
+        ↓
+  Verification Engine
+  retrieve → evaluate → ground → persist
+        ↓
+  Postgres + pgvector · append-only audit log
 ```
 
----
+Business logic exists exactly once. Every interface returns identical
+Findings. Details: [docs/architecture.md](docs/architecture.md).
 
-## Technology Stack
+## Quick Start
 
-The authoritative list lives in [docs/architecture.md](docs/architecture.md). Summary:
-
-Frontend
-
-- React + Vite
-- TypeScript
-- Tailwind CSS
-- TanStack Query
-
-Backend
-
-- FastAPI
-- Python
-
-AI
-
-- Claude API
-- Embedding Models
-- Reranking Models
-- Hybrid Retrieval
-
-Storage
-
-- PostgreSQL
-- Object Storage
-- Qdrant
-- Neo4j (planned)
-
-Infrastructure
-
-- Docker
-- GitHub Actions
-- OpenTelemetry
-
----
-
-## Getting Started
+Requirements: Docker, Python 3.12 + [uv](https://docs.astral.sh/uv/),
+Node 18+.
 
 ```bash
-docker compose up -d     # PostgreSQL + pgvector (host port 5433)
-uv sync                  # Python workspace
-make seed                # reset DB, ingest the demo corpus, run both reviews
-make api                 # FastAPI on :8000
-make web                 # Vite dev server on :5173 (needs pnpm install in apps/web once)
+# 1. environment — create .env at the repo root
+ANTHROPIC_API_KEY=sk-ant-…
+VOYAGE_API_KEY=pa-…
+CLAUDE_MODEL=claude-opus-4-8
+
+# 2. backend
+make db     # Postgres + pgvector (port 5433)
+make api    # FastAPI on :8000
+
+# 3. frontend
+make web    # Playground on :5173
 ```
 
-Open http://localhost:5173 — the seeded reviews (one clean ICF, one with
-three planted defects) are listed on the home page. Without an
-`ANTHROPIC_API_KEY` a deterministic scripted evaluator runs; with one,
-Claude evaluates for real. See [docs/demo-script.md](docs/demo-script.md)
-for the full walkthrough.
+Open http://localhost:5173, pick a sample study, and run a review — no
+uploads required. `make test` runs the full suite (never calls external
+APIs).
+
+## Verification Loop
+
+```
+Claude proposes replacement language
+        ↓
+Citera verifies      → Rejected (which regulation still fails, why)
+        ↓
+Claude revises
+        ↓
+Citera verifies      → Verified (evidence span-checked in the revision)
+        ↓
+Submission Ready
+```
+
+The original review is immutable; verified revisions appear as an
+explicit **Resolved by Verified Revision** overlay, and every attempt is
+recorded in the audit trail. Details:
+[docs/verification-loop.md](docs/verification-loop.md).
+
+## Claude MCP
+
+```bash
+cd packages/sdk && npm install && npm run build
+cd ../mcp && npm install && npm run build
+claude mcp add citera -- node "$PWD/dist/index.js"
+```
+
+Then, inside Claude: *"Review this consent form against FDA
+regulations."* Supported tools: `verify_consent`, `verify_revision`,
+`explain_failure`, `prepare_submission`. Setup and examples:
+[docs/claude-mcp.md](docs/claude-mcp.md).
+
+## Documentation
+
+Start at [docs/](docs/README.md): overview, architecture, the
+Verification Loop, Claude MCP, Rulesets, API, deployment, roadmap.
 
 ## Roadmap
 
-- [x] Document ingestion
-- [ ] OCR pipeline (scanned PDFs — text-based documents supported)
-- [x] Chunking pipeline
-- [x] Embedding pipeline
-- [x] Hybrid Retrieval
-- [x] Regulation Engine
-- [x] Evidence Heatmap
-- [x] Semantic Evidence Map
-- [x] Citation Graph
-- [x] Explainable Retrieval
-- [x] Audit Replay
-- [x] FDA 21 CFR Part 50 Rule Set
-- [ ] Common Rule (45 CFR 46) Rule Set
+Production hardening (durable workers, key enforcement), MCP progress
+notifications, and further Ruleset packs (EMA, PMDA, MHRA, Health
+Canada, NMPA) — see [docs/roadmap.md](docs/roadmap.md).
 
----
+## Contributing
 
-## Philosophy
+- `make test` must pass; tests never depend on external APIs.
+- New Rulesets are YAML packs (`packages/rulesets`) and must reproduce
+  their planted-defect answer key against live Claude before release.
+- Keep the layering: MCP → SDK → REST → engine, no bypasses; never
+  expose retrieval scores, embeddings, or prompts to users.
 
-AI should not only generate answers.
+Bug reports and feature requests: GitHub Issues.
 
-AI should generate trust.
+## License
 
-Trust comes from transparent evidence, observable reasoning, and verifiable regulatory compliance.
+[MIT](LICENSE).
 
-Every feature in this repository exists to make AI reasoning visible.
+## Contact
+
+Husein Indra Kusuma — Founder · husein@monago.io

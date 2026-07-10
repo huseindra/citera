@@ -227,7 +227,7 @@ export function PlatformHome() {
           </h2>
           <div className="mt-3 rounded-2xl border border-stone-200 bg-white px-6 py-8">
             <div className="mx-auto w-fit rounded-xl border-2 border-stone-900 px-8 py-3 text-base font-semibold tracking-tight text-stone-900">
-              Review Engine
+              Verification Engine
             </div>
             <div className="mx-auto h-5 w-px bg-stone-300" />
             <div className="mx-auto w-2/3 border-t border-stone-300" />

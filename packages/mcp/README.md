@@ -2,13 +2,13 @@
 
 MCP server for **Citera — Clinical Regulatory Intelligence**.
 
-Exposes the Review Engine to Claude Desktop, Claude Code, and any MCP
+Exposes the Verification Engine to Claude Desktop, Claude Code, and any MCP
 client. A thin adapter over [`@citera/sdk`](../sdk): it never re-evaluates,
 never re-scores, and returns the exact same findings as the Playground and
 the REST API.
 
 ```
-Claude → MCP tool → @citera/sdk → REST → Review Engine
+Claude → MCP tool → @citera/sdk → REST → Verification Engine
 ```
 
 ## The Verify Loop
@@ -31,7 +31,7 @@ immutable — passing revisions appear as an explicit
 
 | Tool | What it does |
 |---|---|
-| `review_documents` | Review a protocol + ICF against a ruleset; returns readiness, evidence matrix, findings |
+| `verify_consent` | Review a protocol + ICF against a ruleset; returns readiness, evidence matrix, findings |
 | `verify_revision` | **The Verify Loop** — judge proposed replacement language against a failing requirement; Verified or Rejected with structured reasoning |
 | `explain_failure` | Why a requirement fails: requirement → evidence → reason → suggested direction |
 | `prepare_submission` | Submission readiness with the verification overlay + remaining actions + final verdict |
@@ -69,7 +69,7 @@ Claude Code: `claude mcp add citera -- node /path/to/citera/packages/mcp/dist/in
 
 > **User:** Review this informed consent form against FDA regulations.
 >
-> Claude calls `review_documents(protocol_text=…, icf_text=…, ruleset="fda")`
+> Claude calls `verify_consent(protocol_text=…, icf_text=…, ruleset="fda")`
 > and explains the compliance issues — every quote span-verified by the
 > engine, every suggested revision labeled as an AI draft.
 

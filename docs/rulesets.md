@@ -1,7 +1,7 @@
 # Rulesets — Pluggable Regulatory Intelligence
 
 Citera is a Clinical Regulatory Intelligence SDK. Regulatory requirements are
-implemented as interchangeable **Rulesets**. The review engine is completely
+implemented as interchangeable **Rulesets**. The Verification Engine is completely
 jurisdiction-agnostic — it never knows about FDA, HSA, or BPOM; it only loads
 Rulesets. Adding a jurisdiction is content work (YAML), never engine work.
 
