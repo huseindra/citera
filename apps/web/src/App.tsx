@@ -20,11 +20,13 @@ function HealthDot() {
   );
 }
 
+// Four items only — the nav carries the demo story. API Keys and the
+// API Reference still exist (/keys, /reference) via Documentation and
+// the footer; they just don't compete for attention.
 const NAV = [
   { to: "/", label: "Home", end: true },
   { to: "/playground", label: "Playground", end: false },
-  { to: "/keys", label: "API Keys", end: false },
-  { to: "/reference", label: "API Reference", end: false },
+  { to: "/docs", label: "Documentation", end: false },
 ];
 
 export default function App() {
