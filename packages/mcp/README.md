@@ -11,14 +11,32 @@ the REST API.
 Claude → MCP tool → @citera/sdk → REST → Review Engine
 ```
 
+## The Verify Loop
+
+Claude proposes; Citera verifies. Claude revises; Citera proves.
+
+```
+Claude drafts consent language
+  → verify_revision()  → REJECTED (which regulation fails, what's missing)
+  → Claude rewrites
+  → verify_revision()  → VERIFIED (quote span-checked in the revision)
+  → prepare_submission() → Submission Ready
+```
+
+Every attempt is an append-only audit record; the original review is
+immutable — passing revisions appear as an explicit
+"Resolved by Verified Revision" overlay.
+
 ## Tools
 
 | Tool | What it does |
 |---|---|
 | `review_documents` | Review a protocol + ICF against a ruleset; returns readiness, evidence matrix, findings |
-| `list_rulesets` | Rulesets grouped by status: available / in development / roadmap |
-| `get_finding` | Full dossier: requirement, impact, evidence ledger, analysis, suggested revision, audit status |
+| `verify_revision` | **The Verify Loop** — judge proposed replacement language against a failing requirement; Verified or Rejected with structured reasoning |
+| `explain_failure` | Why a requirement fails: requirement → evidence → reason → suggested direction |
+| `prepare_submission` | Submission readiness with the verification overlay + remaining actions + final verdict |
 | `list_findings` | All findings of a review grouped by impact (Critical / Medium / Low) |
+| `list_rulesets` | Rulesets grouped by status: available / in development / roadmap |
 | `export_report` | Report as Markdown or JSON; PDF via the print-ready report page |
 
 ## Setup

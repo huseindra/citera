@@ -291,6 +291,154 @@ def _render_markdown(report: ReviewReportOut) -> str:
     return "\n".join(lines)
 
 
+class ResolvedByRevisionOut(BaseModel):
+    finding_id: UUID
+    rule_id: str
+    rule_title: str | None
+    attempt: int
+
+
+class RemainingActionOut(BaseModel):
+    finding_id: UUID
+    rule_id: str
+    rule_title: str | None
+    citation: str | None
+    impact: str | None
+    status: str
+    status_label: str
+    remediation: str | None
+
+
+class SubmissionOut(BaseModel):
+    review_id: UUID
+    verdict: str  # "Submission Ready" | blocked/attention verdicts
+    coverage: CoverageOut
+    resolved_by_revision: list[ResolvedByRevisionOut]
+    remaining_actions: list[RemainingActionOut]
+
+
+@router.get("/{review_id}/submission", response_model=SubmissionOut)
+async def prepare_submission(
+    review_id: UUID, session: AsyncSession = Depends(get_session)
+):
+    """Submission readiness with the verification overlay: the original
+    review is immutable; findings whose latest verify.revision attempt
+    passed count as resolved and are labeled exactly that — never
+    silently upgraded."""
+    from types import SimpleNamespace
+
+    from app.services.verification import latest_verifications
+
+    review = await session.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if review.status != "complete":
+        raise HTTPException(
+            status_code=409,
+            detail=f"Review is '{review.status}' — submission readiness is "
+            "available once the review is complete.",
+        )
+
+    try:
+        rules = load_ruleset(review.ruleset_id).rules
+    except RulesetError:
+        rules = []
+    rule_by_id = {r.id: r for r in rules}
+    findings = (
+        await session.scalars(
+            select(Finding)
+            .where(Finding.review_id == review.id)
+            .order_by(Finding.created_at)
+        )
+    ).all()
+
+    overlay = await latest_verifications(session, review.id)
+    resolved_ids = {
+        finding_id
+        for finding_id, payload in overlay.items()
+        if payload.get("verdict") == "verified"
+    }
+
+    adjusted = [
+        SimpleNamespace(
+            rule_id=f.rule_id,
+            status="satisfied" if f.id in resolved_ids else f.status,
+        )
+        for f in findings
+    ]
+    summary = compute_coverage(rules, adjusted)
+    resolved_rule_ids = {f.rule_id for f in findings if f.id in resolved_ids}
+    rows = [
+        CoverageRowOut(
+            **{
+                **vars(row),
+                "label": (
+                    "Resolved by Verified Revision"
+                    if row.rule_id in resolved_rule_ids
+                    else row.label
+                ),
+            }
+        )
+        for row in summary.rows
+    ]
+
+    verdict = (
+        "Submission Ready"
+        if summary.verdict == "Ready for Review"
+        else summary.verdict
+    )
+
+    return SubmissionOut(
+        review_id=review.id,
+        verdict=verdict,
+        coverage=CoverageOut(
+            percent=summary.percent,
+            passed=summary.passed,
+            total=summary.total,
+            verdict=verdict,
+            rows=rows,
+        ),
+        resolved_by_revision=[
+            ResolvedByRevisionOut(
+                finding_id=f.id,
+                rule_id=f.rule_id,
+                rule_title=(
+                    rule_by_id[f.rule_id].title if f.rule_id in rule_by_id else None
+                ),
+                attempt=int(overlay[f.id].get("attempt", 1)),
+            )
+            for f in findings
+            if f.id in resolved_ids
+        ],
+        remaining_actions=[
+            RemainingActionOut(
+                finding_id=f.id,
+                rule_id=f.rule_id,
+                rule_title=(
+                    rule_by_id[f.rule_id].title if f.rule_id in rule_by_id else None
+                ),
+                citation=(
+                    rule_by_id[f.rule_id].citation if f.rule_id in rule_by_id else None
+                ),
+                impact=(
+                    IMPACT_LABEL.get(rule_by_id[f.rule_id].severity.value)
+                    if f.rule_id in rule_by_id
+                    else None
+                ),
+                status=f.status,
+                status_label=COVERAGE_LABEL.get(f.status, f.status),
+                remediation=(
+                    rule_by_id[f.rule_id].remediation
+                    if f.rule_id in rule_by_id
+                    else None
+                ),
+            )
+            for f in findings
+            if f.status != "satisfied" and f.id not in resolved_ids
+        ],
+    )
+
+
 @router.get("/{review_id}/report")
 async def export_report(
     review_id: UUID,
