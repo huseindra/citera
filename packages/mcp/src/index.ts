@@ -210,13 +210,14 @@ server.registerTool(
 );
 
 server.registerTool(
-  "get_finding",
+  "explain_failure",
   {
-    title: "Get finding dossier",
+    title: "Explain why a requirement fails",
     description:
-      "Full dossier for a single finding: the regulatory requirement, " +
-      "reviewer impact, span-verified evidence, analysis, suggested " +
-      "revision (AI draft), and audit status.",
+      "Understand exactly why a finding fails its regulatory requirement: " +
+      "the requirement, the span-verified evidence, the reason, and the " +
+      "suggested direction for a compliant rewrite. Use this before " +
+      "drafting a revision to submit with verify_revision.",
     inputSchema: {
       finding_id: z.string().describe("Finding id from a review's findings"),
     },
@@ -224,32 +225,135 @@ server.registerTool(
   async (args) => {
     try {
       const dossier = await citera.findings.get(args.finding_id);
+      const failing = dossier.status !== "satisfied";
       return ok({
         finding_id: dossier.id,
         review_id: dossier.review_id,
-        ruleset: dossier.ruleset_id,
         requirement: {
           citation: dossier.requirement.citation,
           title: dossier.requirement.title,
           description: dossier.requirement.description,
           impact: dossier.requirement.impact,
           statutory_refs: dossier.requirement.statutory_refs,
-          remediation: dossier.requirement.remediation,
         },
-        status: dossier.status,
-        status_label: dossier.status_label,
-        analysis: dossier.reasoning,
-        evidence_ledger: {
-          verified_quote: dossier.verbatim_quote,
+        evidence: {
+          what_the_document_says: dossier.verbatim_quote,
           span: dossier.span,
-          evidence_strength: dossier.evidence_strength,
           protocol_reference: dossier.protocol_reference,
-        },
-        suggested_revision: dossier.suggested_revision,
-        audit_status: {
           span_verified: dossier.audit.span_verified,
-          audit_records: dossier.audit.records,
         },
+        verdict: dossier.status_label,
+        why: dossier.reasoning,
+        suggested_direction: failing
+          ? {
+              remediation: dossier.requirement.remediation,
+              ai_draft_revision: dossier.suggested_revision,
+              note: "The draft is AI-generated and unverified — improve it, then prove it with verify_revision.",
+            }
+          : null,
+        next_step: failing
+          ? "Draft compliant replacement language and submit it with verify_revision(finding_id, revised_text)."
+          : "This requirement is satisfied — no action needed.",
+      });
+    } catch (error) {
+      return fail(error);
+    }
+  },
+);
+
+server.registerTool(
+  "verify_revision",
+  {
+    title: "Verify a proposed revision",
+    description:
+      "Prove whether your proposed consent language satisfies a failing " +
+      "requirement. Citera judges the revision with the same evaluator and " +
+      "byte-for-byte span-grounding gate as a full review, against the " +
+      "study protocol. Returns Verified or Rejected with structured " +
+      "reasoning. Rejected? Read the reasoning, revise, and resubmit — " +
+      "iterate until Verified. Every attempt is recorded in the audit " +
+      "trail; the original review is never rewritten.",
+    inputSchema: {
+      finding_id: z
+        .string()
+        .describe("The failing finding this revision addresses"),
+      revised_text: z
+        .string()
+        .min(20)
+        .describe("Your full proposed replacement section text"),
+    },
+  },
+  async (args) => {
+    try {
+      const result = await citera.findings.verify(
+        args.finding_id,
+        args.revised_text,
+      );
+      const verified = result.verdict === "verified";
+      return ok({
+        verdict: verified ? "VERIFIED" : "REJECTED",
+        attempt: result.attempt,
+        requirement: {
+          citation: result.requirement.citation,
+          title: result.requirement.title,
+        },
+        engine_status: result.status_label,
+        reasoning: result.reasoning,
+        verified_quote: result.verified_quote,
+        next_step: verified
+          ? "Requirement satisfied by this revision. Run prepare_submission to see updated readiness."
+          : "Revise the language to address the reasoning above, then resubmit with verify_revision.",
+      });
+    } catch (error) {
+      return fail(error);
+    }
+  },
+);
+
+server.registerTool(
+  "prepare_submission",
+  {
+    title: "Prepare submission readiness",
+    description:
+      "Is this submission ready? Regulatory readiness with the " +
+      "verification overlay: findings resolved by verified revisions are " +
+      "labeled 'Resolved by Verified Revision' (the original review stays " +
+      "immutable), plus remaining actions and the final verdict.",
+    inputSchema: {
+      review_id: z.string().describe("Review id"),
+    },
+  },
+  async (args) => {
+    try {
+      const submission = await citera.reviews.submission(args.review_id);
+      return ok({
+        review_id: submission.review_id,
+        final_verdict: submission.verdict,
+        regulatory_readiness: {
+          evidence_coverage_percent: submission.coverage.percent,
+          requirements_passed: `${submission.coverage.passed} / ${submission.coverage.total}`,
+        },
+        evidence_matrix: submission.coverage.rows.map((row) => ({
+          requirement: row.rule_title,
+          citation: row.citation,
+          impact: row.impact,
+          status: row.label,
+        })),
+        resolved_by_verified_revision: submission.resolved_by_revision.map(
+          (r) => ({
+            finding_id: r.finding_id,
+            requirement: r.rule_title,
+            verified_on_attempt: r.attempt,
+          }),
+        ),
+        remaining_actions: submission.remaining_actions.map((a) => ({
+          finding_id: a.finding_id,
+          requirement: a.rule_title,
+          citation: a.citation,
+          impact: a.impact,
+          status: a.status_label,
+          direction: a.remediation,
+        })),
       });
     } catch (error) {
       return fail(error);

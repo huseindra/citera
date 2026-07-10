@@ -150,6 +150,47 @@ export interface AuditStatus {
   records: number;
 }
 
+export interface Verification {
+  finding_id: string;
+  review_id: string;
+  verdict: "verified" | "rejected";
+  status: FindingStatus;
+  status_label: string;
+  reasoning: string;
+  requirement: Requirement;
+  verified_quote: string | null;
+  quote_char_start: number | null;
+  quote_char_end: number | null;
+  attempt: number;
+  evaluator_model: string;
+}
+
+export interface ResolvedByRevision {
+  finding_id: string;
+  rule_id: string;
+  rule_title: string | null;
+  attempt: number;
+}
+
+export interface RemainingAction {
+  finding_id: string;
+  rule_id: string;
+  rule_title: string | null;
+  citation: string | null;
+  impact: string | null;
+  status: FindingStatus;
+  status_label: string;
+  remediation: string | null;
+}
+
+export interface Submission {
+  review_id: string;
+  verdict: string;
+  coverage: Coverage;
+  resolved_by_revision: ResolvedByRevision[];
+  remaining_actions: RemainingAction[];
+}
+
 export interface FindingDetail {
   id: string;
   review_id: string;

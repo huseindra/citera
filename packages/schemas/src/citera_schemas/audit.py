@@ -16,6 +16,7 @@ class AuditStep(StrEnum):
     GROUNDING_PASSED = "grounding.passed"
     GROUNDING_FAILED = "grounding.failed"
     FINDING_PERSISTED = "finding.persisted"
+    VERIFY_REVISION = "verify.revision"
 
 
 class AuditRecord(BaseModel):

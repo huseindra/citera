@@ -8,7 +8,7 @@ from uuid import UUID
 
 from citera_rulesets import RulesetError, load_ruleset
 from fastapi import APIRouter, Depends, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +16,7 @@ from app.db import get_session
 from app.serializers import UTCDateTime
 from app.models import AuditRecord, Finding, Review
 from app.services.coverage import COVERAGE_LABEL, IMPACT_LABEL
+from app.services.verification import VerificationError, verify_revision
 
 router = APIRouter(prefix="/findings", tags=["findings"])
 
@@ -29,6 +30,28 @@ class RequirementOut(BaseModel):
     impact: str | None
     statutory_refs: list[str]
     remediation: str | None
+
+
+def _requirement_out(rule_id: str, rule) -> RequirementOut:
+    return RequirementOut(
+        rule_id=rule_id,
+        title=rule.title if rule else None,
+        citation=rule.citation if rule else None,
+        description=rule.description if rule else None,
+        severity=rule.severity.value if rule else None,
+        impact=IMPACT_LABEL.get(rule.severity.value) if rule else None,
+        statutory_refs=rule.statutory_refs if rule else [],
+        remediation=rule.remediation if rule else None,
+    )
+
+
+def _rule_for(ruleset_id: str, rule_id: str):
+    try:
+        return next(
+            (r for r in load_ruleset(ruleset_id).rules if r.id == rule_id), None
+        )
+    except RulesetError:
+        return None
 
 
 class SpanOut(BaseModel):
@@ -61,6 +84,66 @@ class FindingDetailOut(BaseModel):
     created_at: UTCDateTime
 
 
+class VerifyRequest(BaseModel):
+    # Claude's candidate consent language for this finding's requirement
+    revised_text: str = Field(min_length=20)
+
+
+class VerificationOut(BaseModel):
+    finding_id: UUID
+    review_id: UUID
+    verdict: str  # verified | rejected
+    status: str
+    status_label: str
+    reasoning: str
+    requirement: RequirementOut
+    verified_quote: str | None
+    quote_char_start: int | None
+    quote_char_end: int | None
+    attempt: int
+    evaluator_model: str
+
+
+@router.post("/{finding_id}/verify", response_model=VerificationOut)
+async def verify_finding_revision(
+    finding_id: UUID,
+    body: VerifyRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    """The Verify Loop: judge a proposed revision against this finding's
+    requirement with the same evaluator and span-grounding gate as a full
+    review. Append-only — the original finding is never rewritten; a
+    passing revision appears as an overlay in the submission endpoint."""
+    finding = await session.get(Finding, finding_id)
+    if finding is None:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    review = await session.get(Review, finding.review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    try:
+        result = await verify_revision(session, finding, review, body.revised_text)
+    except VerificationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    return VerificationOut(
+        finding_id=finding.id,
+        review_id=review.id,
+        verdict=result.verdict,
+        status=result.status,
+        status_label=COVERAGE_LABEL.get(result.status, result.status),
+        reasoning=result.reasoning,
+        requirement=_requirement_out(
+            finding.rule_id, _rule_for(review.ruleset_id, finding.rule_id)
+        ),
+        verified_quote=result.verified_quote,
+        quote_char_start=result.quote_char_start,
+        quote_char_end=result.quote_char_end,
+        attempt=result.attempt,
+        evaluator_model=result.evaluator_model,
+    )
+
+
 @router.get("/{finding_id}", response_model=FindingDetailOut)
 async def get_finding(
     finding_id: UUID, session: AsyncSession = Depends(get_session)
@@ -72,12 +155,7 @@ async def get_finding(
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found")
 
-    rule = None
-    try:
-        rules = {r.id: r for r in load_ruleset(review.ruleset_id).rules}
-        rule = rules.get(finding.rule_id)
-    except RulesetError:
-        pass
+    rule = _rule_for(review.ruleset_id, finding.rule_id)
 
     audit_records = await session.scalar(
         select(func.count())
@@ -97,16 +175,7 @@ async def get_finding(
         id=finding.id,
         review_id=finding.review_id,
         ruleset_id=review.ruleset_id,
-        requirement=RequirementOut(
-            rule_id=finding.rule_id,
-            title=rule.title if rule else None,
-            citation=rule.citation if rule else None,
-            description=rule.description if rule else None,
-            severity=rule.severity.value if rule else None,
-            impact=IMPACT_LABEL.get(rule.severity.value) if rule else None,
-            statutory_refs=rule.statutory_refs if rule else [],
-            remediation=rule.remediation if rule else None,
-        ),
+        requirement=_requirement_out(finding.rule_id, rule),
         status=finding.status,
         status_label=COVERAGE_LABEL.get(finding.status, finding.status),
         reasoning=finding.reasoning,

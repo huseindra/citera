@@ -20,6 +20,8 @@ import type {
   ReviewSummary,
   Ruleset,
   RulesetInfo,
+  Submission,
+  Verification,
 } from "./types.js";
 
 export * from "./types.js";
@@ -216,6 +218,12 @@ class Reviews {
     return this.http.json<ReviewReport>(`/reviews/${reviewId}/report`);
   }
 
+  /** Submission readiness with the verification overlay — findings
+   *  resolved by verified revisions are labeled exactly that. */
+  submission(reviewId: string): Promise<Submission> {
+    return this.http.json<Submission>(`/reviews/${reviewId}/submission`);
+  }
+
   /** The same report rendered as reviewer-facing Markdown. */
   async reportMarkdown(reviewId: string): Promise<string> {
     const response = await this.http.request(
@@ -244,6 +252,17 @@ class Findings {
   /** Full finding dossier: requirement, evidence, analysis, audit status. */
   get(findingId: string): Promise<FindingDetail> {
     return this.http.json<FindingDetail>(`/findings/${findingId}`);
+  }
+
+  /** The Verify Loop: judge a proposed revision against this finding's
+   *  requirement — same evaluator and span-grounding gate as a review.
+   *  Append-only; the original finding is never rewritten. */
+  verify(findingId: string, revisedText: string): Promise<Verification> {
+    return this.http.json<Verification>(`/findings/${findingId}/verify`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ revised_text: revisedText }),
+    });
   }
 }
 
