@@ -56,6 +56,9 @@ export interface ReviewOut {
   rule_count: number;
   generate_suggested_revision: boolean;
   evaluator_model: string | null;
+  title: string | null;
+  notes: string | null;
+  required_stages: number;
   findings: FindingOut[];
   created_at: string;
 }
@@ -153,6 +156,49 @@ export interface ReviewSummary {
   document_filename: string | null;
   ruleset_id: string;
   status: string;
+  title: string | null;
+  approved: boolean;
   status_counts: Record<string, number>;
   created_at: string;
+}
+
+// ------- staged reviewer workflow (Review 1..N + Verified stamp) -------
+
+export interface DeterminationOut {
+  id: string;
+  stage_id: string;
+  finding_id: string;
+  rule_id: string | null;
+  decision: "concur" | "override";
+  comment: string | null;
+  edited_text: string | null;
+  reviewer_name: string;
+  created_at: string;
+}
+
+export interface StageOut {
+  id: string;
+  stage_number: number;
+  reviewer_name: string;
+  status: "in_progress" | "completed";
+  notes: string | null;
+  created_at: string;
+  completed_at: string | null;
+  determinations: DeterminationOut[];
+}
+
+export interface ApprovalOut {
+  id: string;
+  reviewer_name: string;
+  content_hash: string;
+  created_at: string;
+}
+
+export interface WorkflowOut {
+  review_id: string;
+  review_status: string;
+  required_stages: number;
+  completed_stages: number;
+  stages: StageOut[];
+  approval: ApprovalOut | null;
 }

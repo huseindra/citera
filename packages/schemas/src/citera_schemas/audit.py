@@ -17,6 +17,13 @@ class AuditStep(StrEnum):
     GROUNDING_FAILED = "grounding.failed"
     FINDING_PERSISTED = "finding.persisted"
     VERIFY_REVISION = "verify.revision"
+    # reviewer workflow: staged human review over an immutable AI review
+    REVIEW_UPDATED = "review.updated"
+    REVIEW_DELETED = "review.deleted"
+    WORKFLOW_STAGE_STARTED = "workflow.stage.started"
+    WORKFLOW_DETERMINATION = "workflow.determination"
+    WORKFLOW_STAGE_COMPLETED = "workflow.stage.completed"
+    REVIEW_APPROVED = "review.approved"
 
 
 class AuditRecord(BaseModel):

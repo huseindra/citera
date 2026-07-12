@@ -66,3 +66,18 @@ export const SEVERITY_ORDER: Record<string, number> = {
   major: 1,
   minor: 2,
 };
+
+// Review job states, reviewer-facing wording (API keeps the raw values)
+export const REVIEW_STATUS_LABEL: Record<string, string> = {
+  pending: "Queued",
+  running: "Processing",
+  complete: "Completed",
+  failed: "Failed",
+};
+
+export const REVIEW_STATUS_CHIP: Record<string, string> = {
+  pending: "bg-stone-100 text-stone-600 border-stone-300",
+  running: "bg-sky-50 text-sky-700 border-sky-200",
+  complete: "bg-green-50 text-green-700 border-green-200",
+  failed: "bg-red-50 text-red-700 border-red-200",
+};

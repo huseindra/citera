@@ -2,15 +2,16 @@ from datetime import datetime
 from uuid import UUID
 
 from citera_rulesets import RulesetError, load_ruleset
+from citera_schemas import AuditStep
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
 from fastapi.responses import PlainTextResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.serializers import UTCDateTime, as_utc
-from app.models import AuditRecord, Chunk, Document, Finding, Review
+from app.models import AuditRecord, Chunk, Document, Finding, Review, ReviewApproval
 from app.services.coverage import COVERAGE_LABEL, IMPACT_LABEL, compute_coverage
 from app.services.demo import enforce_demo_limits, record_demo_usage
 from app.services.review import run_review
@@ -28,6 +29,9 @@ class ReviewCreate(BaseModel):
     ruleset_id: str = "fda-21cfr50"
     # draft an AI revision for every non-satisfied finding (labeled draft)
     generate_suggested_revision: bool = True
+    title: str | None = None
+    # completed reviewer stages the Verified stamp will require (1–5)
+    required_stages: int = Field(default=3, ge=1, le=5)
 
 
 class SpanOut(BaseModel):
@@ -64,6 +68,9 @@ class ReviewOut(BaseModel):
     generate_suggested_revision: bool
     # which model actually evaluated (from the audit log) — honest chip
     evaluator_model: str | None
+    title: str | None
+    notes: str | None
+    required_stages: int
     findings: list[FindingOut]
     created_at: UTCDateTime
 
@@ -123,6 +130,8 @@ async def create_review(
         ruleset_version=ruleset.version,
         status="pending",
         generate_suggested_revision=body.generate_suggested_revision,
+        title=body.title,
+        required_stages=body.required_stages,
     )
     session.add(review)
     await session.flush()
@@ -140,6 +149,9 @@ class ReviewSummary(BaseModel):
     document_filename: str | None
     ruleset_id: str
     status: str
+    title: str | None
+    # a Verified digital stamp exists for this review
+    approved: bool
     # finding counts keyed by status — review list shows outcomes at a glance
     status_counts: dict[str, int]
     created_at: UTCDateTime
@@ -160,6 +172,9 @@ async def list_reviews(session: AsyncSession = Depends(get_session)):
     counts: dict[UUID, dict[str, int]] = {}
     for review_id, status, count in counts_rows:
         counts.setdefault(review_id, {})[status] = count
+    approved_ids = set(
+        (await session.scalars(select(ReviewApproval.review_id))).all()
+    )
 
     return [
         ReviewSummary(
@@ -168,6 +183,8 @@ async def list_reviews(session: AsyncSession = Depends(get_session)):
             document_filename=filename,
             ruleset_id=review.ruleset_id,
             status=review.status,
+            title=review.title,
+            approved=review.id in approved_ids,
             status_counts=counts.get(review.id, {}),
             created_at=review.created_at,
         )
@@ -181,6 +198,83 @@ async def get_review(review_id: UUID, session: AsyncSession = Depends(get_sessio
     if review is None:
         raise HTTPException(status_code=404, detail="Review not found")
     return await _to_out(session, review)
+
+
+class ReviewUpdate(BaseModel):
+    title: str | None = None
+    notes: str | None = None
+
+
+@router.patch("/{review_id}", response_model=ReviewOut)
+async def update_review(
+    review_id: UUID,
+    body: ReviewUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    """Update reviewer-editable metadata only (title, notes). Findings and
+    the review outcome are immutable — reviewer decisions go through the
+    staged workflow, never through PATCH."""
+    review = await session.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+
+    changes = body.model_dump(exclude_unset=True)
+    if not changes:
+        raise HTTPException(
+            status_code=422, detail="Provide at least one of: title, notes"
+        )
+    for field, value in changes.items():
+        setattr(review, field, value)
+    session.add(
+        AuditRecord(
+            step=AuditStep.REVIEW_UPDATED,
+            review_id=review.id,
+            document_id=review.document_id,
+            payload={"changes": changes},
+        )
+    )
+    await session.commit()
+    return await _to_out(session, review)
+
+
+@router.delete("/{review_id}", status_code=204)
+async def delete_review(
+    review_id: UUID, session: AsyncSession = Depends(get_session)
+):
+    """Delete a review and its findings/stages (cascade). The append-only
+    audit log is intentionally kept — deletion itself is recorded there."""
+    review = await session.get(Review, review_id)
+    if review is None:
+        raise HTTPException(status_code=404, detail="Review not found")
+    if review.status in ("pending", "running"):
+        raise HTTPException(
+            status_code=409,
+            detail=f"Review is '{review.status}' — wait for it to finish "
+            "before deleting.",
+        )
+    approval = await session.scalar(
+        select(ReviewApproval).where(ReviewApproval.review_id == review_id)
+    )
+    if approval is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Review carries a Verified stamp — approved reviews are "
+            "part of the compliance record and cannot be deleted.",
+        )
+    session.add(
+        AuditRecord(
+            step=AuditStep.REVIEW_DELETED,
+            review_id=review.id,
+            document_id=review.document_id,
+            payload={
+                "ruleset_id": review.ruleset_id,
+                "status": review.status,
+                "title": review.title,
+            },
+        )
+    )
+    await session.delete(review)
+    await session.commit()
 
 
 class CoverageRowOut(BaseModel):
@@ -685,6 +779,9 @@ async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:
         rule_count=len(rules),
         generate_suggested_revision=review.generate_suggested_revision,
         evaluator_model=evaluator_model,
+        title=review.title,
+        notes=review.notes,
+        required_stages=review.required_stages,
         findings=findings,
         created_at=review.created_at,
     )

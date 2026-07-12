@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime
 
 from pgvector.sqlalchemy import Vector
-from sqlalchemy import DDL, Computed, ForeignKey, Index, Text, event, func
+from sqlalchemy import DDL, Computed, ForeignKey, Index, Text, UniqueConstraint, event, func
 from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -74,6 +74,11 @@ class Review(Base):
     generate_suggested_revision: Mapped[bool] = mapped_column(
         default=True, server_default="true"
     )
+    # reviewer-editable metadata (PATCH /reviews/{id})
+    title: Mapped[str | None]
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # how many completed reviewer stages the Verified stamp requires
+    required_stages: Mapped[int] = mapped_column(default=3, server_default="3")
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 
@@ -102,6 +107,74 @@ class Finding(Base):
     retrieval_audit_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ReviewStage(Base):
+    """One pass of staged human review (Review 1, Review 2, …) over a
+    completed AI review. Stages are sequential; the AI findings stay
+    immutable — reviewer decisions live in FindingDetermination."""
+
+    __tablename__ = "review_stages"
+    __table_args__ = (UniqueConstraint("review_id", "stage_number"),)
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    review_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reviews.id", ondelete="CASCADE"), index=True
+    )
+    stage_number: Mapped[int]
+    reviewer_name: Mapped[str]
+    status: Mapped[str] = mapped_column(default="in_progress")  # in_progress|completed
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+    completed_at: Mapped[datetime | None]
+
+
+class FindingDetermination(Base):
+    """A reviewer's decision on one finding within one stage — appended,
+    never updated (the latest row per stage+finding wins for display, the
+    full history is the change log). 'override' carries the reviewer's
+    edit as comment/edited_text; the original finding is never mutated."""
+
+    __tablename__ = "finding_determinations"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    stage_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("review_stages.id", ondelete="CASCADE"), index=True
+    )
+    review_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reviews.id", ondelete="CASCADE"), index=True
+    )
+    finding_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("findings.id", ondelete="CASCADE"), index=True
+    )
+    decision: Mapped[str]  # concur | override
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # reviewer's replacement text for the finding's assessment/revision
+    edited_text: Mapped[str | None] = mapped_column(Text, nullable=True)
+    reviewer_name: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(server_default=func.now())
+
+
+class ReviewApproval(Base):
+    """The digital stamp: one Verified approval per review, only after
+    every required stage is completed. content_hash is the sha256 of the
+    canonical report payload at stamping time — tamper-evident."""
+
+    __tablename__ = "review_approvals"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    review_id: Mapped[uuid.UUID] = mapped_column(
+        ForeignKey("reviews.id", ondelete="CASCADE"), unique=True, index=True
+    )
+    reviewer_name: Mapped[str]
+    content_hash: Mapped[str]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 

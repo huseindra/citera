@@ -12,6 +12,7 @@ import { Inspector } from "../components/inspector/Inspector";
 import { EvidenceCoverage } from "../components/review/EvidenceCoverage";
 import { RulesetBadge } from "../components/RulesetBadge";
 import { displayName, rulesetName } from "../lib/format";
+import { REVIEW_STATUS_LABEL } from "../lib/status";
 
 export function ReviewPage() {
   const { reviewId } = useParams();
@@ -172,8 +173,8 @@ export function ReviewPage() {
             {playing
               ? `Replaying · ${visibleFindings.length}/${data.rule_count}`
               : reviewRunning
-                ? `Claude reviewing · ${data.findings.length}/${data.rule_count}`
-                : data.status}
+                ? `${REVIEW_STATUS_LABEL[data.status]} · ${data.findings.length}/${data.rule_count}`
+                : (REVIEW_STATUS_LABEL[data.status] ?? data.status)}
           </span>
         </div>
       </div>

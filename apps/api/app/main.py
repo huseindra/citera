@@ -15,7 +15,9 @@ from app.routers.platform import router as platform_router
 from app.routers.retrieval import router as retrieval_router
 from app.routers.reviews import router as reviews_router
 from app.routers.rulesets import router as rulesets_router
+from app.routers.workflow import router as workflow_router
 from app.services.embeddings import embedding_metadata, get_embedder
+from app.services.review import recover_orphaned_reviews
 from app.settings import settings
 
 logger = logging.getLogger(__name__)
@@ -27,6 +29,18 @@ async def lifespan(app: FastAPI):
         # Idempotent safety net: initdb only runs on first volume creation.
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.create_all)
+        # create_all never alters existing tables (no Alembic here) —
+        # idempotent ADD COLUMN keeps pre-existing dev volumes in sync.
+        for ddl in (
+            "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS title VARCHAR",
+            "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS notes TEXT",
+            "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS "
+            "required_stages INTEGER NOT NULL DEFAULT 3",
+        ):
+            await conn.execute(text(ddl))
+
+    # in-process background reviews don't survive restarts — close them out
+    await recover_orphaned_reviews()
 
     # Fail fast: a misconfigured or unreachable embedding provider must be
     # visible at startup, never at the first review.
@@ -54,6 +68,7 @@ app.include_router(findings_router)
 app.include_router(retrieval_router)
 app.include_router(reviews_router)
 app.include_router(rulesets_router)
+app.include_router(workflow_router)
 
 # Public v1 surface: the SDK's REST API is the existing resource API,
 # re-included under /v1 (retrieval stays internal). Key enforcement on
@@ -63,6 +78,7 @@ v1.include_router(documents_router)
 v1.include_router(findings_router)
 v1.include_router(reviews_router)
 v1.include_router(rulesets_router)
+v1.include_router(workflow_router)
 v1.include_router(platform_router)
 app.include_router(v1)
 

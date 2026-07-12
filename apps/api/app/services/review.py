@@ -31,6 +31,28 @@ _EVIDENCE_BACKED = {
 }
 
 
+async def recover_orphaned_reviews() -> int:
+    """Startup recovery: reviews run as in-process background tasks, so an
+    API restart strands anything mid-flight in pending/running forever.
+    Mark them failed so polling clients see a terminal state. Returns the
+    number of reviews recovered."""
+    from sqlalchemy import update
+
+    async with session_factory() as session:
+        result = await session.execute(
+            update(Review)
+            .where(Review.status.in_(("pending", "running")))
+            .values(status="failed")
+        )
+        await session.commit()
+    recovered = result.rowcount or 0
+    if recovered:
+        logger.warning(
+            "recovered %d orphaned review(s) stranded by a restart", recovered
+        )
+    return recovered
+
+
 async def run_review(review_id: UUID) -> None:
     async with session_factory() as session:
         review = await session.get(Review, review_id)

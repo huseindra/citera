@@ -3,11 +3,11 @@
 // real API calls this session made. The review engine is untouched —
 // the full Finding Dossier experience lives at /playground/reviews/:id.
 
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
-import { Activity, Check, Dna, FlaskConical, HeartPulse, Microscope, Stethoscope, Wind, Zap, type LucideIcon } from "lucide-react";
+import { Activity, BadgeCheck, Check, Dna, FlaskConical, HeartPulse, Microscope, Pencil, Stethoscope, Trash2, Wind, Zap, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
-import { apiGet, apiPost, apiUploadWithProgress, storedApiKey } from "../api/client";
+import { apiDelete, apiGet, apiPatch, apiPost, apiUploadWithProgress, storedApiKey } from "../api/client";
 import type {
   DocumentOut,
   FindingOut,
@@ -23,7 +23,7 @@ import {
 import { RulesetBadge } from "../components/RulesetBadge";
 import { RulesetSelector } from "../components/playground/RulesetSelector";
 import { displayName, timeAgo } from "../lib/format";
-import { STATUS_META } from "../lib/status";
+import { REVIEW_STATUS_CHIP, REVIEW_STATUS_LABEL, STATUS_META } from "../lib/status";
 
 type SlotKind = "protocol" | "icf";
 
@@ -815,20 +815,98 @@ function EmptyState({
           </div>
           <ul className="mt-2 space-y-1">
             {sessions.map((r) => (
-              <li key={r.id}>
-                <Link
-                  to={`/playground/reviews/${r.id}`}
-                  className="flex justify-between rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs hover:bg-stone-50"
-                >
-                  <span className="text-stone-700">{displayName(r.document_filename)}</span>
-                  <span className="text-stone-400">{timeAgo(r.created_at)}</span>
-                </Link>
-              </li>
+              <SessionRow key={r.id} review={r} />
             ))}
           </ul>
         </div>
       )}
     </div>
+  );
+}
+
+function SessionRow({ review }: { review: ReviewSummary }) {
+  const queryClient = useQueryClient();
+  const refresh = () => queryClient.invalidateQueries({ queryKey: ["reviews"] });
+
+  const rename = useMutation({
+    mutationFn: (title: string) =>
+      apiPatch(`/reviews/${review.id}`, { title }),
+    onSettled: refresh,
+  });
+  const remove = useMutation({
+    mutationFn: () => apiDelete(`/reviews/${review.id}`),
+    onSettled: refresh,
+  });
+
+  const onRename = () => {
+    const title = window.prompt(
+      "Review title",
+      review.title ?? displayName(review.document_filename) ?? "",
+    );
+    if (title !== null && title.trim()) rename.mutate(title.trim());
+  };
+  const onDelete = () => {
+    if (
+      window.confirm(
+        "Delete this review and its findings? The audit trail is kept.",
+      )
+    )
+      remove.mutate();
+  };
+
+  return (
+    <li className="group flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs hover:bg-stone-50">
+      <Link
+        to={`/playground/reviews/${review.id}`}
+        className="flex min-w-0 flex-1 items-center gap-2"
+      >
+        <span className="truncate text-stone-700">
+          {review.title ?? displayName(review.document_filename)}
+        </span>
+        {review.approved ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-green-200 bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
+            <BadgeCheck aria-hidden className="h-3 w-3" /> Verified
+          </span>
+        ) : (
+          <span
+            className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${REVIEW_STATUS_CHIP[review.status] ?? ""}`}
+          >
+            {REVIEW_STATUS_LABEL[review.status] ?? review.status}
+          </span>
+        )}
+        <span className="ml-auto shrink-0 text-stone-400">
+          {timeAgo(review.created_at)}
+        </span>
+      </Link>
+      <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+        <button
+          onClick={onRename}
+          title="Rename review"
+          aria-label="Rename review"
+          className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+        >
+          <Pencil aria-hidden className="h-3.5 w-3.5" />
+        </button>
+        <button
+          onClick={onDelete}
+          disabled={remove.isPending}
+          title={
+            review.approved
+              ? "Verified reviews cannot be deleted"
+              : "Delete review"
+          }
+          aria-label="Delete review"
+          className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+        >
+          <Trash2 aria-hidden className="h-3.5 w-3.5" />
+        </button>
+      </span>
+      {remove.isError && (
+        <span className="text-[10px] text-red-600">
+          {String((remove.error as Error).message ?? "delete failed")}
+        </span>
+      )}
+    </li>
   );
 }
 

@@ -1,9 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, BadgeCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../api/client";
-import type { DocumentText, ReviewOut } from "../api/types";
+import type { DocumentText, ReviewOut, WorkflowOut } from "../api/types";
 import { EvidenceBlock } from "../components/EvidenceBlock";
+import {
+  DeterminationControl,
+  WorkflowPanel,
+} from "../components/review/WorkflowPanel";
 import { displayName, rulesetName } from "../lib/format";
 import { STATUS_META } from "../lib/status";
 import { SEVERITY_ORDER } from "../lib/status";
@@ -24,11 +28,16 @@ export function ReportPage() {
       apiGet<DocumentText>(`/documents/${review.data!.document_id}/text`),
     enabled: !!review.data?.document_id,
   });
+  const workflow = useQuery({
+    queryKey: ["workflow", reviewId],
+    queryFn: () => apiGet<WorkflowOut>(`/reviews/${reviewId}/workflow`),
+  });
 
   if (!review.data || !documentText.data) {
     return <div className="p-8 text-sm text-stone-400">Preparing report…</div>;
   }
   const data = review.data;
+  const approval = workflow.data?.approval ?? null;
 
   const findings = [...data.findings].sort((a, b) => {
     const byStatus = STATUS_META[a.status].order - STATUS_META[b.status].order;
@@ -63,8 +72,13 @@ export function ReportPage() {
           <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
             Citera — Evidence Intelligence · Compliance Review Report
           </div>
-          <h1 className="mt-1 text-xl font-semibold tracking-tight">
-            {displayName(documentText.data.filename)}
+          <h1 className="mt-1 flex items-center gap-2 text-xl font-semibold tracking-tight">
+            {data.title ?? displayName(documentText.data.filename)}
+            {approval && (
+              <span className="inline-flex items-center gap-1 rounded-full border border-green-300 bg-green-50 px-2 py-0.5 text-[11px] font-semibold text-green-700">
+                <BadgeCheck aria-hidden className="h-3.5 w-3.5" /> Verified
+              </span>
+            )}
           </h1>
           <dl className="mt-3 grid grid-cols-2 gap-x-8 gap-y-1 text-xs text-stone-600">
             <div className="flex gap-2">
@@ -117,6 +131,10 @@ export function ReportPage() {
               ))}
           </div>
         </section>
+
+        {workflow.data && (
+          <WorkflowPanel reviewId={data.id} workflow={workflow.data} />
+        )}
 
         <section className="mt-8 space-y-6">
           {findings.map((f, index) => {
@@ -185,20 +203,30 @@ export function ReportPage() {
                 </div>
 
                 {/* human-in-the-loop: the reviewer decides */}
-                <div className="mt-3 flex items-center gap-6 border-t border-dashed border-stone-200 pt-3 text-[11px] text-stone-600">
-                  <span className="font-medium">Reviewer determination:</span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="inline-block h-3.5 w-3.5 rounded-sm border border-stone-400" />
-                    Concur
-                  </span>
-                  <span className="inline-flex items-center gap-1.5">
-                    <span className="inline-block h-3.5 w-3.5 rounded-sm border border-stone-400" />
-                    Override
-                  </span>
-                  <span className="ml-auto text-stone-400">
-                    initials ________
-                  </span>
-                </div>
+                {workflow.data ? (
+                  <DeterminationControl
+                    reviewId={data.id}
+                    workflow={workflow.data}
+                    findingId={f.id}
+                  />
+                ) : (
+                  <div className="mt-3 flex items-center gap-6 border-t border-dashed border-stone-200 pt-3 text-[11px] text-stone-600">
+                    <span className="font-medium">
+                      Reviewer determination:
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-3.5 w-3.5 rounded-sm border border-stone-400" />
+                      Concur
+                    </span>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-block h-3.5 w-3.5 rounded-sm border border-stone-400" />
+                      Override
+                    </span>
+                    <span className="ml-auto text-stone-400">
+                      initials ________
+                    </span>
+                  </div>
+                )}
               </article>
             );
           })}
@@ -211,16 +239,39 @@ export function ReportPage() {
             trail (retrieval scores, prompts, model responses, grounding
             verification) is preserved in the append-only audit log.
           </p>
-          <div className="mt-8 grid grid-cols-2 gap-12 text-[11px] text-stone-600">
-            <div>
-              <div className="border-b border-stone-400 pb-8" />
-              <div className="mt-1">Reviewer signature</div>
+          {approval ? (
+            // the digital stamp replaces the wet-signature block
+            <div className="mt-8 flex items-start gap-3 rounded-lg border-2 border-green-600 p-4">
+              <BadgeCheck aria-hidden className="h-8 w-8 shrink-0 text-green-700" />
+              <div className="text-[11px] leading-5 text-stone-700">
+                <div className="text-sm font-bold uppercase tracking-wide text-green-700">
+                  Verified
+                </div>
+                <div>
+                  Digitally stamped by{" "}
+                  <span className="font-semibold">
+                    {approval.reviewer_name}
+                  </span>{" "}
+                  on {new Date(approval.created_at).toLocaleString()} after{" "}
+                  {workflow.data!.completed_stages} completed review stages.
+                </div>
+                <div className="mt-1 font-mono text-[9px] text-stone-400">
+                  report sha256 {approval.content_hash}
+                </div>
+              </div>
             </div>
-            <div>
-              <div className="border-b border-stone-400 pb-8" />
-              <div className="mt-1">Date</div>
+          ) : (
+            <div className="mt-8 grid grid-cols-2 gap-12 text-[11px] text-stone-600">
+              <div>
+                <div className="border-b border-stone-400 pb-8" />
+                <div className="mt-1">Reviewer signature</div>
+              </div>
+              <div>
+                <div className="border-b border-stone-400 pb-8" />
+                <div className="mt-1">Date</div>
+              </div>
             </div>
-          </div>
+          )}
         </footer>
       </div>
     </div>

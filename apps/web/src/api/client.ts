@@ -48,6 +48,15 @@ export async function apiDelete(path: string): Promise<void> {
   if (!resp.ok) throw new Error(`DELETE ${path} failed (${resp.status})`);
 }
 
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  const resp = await fetch(`/api${path}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", ...authHeaders() },
+    body: JSON.stringify(body),
+  });
+  return handle(resp, "PATCH", path);
+}
+
 export async function apiPost<T>(path: string, body: unknown): Promise<T> {
   const resp = await fetch(`/api${path}`, {
     method: "POST",
