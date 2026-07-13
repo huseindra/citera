@@ -3,7 +3,14 @@ from uuid import UUID
 
 from citera_rulesets import RulesetError, load_ruleset
 from citera_schemas import AuditStep
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    Query,
+    Request,
+)
 from fastapi.responses import PlainTextResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, func, or_, select
@@ -161,23 +168,44 @@ class ReviewSummary(BaseModel):
 
 
 @router.get("", response_model=list[ReviewSummary])
-async def list_reviews(session: AsyncSession = Depends(get_session)):
-    rows = await session.execute(
-        select(Review, Document.filename)
-        .join(Document, Document.id == Review.document_id)
-        .order_by(Review.created_at.desc())
-    )
-    counts_rows = await session.execute(
-        select(Finding.review_id, Finding.status, func.count()).group_by(
-            Finding.review_id, Finding.status
+async def list_reviews(
+    limit: int = Query(50, ge=1, le=200),
+    offset: int = Query(0, ge=0),
+    session: AsyncSession = Depends(get_session),
+):
+    """Newest first, paginated. Clients page with limit/offset; a page
+    shorter than `limit` is the last one."""
+    rows = (
+        await session.execute(
+            select(Review, Document.filename)
+            .join(Document, Document.id == Review.document_id)
+            # id breaks created_at ties so pages never overlap
+            .order_by(Review.created_at.desc(), Review.id.desc())
+            .limit(limit)
+            .offset(offset)
         )
-    )
+    ).all()
+    page_ids = [review.id for review, _ in rows]
+
     counts: dict[UUID, dict[str, int]] = {}
-    for review_id, status, count in counts_rows:
-        counts.setdefault(review_id, {})[status] = count
-    approved_ids = set(
-        (await session.scalars(select(ReviewApproval.review_id))).all()
-    )
+    approved_ids: set[UUID] = set()
+    if page_ids:
+        counts_rows = await session.execute(
+            select(Finding.review_id, Finding.status, func.count())
+            .where(Finding.review_id.in_(page_ids))
+            .group_by(Finding.review_id, Finding.status)
+        )
+        for review_id, status, count in counts_rows:
+            counts.setdefault(review_id, {})[status] = count
+        approved_ids = set(
+            (
+                await session.scalars(
+                    select(ReviewApproval.review_id).where(
+                        ReviewApproval.review_id.in_(page_ids)
+                    )
+                )
+            ).all()
+        )
 
     return [
         ReviewSummary(

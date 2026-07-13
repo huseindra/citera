@@ -492,6 +492,26 @@ async def test_delete_document_guards_review_history(client):
         assert "review" in resp.json()["detail"]
 
 
+async def test_review_list_paginates_newest_first(client):
+    await _manual_review("complete")
+    await _manual_review("complete")
+
+    first = (await client.get("/reviews?limit=1")).json()
+    assert len(first) == 1
+    second = (await client.get("/reviews?limit=1&offset=1")).json()
+    assert len(second) == 1
+    assert second[0]["id"] != first[0]["id"]
+
+    # pages tile the same ordering: limit=2 is exactly page1 + page2
+    both = (await client.get("/reviews?limit=2")).json()
+    assert [r["id"] for r in both] == [first[0]["id"], second[0]["id"]]
+
+    # bounds are enforced, not silently clamped
+    assert (await client.get("/reviews?limit=0")).status_code == 422
+    assert (await client.get("/reviews?limit=201")).status_code == 422
+    assert (await client.get("/reviews?offset=-1")).status_code == 422
+
+
 async def test_workflow_requires_completed_review(client):
     review_id = await _manual_review("running")
     resp = await client.post(

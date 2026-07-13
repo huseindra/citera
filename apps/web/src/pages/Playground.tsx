@@ -4,7 +4,12 @@
 // calls this session made. The review engine is untouched — the full
 // Finding Dossier experience lives at /playground/reviews/:id.
 
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
 import { Activity, BadgeCheck, Check, Dna, ExternalLink, FlaskConical, HeartPulse, Microscope, Pencil, Stethoscope, Trash2, Wind, Zap, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
@@ -129,10 +134,17 @@ export function PlaygroundPage() {
     refetchInterval: () =>
       Object.values(slots).some((s) => s.state === "processing") ? 1200 : false,
   });
-  const reviews = useQuery({
+  // history pages in 10 at a time — a page shorter than PAGE is the last
+  const PAGE = 10;
+  const reviews = useInfiniteQuery({
     queryKey: ["reviews"],
-    queryFn: () => apiGet<ReviewSummary[]>("/reviews"),
+    queryFn: ({ pageParam }) =>
+      apiGet<ReviewSummary[]>(`/reviews?limit=${PAGE}&offset=${pageParam}`),
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, allPages) =>
+      lastPage.length === PAGE ? allPages.flat().length : undefined,
   });
+  const sessions = reviews.data?.pages.flat() ?? [];
   const activeReview = useQuery({
     queryKey: ["review", activeReviewId],
     queryFn: () => apiGet<ReviewOut>(`/reviews/${activeReviewId}`),
@@ -328,7 +340,7 @@ export function PlaygroundPage() {
             History
           </div>
           <ul className="mt-1.5 min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-3">
-            {(reviews.data ?? []).map((r) => (
+            {sessions.map((r) => (
               <SessionRow
                 key={r.id}
                 review={r}
@@ -339,9 +351,20 @@ export function PlaygroundPage() {
                 }}
               />
             ))}
-            {(reviews.data ?? []).length === 0 && (
+            {sessions.length === 0 && (
               <li className="px-1 py-2 text-[11px] text-stone-400">
                 No reviews yet — start your first one.
+              </li>
+            )}
+            {reviews.hasNextPage && (
+              <li>
+                <button
+                  onClick={() => reviews.fetchNextPage()}
+                  disabled={reviews.isFetchingNextPage}
+                  className="w-full rounded-lg border border-dashed border-stone-300 px-3 py-1.5 text-[11px] font-medium text-stone-500 hover:bg-stone-100 hover:text-stone-700 disabled:opacity-50"
+                >
+                  {reviews.isFetchingNextPage ? "Loading…" : "Load more"}
+                </button>
               </li>
             )}
           </ul>
