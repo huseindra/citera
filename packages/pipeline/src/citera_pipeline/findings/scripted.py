@@ -214,7 +214,9 @@ class ScriptedEvaluator:
 _KEYWORD_JUDGMENTS: list[tuple[str, list[tuple[str, list[str]]]]] = [
     ("risks", [
         ("satisfied", ["liver", "enzim hati"]),
-        ("conflicting", ["well tolerated", "sangat aman"]),
+        # each corpus words its understated-risk defect differently:
+        # en, bpom asthma ("sangat aman"), bpom TB ("ditoleransi dengan baik")
+        ("conflicting", ["well tolerated", "sangat aman", "ditoleransi dengan baik"]),
     ]),
     ("injury-compensation", [
         ("satisfied", ["pay the reasonable costs", "ditanggung oleh sponsor"]),

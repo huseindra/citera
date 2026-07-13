@@ -113,6 +113,18 @@ ANSWER_KEYS = {
             "bpom-4811-copy": "not_found",
         },
     },
+    # second corpus for the same pack: the TB study (TBC-311) words its
+    # planted defects differently — it must reproduce the same archetypes
+    "bpom-cukb-tb": {
+        "ruleset": "bpom-cukb",
+        "corpus": ("bpom-tb-protocol.md", "bpom-tb-icf.md"),
+        "expected": {
+            "bpom-4810-risks": "conflicting",
+            "bpom-4810-injury-compensation": "partial",
+            "bpom-ku17-insurance": "not_found",
+            "bpom-4811-copy": "not_found",
+        },
+    },
     "tga-ns-ichgcp": {
         "corpus": ("tga-protocol.md", "tga-icf.md"),
         "expected": {
@@ -124,9 +136,10 @@ ANSWER_KEYS = {
 }
 
 
-@pytest.mark.parametrize("ruleset_id", list(ANSWER_KEYS))
-async def test_pack_reproduces_its_answer_key(client, ruleset_id):
-    spec = ANSWER_KEYS[ruleset_id]
+@pytest.mark.parametrize("key", list(ANSWER_KEYS))
+async def test_pack_reproduces_its_answer_key(client, key):
+    spec = ANSWER_KEYS[key]
+    ruleset_id = spec.get("ruleset", key)  # a pack may have several corpora
     protocol_name, icf_name = spec["corpus"]
     protocol_id = await _ingest(client, protocol_name, "protocol")
     icf_id = await _ingest(client, icf_name, "icf")
