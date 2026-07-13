@@ -43,6 +43,8 @@ export interface FindingOut {
   protocol_reference: string | null;
   queries_executed: string[] | null;
   suggested_revision: string | null;
+  source: "engine" | "reviewer";
+  reviewer_name: string | null;
   created_at: string;
 }
 

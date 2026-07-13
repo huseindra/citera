@@ -54,6 +54,9 @@ class FindingOut(BaseModel):
     protocol_reference: str | None
     queries_executed: list[str] | None
     suggested_revision: str | None
+    # engine = review pipeline; reviewer = added manually during a stage
+    source: str
+    reviewer_name: str | None
     created_at: UTCDateTime
 
 
@@ -311,8 +314,15 @@ async def _report_payload(
     except RulesetError:
         rules = []
     findings = (
-        await session.scalars(select(Finding).where(Finding.review_id == review.id))
+        await session.scalars(
+            select(Finding)
+            .where(Finding.review_id == review.id)
+            .order_by(Finding.created_at)
+        )
     ).all()
+    # coverage keys findings by rule_id, last one wins — created_at order
+    # makes that deterministic: a reviewer-added finding supersedes the
+    # engine's for readiness, without ever rewriting the engine's row
     summary = compute_coverage(rules, findings)
     document = await session.get(Document, review.document_id)
     return ReviewReportOut(
@@ -364,6 +374,12 @@ def _render_markdown(report: ReviewReportOut) -> str:
             "",
             f"- **Citation:** {finding.citation or '—'}",
             f"- **Impact:** {IMPACT_LABEL.get(finding.severity or '', finding.severity or '—')}",
+        ]
+        if finding.source == "reviewer":
+            lines.append(
+                f"- **Source:** Added by reviewer ({finding.reviewer_name})"
+            )
+        lines += [
             "",
             f"{finding.reasoning}",
             "",
@@ -765,6 +781,8 @@ async def _to_out(session: AsyncSession, review: Review) -> ReviewOut:
             protocol_reference=f.protocol_reference,
             queries_executed=f.queries_executed,
             suggested_revision=f.suggested_revision,
+            source=f.source,
+            reviewer_name=f.reviewer_name,
             created_at=f.created_at,
         )
         for f in rows

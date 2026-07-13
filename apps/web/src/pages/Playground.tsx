@@ -322,6 +322,21 @@ export function PlaygroundPage() {
             </div>
           </div>
 
+          <DocumentLibrary
+            documents={documents.data ?? []}
+            slots={slots}
+            onSelect={(kind, doc) =>
+              setSlots((prev) => ({
+                ...prev,
+                [kind]: {
+                  documentId: doc.id,
+                  filename: doc.filename,
+                  state: "ready",
+                },
+              }))
+            }
+          />
+
           <div>
             <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
               Review Configuration
@@ -905,6 +920,116 @@ function SessionRow({ review }: { review: ReviewSummary }) {
         <span className="text-[10px] text-red-600">
           {String((remove.error as Error).message ?? "delete failed")}
         </span>
+      )}
+    </li>
+  );
+}
+
+/** Every ready document already in Citera — pick one into a slot instead
+ *  of re-uploading, or delete it (reviews protect their documents). */
+function DocumentLibrary({
+  documents,
+  slots,
+  onSelect,
+}: {
+  documents: DocumentOut[];
+  slots: Record<SlotKind, Slot>;
+  onSelect: (kind: SlotKind, doc: DocumentOut) => void;
+}) {
+  const inSlots = new Set(
+    Object.values(slots)
+      .map((s) => s.documentId)
+      .filter(Boolean),
+  );
+  const library = documents.filter(
+    (d) => d.status === "ready" && !inSlots.has(d.id),
+  );
+  if (library.length === 0) return null;
+
+  return (
+    <div>
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+        File Library
+      </div>
+      <ul className="mt-1.5 max-h-56 space-y-1 overflow-y-auto">
+        {library.slice(0, 12).map((doc) => (
+          <LibraryRow key={doc.id} doc={doc} onSelect={onSelect} />
+        ))}
+      </ul>
+      {library.length > 12 && (
+        <p className="mt-1 text-[10px] text-stone-400">
+          + {library.length - 12} more via the API
+        </p>
+      )}
+    </div>
+  );
+}
+
+function LibraryRow({
+  doc,
+  onSelect,
+}: {
+  doc: DocumentOut;
+  onSelect: (kind: SlotKind, doc: DocumentOut) => void;
+}) {
+  const queryClient = useQueryClient();
+  const remove = useMutation({
+    mutationFn: () => apiDelete(`/documents/${doc.id}`),
+    onSuccess: () =>
+      queryClient.invalidateQueries({ queryKey: ["documents"] }),
+  });
+
+  const KIND_CHIP: Record<string, string> = {
+    protocol: "bg-violet-50 text-violet-700 border-violet-200",
+    icf: "bg-blue-50 text-blue-700 border-blue-200",
+    other: "bg-stone-100 text-stone-600 border-stone-300",
+  };
+
+  return (
+    <li className="group rounded-lg border border-stone-200 bg-white px-2 py-1.5">
+      <div className="flex items-center gap-1.5">
+        <span
+          className={`inline-flex shrink-0 rounded-full border px-1.5 text-[9px] font-semibold uppercase ${KIND_CHIP[doc.kind] ?? KIND_CHIP.other}`}
+        >
+          {doc.kind}
+        </span>
+        <span
+          className="min-w-0 flex-1 truncate text-[11px] text-stone-700"
+          title={doc.filename}
+        >
+          {displayName(doc.filename)}
+        </span>
+        <button
+          onClick={() => {
+            if (window.confirm(`Delete "${doc.filename}" from Citera?`))
+              remove.mutate();
+          }}
+          disabled={remove.isPending}
+          title="Delete document"
+          aria-label={`Delete ${doc.filename}`}
+          className="rounded p-0.5 text-stone-300 opacity-0 transition-opacity hover:bg-red-50 hover:text-red-600 group-hover:opacity-100"
+        >
+          <Trash2 aria-hidden className="h-3 w-3" />
+        </button>
+      </div>
+      <div className="mt-1 flex items-center gap-1">
+        <button
+          onClick={() => onSelect("protocol", doc)}
+          className="rounded border border-stone-200 px-1.5 py-0.5 text-[9px] font-medium text-stone-500 hover:border-violet-300 hover:text-violet-700"
+        >
+          Use as Protocol
+        </button>
+        <button
+          onClick={() => onSelect("icf", doc)}
+          className="rounded border border-stone-200 px-1.5 py-0.5 text-[9px] font-medium text-stone-500 hover:border-blue-300 hover:text-blue-700"
+        >
+          Use as ICF
+        </button>
+      </div>
+      {remove.isError && (
+        <p className="mt-1 text-[10px] leading-3 text-red-600">
+          {(remove.error as Error).message}
+        </p>
       )}
     </li>
   );

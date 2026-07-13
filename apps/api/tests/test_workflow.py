@@ -372,6 +372,126 @@ async def test_staged_workflow_to_verified_stamp(client):
     assert steps.count("review.approved") == 1
 
 
+async def test_reviewer_adds_manual_finding(client):
+    """A finding the engine missed: a NEW reviewer-sourced row, never a
+    mutation — and its quote must still pass the grounding gate."""
+    review = await _run_review(client, required_stages=1)
+    rid = review["id"]
+    wf = (
+        await client.post(
+            f"/reviews/{rid}/stages", json={"reviewer_name": "Dr. Sari"}
+        )
+    ).json()
+    stage_id = wf["stages"][0]["id"]
+    findings_url = f"/reviews/{rid}/stages/{stage_id}/findings"
+
+    # unknown rule and unknown status are rejected
+    resp = await client.post(
+        findings_url,
+        json={"rule_id": "not-a-rule", "status": "partial", "reasoning": "x"},
+    )
+    assert resp.status_code == 422
+    some_rule = review["findings"][0]["rule_id"]
+    resp = await client.post(
+        findings_url,
+        json={"rule_id": some_rule, "status": "evaluation_failed", "reasoning": "x"},
+    )
+    assert resp.status_code == 422
+
+    # an ungroundable quote can never enter the record
+    resp = await client.post(
+        findings_url,
+        json={
+            "rule_id": some_rule,
+            "status": "conflicting",
+            "reasoning": "Reviewer claim with fabricated evidence.",
+            "verbatim_quote": "This exact sentence appears nowhere in the ICF.",
+        },
+    )
+    assert resp.status_code == 422
+    assert "ground" in resp.json()["detail"]
+
+    # a verbatim slice of the reviewed document grounds and persists
+    satisfied_rule = next(
+        f["rule_id"] for f in review["findings"] if f["status"] == "satisfied"
+    )
+    text = (
+        await client.get(f"/documents/{review['document_id']}/text")
+    ).json()["canonical_text"]
+    quote = text[200:320]
+    resp = await client.post(
+        findings_url,
+        json={
+            "rule_id": satisfied_rule,
+            "status": "partial",
+            "reasoning": "The engine overlooked a qualifier in this passage.",
+            "verbatim_quote": quote,
+        },
+    )
+    assert resp.status_code == 201, resp.text
+    created = resp.json()
+    assert created["source"] == "reviewer"
+    assert created["reviewer_name"] == "Dr. Sari"
+    assert created["char_end"] > created["char_start"]
+
+    # visible in the review, labeled as the reviewer's
+    detail = (await client.get(f"/reviews/{rid}")).json()
+    manual = [f for f in detail["findings"] if f["source"] == "reviewer"]
+    assert len(manual) == 1
+    assert manual[0]["reviewer_name"] == "Dr. Sari"
+    # grounding may trim surrounding whitespace; the stored quote is the
+    # exact grounded slice and must round-trip against the document
+    assert manual[0]["verbatim_quote"] == quote.strip()
+    assert manual[0]["verbatim_quote"] in text
+    assert all(
+        f["reviewer_name"] is None
+        for f in detail["findings"]
+        if f["source"] == "engine"
+    )
+
+    # readiness: the latest finding per rule wins — the reviewer's partial
+    # supersedes the engine's satisfied without rewriting it
+    report = (await client.get(f"/reviews/{rid}/report")).json()
+    row = next(
+        r for r in report["coverage"]["rows"] if r["rule_id"] == satisfied_rule
+    )
+    assert row["status"] == "partial"
+
+    assert "workflow.finding.added" in await _audit_steps(rid)
+
+    # a completed stage takes no more findings
+    resp = await client.post(
+        f"/reviews/{rid}/stages/{stage_id}/complete", json={}
+    )
+    assert resp.status_code == 200
+    resp = await client.post(
+        findings_url,
+        json={"rule_id": some_rule, "status": "partial", "reasoning": "late"},
+    )
+    assert resp.status_code == 409
+
+
+async def test_delete_document_guards_review_history(client):
+    # a document no review uses: freely deletable, audit trail retained
+    content = f"# Disposable {uuid.uuid4()}\n\nA throwaway paragraph.".encode()
+    resp = await client.post(
+        "/documents",
+        files={"file": ("temp.md", content, "text/markdown")},
+        data={"kind": "other"},
+    )
+    doc_id = resp.json()["id"]
+    assert (await client.get(f"/documents/{doc_id}")).json()["status"] == "ready"
+    assert (await client.delete(f"/documents/{doc_id}")).status_code == 204
+    assert (await client.get(f"/documents/{doc_id}")).status_code == 404
+
+    # documents referenced by reviews are protected — both roles
+    review = await _run_review(client)
+    for used in (review["document_id"], review["protocol_document_id"]):
+        resp = await client.delete(f"/documents/{used}")
+        assert resp.status_code == 409
+        assert "review" in resp.json()["detail"]
+
+
 async def test_workflow_requires_completed_review(client):
     review_id = await _manual_review("running")
     resp = await client.post(

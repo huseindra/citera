@@ -17,6 +17,8 @@ function finding(id: string, start: number, end: number): FindingOut {
     protocol_reference: null,
     queries_executed: null,
   suggested_revision: null,
+  source: "engine" as const,
+  reviewer_name: null,
     created_at: "",
   };
 }

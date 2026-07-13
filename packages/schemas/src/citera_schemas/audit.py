@@ -22,8 +22,10 @@ class AuditStep(StrEnum):
     REVIEW_DELETED = "review.deleted"
     WORKFLOW_STAGE_STARTED = "workflow.stage.started"
     WORKFLOW_DETERMINATION = "workflow.determination"
+    WORKFLOW_FINDING_ADDED = "workflow.finding.added"
     WORKFLOW_STAGE_COMPLETED = "workflow.stage.completed"
     REVIEW_APPROVED = "review.approved"
+    DOCUMENT_DELETED = "document.deleted"
 
 
 class AuditRecord(BaseModel):

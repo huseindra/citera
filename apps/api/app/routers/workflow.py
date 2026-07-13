@@ -21,6 +21,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.db import get_session
 from app.models import (
     AuditRecord,
+    Document,
     Finding,
     FindingDetermination,
     Review,
@@ -314,6 +315,127 @@ async def add_determination(
     )
     await session.commit()
     return await _workflow_out(session, review)
+
+
+class ManualFindingCreate(BaseModel):
+    rule_id: str
+    status: str  # satisfied | partial | conflicting | not_found
+    reasoning: str = Field(min_length=1)
+    verbatim_quote: str | None = None
+
+
+class ManualFindingOut(BaseModel):
+    finding_id: UUID
+    rule_id: str
+    status: str
+    source: str
+    reviewer_name: str
+    char_start: int | None
+    char_end: int | None
+
+
+_MANUAL_STATUSES = ("satisfied", "partial", "conflicting", "not_found")
+
+
+@router.post(
+    "/stages/{stage_id}/findings",
+    response_model=ManualFindingOut,
+    status_code=201,
+)
+async def add_manual_finding(
+    review_id: UUID,
+    stage_id: UUID,
+    body: ManualFindingCreate,
+    session: AsyncSession = Depends(get_session),
+):
+    """A reviewer-authored finding the engine missed — a NEW row
+    (source='reviewer'), never a mutation of an AI finding. Evidence
+    First still applies: a quote must ground byte-for-byte against the
+    reviewed document or the finding is rejected."""
+    from citera_pipeline.findings import ground_quote
+    from citera_rulesets import RulesetError, load_ruleset
+
+    review = await _require_open_workflow(session, review_id)
+    stage = await _require_open_stage(session, review_id, stage_id)
+
+    if body.status not in _MANUAL_STATUSES:
+        raise HTTPException(
+            status_code=422,
+            detail=f"status must be one of {', '.join(_MANUAL_STATUSES)}",
+        )
+    try:
+        rules = {r.id for r in load_ruleset(review.ruleset_id).rules}
+    except RulesetError:
+        rules = set()
+    if body.rule_id not in rules:
+        raise HTTPException(
+            status_code=422,
+            detail=f"Rule '{body.rule_id}' is not part of {review.ruleset_id}",
+        )
+
+    char_start: int | None = None
+    char_end: int | None = None
+    quote: str | None = None
+    if body.verbatim_quote and body.verbatim_quote.strip():
+        document = await session.get(Document, review.document_id)
+        grounding = ground_quote(
+            body.verbatim_quote, document.canonical_text, None
+        )
+        if not grounding.ok:
+            raise HTTPException(
+                status_code=422,
+                detail="The quote could not be located in the reviewed "
+                f"document ({grounding.reason}) — findings only carry "
+                "evidence that grounds verbatim.",
+            )
+        char_start, char_end = grounding.char_start, grounding.char_end
+        quote = document.canonical_text[char_start:char_end]
+
+    finding = Finding(
+        review_id=review_id,
+        rule_id=body.rule_id,
+        status=body.status,
+        reasoning=body.reasoning,
+        verbatim_quote=quote,
+        char_start=char_start,
+        char_end=char_end,
+        source="reviewer",
+        reviewer_name=stage.reviewer_name,
+    )
+    session.add(finding)
+    await session.flush()
+    session.add(
+        AuditRecord(
+            step=AuditStep.WORKFLOW_FINDING_ADDED,
+            review_id=review_id,
+            finding_id=finding.id,
+            document_id=review.document_id,
+            payload={
+                "stage_id": str(stage.id),
+                "stage_number": stage.stage_number,
+                "reviewer_name": stage.reviewer_name,
+                "rule_id": body.rule_id,
+                "status": body.status,
+                "reasoning": body.reasoning,
+                "quote": quote,
+                "quote_span": (
+                    {"char_start": char_start, "char_end": char_end}
+                    if char_start is not None
+                    else None
+                ),
+            },
+        )
+    )
+    await session.commit()
+    return ManualFindingOut(
+        finding_id=finding.id,
+        rule_id=finding.rule_id,
+        status=finding.status,
+        source=finding.source,
+        reviewer_name=stage.reviewer_name,
+        char_start=char_start,
+        char_end=char_end,
+    )
 
 
 class StageComplete(BaseModel):

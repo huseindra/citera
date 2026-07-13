@@ -2,9 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck } from "lucide-react";
 import { Link, useParams } from "react-router-dom";
 import { apiGet } from "../api/client";
-import type { DocumentText, ReviewOut, WorkflowOut } from "../api/types";
+import type {
+  DocumentText,
+  ReviewOut,
+  RuleSetOut,
+  WorkflowOut,
+} from "../api/types";
 import { EvidenceBlock } from "../components/EvidenceBlock";
 import {
+  AddFindingCard,
   DeterminationControl,
   WorkflowPanel,
 } from "../components/review/WorkflowPanel";
@@ -31,6 +37,12 @@ export function ReportPage() {
   const workflow = useQuery({
     queryKey: ["workflow", reviewId],
     queryFn: () => apiGet<WorkflowOut>(`/reviews/${reviewId}/workflow`),
+  });
+  const ruleset = useQuery({
+    queryKey: ["ruleset", review.data?.ruleset_id],
+    queryFn: () => apiGet<RuleSetOut>(`/rulesets/${review.data!.ruleset_id}`),
+    enabled: !!review.data?.ruleset_id,
+    staleTime: Infinity,
   });
 
   if (!review.data || !documentText.data) {
@@ -133,7 +145,14 @@ export function ReportPage() {
         </section>
 
         {workflow.data && (
-          <WorkflowPanel reviewId={data.id} workflow={workflow.data} />
+          <>
+            <WorkflowPanel reviewId={data.id} workflow={workflow.data} />
+            <AddFindingCard
+              reviewId={data.id}
+              workflow={workflow.data}
+              rules={ruleset.data?.rules ?? []}
+            />
+          </>
         )}
 
         <section className="mt-8 space-y-6">
@@ -154,10 +173,18 @@ export function ReportPage() {
                     <meta.Icon aria-hidden className="h-3 w-3" /> {meta.label}
                   </span>
                 </div>
-                <div className="mt-0.5 text-[11px] text-stone-400">
-                  {f.citation}
-                  {f.severity && ` · severity: ${f.severity}`}
-                  {f.evidence_strength && ` · evidence: ${f.evidence_strength}`}
+                <div className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-[11px] text-stone-400">
+                  <span>
+                    {f.citation}
+                    {f.severity && ` · severity: ${f.severity}`}
+                    {f.evidence_strength &&
+                      ` · evidence: ${f.evidence_strength}`}
+                  </span>
+                  {f.source === "reviewer" && (
+                    <span className="inline-flex items-center rounded-full border border-indigo-200 bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700">
+                      Reviewer-added · {f.reviewer_name}
+                    </span>
+                  )}
                 </div>
 
                 {f.verbatim_quote && (

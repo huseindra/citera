@@ -17,6 +17,8 @@ function finding(overrides: Partial<FindingOut>): FindingOut {
     protocol_reference: null,
     queries_executed: null,
     suggested_revision: null,
+    source: "engine" as const,
+    reviewer_name: null,
     created_at: "",
     ...overrides,
   };

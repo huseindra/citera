@@ -107,6 +107,10 @@ class Finding(Base):
     retrieval_audit_id: Mapped[uuid.UUID | None] = mapped_column(
         UUID(as_uuid=True), nullable=True
     )
+    # engine = produced by the review pipeline; reviewer = added manually
+    # during a workflow stage (its quote still passes the grounding gate)
+    source: Mapped[str] = mapped_column(default="engine", server_default="engine")
+    reviewer_name: Mapped[str | None]
     created_at: Mapped[datetime] = mapped_column(server_default=func.now())
 
 

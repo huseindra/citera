@@ -28,7 +28,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_session
 from app.serializers import UTCDateTime
-from app.models import AuditRecord, Chunk, Document
+from app.models import AuditRecord, Chunk, Document, Review
 from app.services.demo import enforce_demo_upload_limit
 from app.services.ingestion import run_chunking
 
@@ -162,6 +162,47 @@ async def get_document(
     if doc is None:
         raise HTTPException(status_code=404, detail="Document not found")
     return await _to_out(session, doc)
+
+
+@router.delete("/{document_id}", status_code=204)
+async def delete_document(
+    document_id: UUID, session: AsyncSession = Depends(get_session)
+):
+    """Delete a document and its chunks. Documents referenced by a review
+    are protected — deleting them would cascade the review history away
+    silently; delete those reviews first. The audit trail stays."""
+    doc = await session.get(Document, document_id)
+    if doc is None:
+        raise HTTPException(status_code=404, detail="Document not found")
+    if doc.status == "processing":
+        raise HTTPException(
+            status_code=409,
+            detail="Document is still processing — wait for ingestion to "
+            "finish before deleting.",
+        )
+    review_count = await session.scalar(
+        select(func.count())
+        .select_from(Review)
+        .where(
+            (Review.document_id == document_id)
+            | (Review.protocol_document_id == document_id)
+        )
+    )
+    if int(review_count or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail=f"Document is used by {review_count} review(s) — delete "
+            "those reviews first so review history is never removed silently.",
+        )
+    session.add(
+        AuditRecord(
+            step=AuditStep.DOCUMENT_DELETED,
+            document_id=doc.id,
+            payload={"filename": doc.filename, "kind": doc.kind},
+        )
+    )
+    await session.delete(doc)
+    await session.commit()
 
 
 class DocumentText(BaseModel):

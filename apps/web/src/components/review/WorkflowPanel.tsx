@@ -5,10 +5,11 @@
 
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { BadgeCheck, CircleDot, Stamp } from "lucide-react";
+import { BadgeCheck, CircleDot, FilePlus2, Stamp } from "lucide-react";
 import { apiPost } from "../../api/client";
 import type {
   DeterminationOut,
+  RuleOut,
   StageOut,
   WorkflowOut,
 } from "../../api/types";
@@ -187,6 +188,123 @@ export function WorkflowPanel({
           </p>
         )}
       </div>
+    </section>
+  );
+}
+
+/** Reviewer-authored finding the engine missed: a new appended row —
+ *  its quote is grounded server-side against the reviewed document. */
+export function AddFindingCard({
+  reviewId,
+  workflow,
+  rules,
+}: {
+  reviewId: string;
+  workflow: WorkflowOut;
+  rules: RuleOut[];
+}) {
+  const open = openStage(workflow);
+  const queryClient = useQueryClient();
+  const [expanded, setExpanded] = useState(false);
+  const [ruleId, setRuleId] = useState("");
+  const [status, setStatus] = useState("partial");
+  const [reasoning, setReasoning] = useState("");
+  const [quote, setQuote] = useState("");
+
+  const submit = useMutation({
+    mutationFn: () =>
+      apiPost(`/reviews/${reviewId}/stages/${open!.id}/findings`, {
+        rule_id: ruleId,
+        status,
+        reasoning: reasoning.trim(),
+        verbatim_quote: quote.trim() || null,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["workflow", reviewId] });
+      queryClient.invalidateQueries({ queryKey: ["review", reviewId] });
+      setExpanded(false);
+      setRuleId("");
+      setReasoning("");
+      setQuote("");
+    },
+  });
+
+  if (!open) return null;
+
+  return (
+    <section className="mt-4 rounded-lg border border-dashed border-stone-300 p-4 print:hidden">
+      {!expanded ? (
+        <button
+          onClick={() => setExpanded(true)}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-stone-600 hover:text-stone-900"
+        >
+          <FilePlus2 aria-hidden className="h-3.5 w-3.5" /> Add finding —
+          something the engine missed (Review {open.stage_number})
+        </button>
+      ) : (
+        <div className="space-y-2 text-[11px]">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-semibold text-stone-800">
+              New reviewer finding — Review {open.stage_number} ·{" "}
+              {open.reviewer_name}
+            </span>
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-stone-400 hover:text-stone-700"
+            >
+              Cancel
+            </button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <select
+              value={ruleId}
+              onChange={(e) => setRuleId(e.target.value)}
+              className="min-w-64 flex-1 rounded-md border border-stone-300 px-2 py-1.5"
+            >
+              <option value="">Requirement…</option>
+              {rules.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.citation} — {r.title}
+                </option>
+              ))}
+            </select>
+            <select
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+              className="rounded-md border border-stone-300 px-2 py-1.5"
+            >
+              <option value="partial">Partial</option>
+              <option value="conflicting">Conflicting</option>
+              <option value="not_found">Missing</option>
+              <option value="satisfied">Satisfied</option>
+            </select>
+          </div>
+          <textarea
+            value={reasoning}
+            onChange={(e) => setReasoning(e.target.value)}
+            placeholder="Why does this requirement need attention? (required)"
+            rows={2}
+            className="w-full rounded-md border border-stone-300 px-2 py-1.5"
+          />
+          <textarea
+            value={quote}
+            onChange={(e) => setQuote(e.target.value)}
+            placeholder="Evidence quote — paste the exact document text (optional; verified verbatim against the source)"
+            rows={2}
+            className="w-full rounded-md border border-stone-300 px-2 py-1.5 font-mono text-[10px]"
+          />
+          <button
+            onClick={() => submit.mutate()}
+            disabled={submit.isPending || !ruleId || !reasoning.trim()}
+            className="rounded-lg bg-stone-800 px-3 py-1.5 text-xs font-semibold text-white hover:bg-stone-900 disabled:opacity-50"
+          >
+            Add finding
+          </button>
+          {submit.isError && (
+            <p className="text-red-600">{(submit.error as Error).message}</p>
+          )}
+        </div>
+      )}
     </section>
   );
 }

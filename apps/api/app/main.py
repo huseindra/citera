@@ -36,6 +36,9 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS notes TEXT",
             "ALTER TABLE reviews ADD COLUMN IF NOT EXISTS "
             "required_stages INTEGER NOT NULL DEFAULT 3",
+            "ALTER TABLE findings ADD COLUMN IF NOT EXISTS "
+            "source VARCHAR NOT NULL DEFAULT 'engine'",
+            "ALTER TABLE findings ADD COLUMN IF NOT EXISTS reviewer_name VARCHAR",
         ):
             await conn.execute(text(ddl))
 
