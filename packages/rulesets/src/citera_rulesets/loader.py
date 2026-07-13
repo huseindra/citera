@@ -115,10 +115,16 @@ def load_ruleset(ruleset_id: str) -> RuleSet:
     if not rule_files:
         raise RulesetError(f"Ruleset '{ruleset_id}' has no rules")
 
+    # the pack's primary language rides on every rule: the evaluator must
+    # write its findings in the language the documents are reviewed in
+    primary_language = (meta.get("languages") or ["en"])[0]
+
     rules: list[Rule] = []
     for path in rule_files:
         try:
-            rules.append(Rule.model_validate(yaml.safe_load(path.read_text())))
+            data = yaml.safe_load(path.read_text())
+            data.setdefault("language", primary_language)
+            rules.append(Rule.model_validate(data))
         except Exception as exc:
             raise RulesetError(f"Invalid rule file {path.name}: {exc}") from exc
 

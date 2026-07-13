@@ -57,6 +57,25 @@ def test_prompt_without_protocol_has_single_user_block():
     assert len(messages[0]["content"]) == 1
 
 
+def test_language_directive_follows_the_rule_language():
+    # English packs: no directive — the default behavior is unchanged
+    system, _ = build_prompt(_rule(), [_chunk("t", 1)], protocol_text=None)
+    assert "OUTPUT LANGUAGE" not in system[0]["text"]
+
+    # Indonesian pack (e.g. BPOM): findings must be written in the
+    # document language, quotes still verbatim
+    rule = _rule().model_copy(update={"language": "id"})
+    system, _ = build_prompt(rule, [_chunk("t", 1)], protocol_text=None)
+    text = system[0]["text"]
+    assert "OUTPUT LANGUAGE — Bahasa Indonesia" in text
+    assert "never translated" in text
+
+    # unknown codes pass through instead of crashing the review
+    rule = _rule().model_copy(update={"language": "xx"})
+    system, _ = build_prompt(rule, [_chunk("t", 1)], protocol_text=None)
+    assert "OUTPUT LANGUAGE — xx" in system[0]["text"]
+
+
 def test_suggested_revision_is_opt_in():
     from citera_pipeline.findings.llm import finding_tool
 

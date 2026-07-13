@@ -52,6 +52,18 @@ for a missing element. Write 1-3 sentences in plain, participant-friendly langua
 clinical facts that are not in the protocol. For satisfied findings, use null. \
 This is a DRAFT for the reviewer; it will be labeled as AI-generated."""
 
+# display names for the language directive; unknown codes pass through
+LANGUAGE_NAMES = {"en": "English", "id": "Bahasa Indonesia"}
+
+# Appended when the rule pack's language is not English: the reviewer
+# reads the finding in the language the case documents are written in.
+LANGUAGE_PROMPT = """
+
+OUTPUT LANGUAGE — {language}: this rule pack reviews documents written in {language}. \
+Write reasoning, protocol_reference commentary, and suggested_revision in {language} — \
+that is the language the reviewer works in. verbatim_quote is still a CONTIGUOUS, EXACT \
+copy of document text, never translated or altered."""
+
 
 def build_prompt(
     rule: Rule,
@@ -63,6 +75,9 @@ def build_prompt(
     system_text = SYSTEM_PROMPT
     if include_suggested_revision:
         system_text += REVISION_PROMPT
+    if rule.language != "en":
+        language = LANGUAGE_NAMES.get(rule.language, rule.language)
+        system_text += LANGUAGE_PROMPT.format(language=language)
     system = [
         {
             "type": "text",

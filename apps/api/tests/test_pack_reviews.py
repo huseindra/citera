@@ -160,6 +160,34 @@ async def test_pack_reproduces_its_answer_key(client, ruleset_id):
     assert not not_satisfied, not_satisfied
 
 
+async def test_bpom_review_content_is_in_bahasa_indonesia(client):
+    """An Indonesian case must produce an Indonesian review: reasoning
+    and AI-drafted revisions follow the pack's primary language (id for
+    BPOM), never defaulting back to English."""
+    protocol_id = await _ingest(client, "bpom-protocol.md", "protocol")
+    icf_id = await _ingest(client, "bpom-icf.md", "icf")
+    review = await _run_engine_review(client, "bpom-cukb", icf_id, protocol_id)
+
+    assert review["findings"]
+    for finding in review["findings"]:
+        assert "[evaluator skrip]" in finding["reasoning"], finding["rule_id"]
+
+    drafts = [
+        f["suggested_revision"]
+        for f in review["findings"]
+        if f["suggested_revision"]
+    ]
+    assert drafts  # planted defects guarantee at least one draft
+    assert all("[draf skrip]" in d for d in drafts)
+
+    # the conflicting finding's protocol reference quotes the Indonesian
+    # protocol (this was already localized; keep it that way)
+    conflicting = next(
+        f for f in review["findings"] if f["status"] == "conflicting"
+    )
+    assert "Protokol" in conflicting["protocol_reference"]
+
+
 async def test_bpom_findings_ground_against_indonesian_text(client):
     """Span integrity in Bahasa Indonesia: every grounded quote must
     round-trip byte-for-byte against the canonical Indonesian text."""

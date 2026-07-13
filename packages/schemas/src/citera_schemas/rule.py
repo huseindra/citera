@@ -26,6 +26,12 @@ class Rule(BaseModel):
     retrieval_queries: list[str] = Field(min_length=1)
     evaluation_criteria: str
     severity: Severity
+    # ISO 639-1 code of the language the reviewed documents (and therefore
+    # the finding's reasoning/suggested_revision) are written in. Stamped
+    # by the loader from the pack's primary language; a rule file may
+    # override it. The engine stays jurisdiction-agnostic — this is the
+    # only language fact it ever needs.
+    language: str = "en"
     # native statutory provisions this grouped rule covers (evidence mapping)
     statutory_refs: list[str] = []
     # static, jurisdiction-authored remediation guidance (distinct from the

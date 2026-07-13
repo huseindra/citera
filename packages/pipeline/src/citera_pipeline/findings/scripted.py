@@ -12,25 +12,52 @@ from citera_schemas import RetrievedChunk, Rule
 
 from citera_pipeline.findings.base import EvaluationOutcome
 
+# Canned findings per language, keyed by the rule's pack language — a
+# BPOM (Bahasa Indonesia) demo review must read in Bahasa Indonesia,
+# exactly like the Claude evaluator is instructed to (prompt.py).
 _CANNED_REASONING = {
-    "satisfied": (
-        "The quoted ICF text addresses this requirement and is consistent "
-        "with the study protocol. [scripted evaluator]"
-    ),
-    "partial": (
-        "The quoted ICF text mentions the availability of care but does not "
-        "explain whether costs are covered or compensation is available, so "
-        "the element is only partially satisfied. [scripted evaluator]"
-    ),
-    "conflicting": (
-        "The quoted ICF text claims the drug is well tolerated with no "
-        "serious side effects, contradicting the protocol's documented "
-        "hepatic and hypersensitivity risks. [scripted evaluator]"
-    ),
-    "not_found": (
-        "None of the retrieved evidence is relevant to this requirement; "
-        "the element appears to be absent from the document. [scripted evaluator]"
-    ),
+    "en": {
+        "satisfied": (
+            "The quoted ICF text addresses this requirement and is consistent "
+            "with the study protocol. [scripted evaluator]"
+        ),
+        "partial": (
+            "The quoted ICF text mentions the availability of care but does not "
+            "explain whether costs are covered or compensation is available, so "
+            "the element is only partially satisfied. [scripted evaluator]"
+        ),
+        "conflicting": (
+            "The quoted ICF text claims the drug is well tolerated with no "
+            "serious side effects, contradicting the protocol's documented "
+            "hepatic and hypersensitivity risks. [scripted evaluator]"
+        ),
+        "not_found": (
+            "None of the retrieved evidence is relevant to this requirement; "
+            "the element appears to be absent from the document. [scripted evaluator]"
+        ),
+    },
+    "id": {
+        "satisfied": (
+            "Kutipan teks PSP tersebut memenuhi persyaratan ini dan konsisten "
+            "dengan protokol penelitian. [evaluator skrip]"
+        ),
+        "partial": (
+            "Kutipan teks PSP menyebutkan tersedianya perawatan, tetapi tidak "
+            "menjelaskan apakah biaya ditanggung atau kompensasi tersedia, "
+            "sehingga unsur ini baru terpenuhi sebagian. [evaluator skrip]"
+        ),
+        "conflicting": (
+            "Kutipan teks PSP menyatakan obat dapat ditoleransi dengan baik "
+            "tanpa efek samping serius, bertentangan dengan risiko gangguan "
+            "hati dan hipersensitivitas yang terdokumentasi dalam protokol. "
+            "[evaluator skrip]"
+        ),
+        "not_found": (
+            "Tidak ada bukti yang ditemukan yang relevan dengan persyaratan "
+            "ini; unsur tersebut tampaknya tidak tercantum dalam dokumen. "
+            "[evaluator skrip]"
+        ),
+    },
 }
 
 # per-pack protocol references for conflicting findings, keyed by rule-id
@@ -62,23 +89,46 @@ _PROTOCOL_REFERENCES = {
 # participant-friendly language mirroring what the Claude evaluator is
 # asked to produce. Only for statuses where action is needed.
 _CANNED_REVISIONS = {
-    "partial": (
-        "If you are injured as a result of taking part in this study, medical "
-        "care is available to you, and the sponsor will pay the reasonable "
-        "costs of treating research-related injuries. You do not give up any "
-        "legal rights by signing this form. [scripted draft]"
-    ),
-    "conflicting": (
-        "The study drug can cause side effects. In earlier studies, about 3 in "
-        "100 participants developed elevated liver enzymes, and rare but "
-        "serious allergic reactions (including angioedema) have occurred. Your "
-        "liver function will be checked at every visit. [scripted draft]"
-    ),
-    "not_found": (
-        "Taking part in this study is completely voluntary. You may refuse to "
-        "participate or stop at any time, without penalty or loss of benefits "
-        "to which you are otherwise entitled. [scripted draft]"
-    ),
+    "en": {
+        "partial": (
+            "If you are injured as a result of taking part in this study, medical "
+            "care is available to you, and the sponsor will pay the reasonable "
+            "costs of treating research-related injuries. You do not give up any "
+            "legal rights by signing this form. [scripted draft]"
+        ),
+        "conflicting": (
+            "The study drug can cause side effects. In earlier studies, about 3 in "
+            "100 participants developed elevated liver enzymes, and rare but "
+            "serious allergic reactions (including angioedema) have occurred. Your "
+            "liver function will be checked at every visit. [scripted draft]"
+        ),
+        "not_found": (
+            "Taking part in this study is completely voluntary. You may refuse to "
+            "participate or stop at any time, without penalty or loss of benefits "
+            "to which you are otherwise entitled. [scripted draft]"
+        ),
+    },
+    "id": {
+        "partial": (
+            "Jika Anda mengalami cedera akibat keikutsertaan dalam penelitian "
+            "ini, perawatan medis tersedia bagi Anda, dan sponsor akan "
+            "menanggung biaya wajar pengobatan cedera terkait penelitian. Anda "
+            "tidak melepaskan hak hukum apa pun dengan menandatangani formulir "
+            "ini. [draf skrip]"
+        ),
+        "conflicting": (
+            "Obat uji dapat menimbulkan efek samping. Pada penelitian "
+            "sebelumnya, sekitar 3 dari 100 peserta mengalami peningkatan "
+            "enzim hati, dan reaksi hipersensitivitas seperti urtikaria pernah "
+            "terjadi. Fungsi hati Anda akan diperiksa pada setiap kunjungan. "
+            "[draf skrip]"
+        ),
+        "not_found": (
+            "Keikutsertaan Anda dalam penelitian ini sepenuhnya sukarela. Anda "
+            "dapat menolak ikut serta atau berhenti kapan saja, tanpa sanksi "
+            "atau kehilangan manfaat yang menjadi hak Anda. [draf skrip]"
+        ),
+    },
 }
 
 
@@ -108,9 +158,11 @@ class ScriptedEvaluator:
             quote = _verbatim_excerpt(chunk.text, keyword)
             source_chunk_id = str(chunk.chunk_id)
 
+        reasoning = _CANNED_REASONING.get(rule.language, _CANNED_REASONING["en"])
+        revisions = _CANNED_REVISIONS.get(rule.language, _CANNED_REVISIONS["en"])
         return EvaluationOutcome(
             status=status,
-            reasoning=_CANNED_REASONING[status],
+            reasoning=reasoning[status],
             verbatim_quote=quote,
             source_chunk_id=source_chunk_id,
             protocol_reference=(
@@ -119,7 +171,7 @@ class ScriptedEvaluator:
                 else None
             ),
             suggested_revision=(
-                _CANNED_REVISIONS.get(status)
+                revisions.get(status)
                 if include_suggested_revision
                 else None
             ),
