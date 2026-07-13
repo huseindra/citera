@@ -43,3 +43,4 @@ uploads/
 
 # build metadata
 *.tsbuildinfo
+!docs/video-script.pdf
