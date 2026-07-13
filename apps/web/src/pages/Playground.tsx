@@ -1,11 +1,12 @@
 // The Playground is the interactive console for the Citera SDK:
-// left = study configuration, center = interactive review, right = the
-// real API calls this session made. The review engine is untouched —
-// the full Finding Dossier experience lives at /playground/reviews/:id.
+// left = review history (chat-style sessions: click to reopen), center =
+// the active session or the new-review composer, right = the real API
+// calls this session made. The review engine is untouched — the full
+// Finding Dossier experience lives at /playground/reviews/:id.
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useState, type DragEvent } from "react";
-import { Activity, BadgeCheck, Check, Dna, FlaskConical, HeartPulse, Microscope, Pencil, Stethoscope, Trash2, Wind, Zap, type LucideIcon } from "lucide-react";
+import { Activity, BadgeCheck, Check, Dna, ExternalLink, FlaskConical, HeartPulse, Microscope, Pencil, Stethoscope, Trash2, Wind, Zap, type LucideIcon } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiDelete, apiGet, apiPatch, apiPost, apiUploadWithProgress, storedApiKey } from "../api/client";
 import type {
@@ -106,7 +107,7 @@ const REVIEW_CAPABILITIES = [
 export function PlaygroundPage() {
   const [ruleset, setRuleset] = useState("fda-21cfr50");
   const [withRevision, setWithRevision] = useState(true);
-  const [docsNonce, setDocsNonce] = useState(0);
+  const queryClient = useQueryClient();
   const [slots, setSlots] = useState<Record<SlotKind, Slot>>({
     protocol: EMPTY_SLOT,
     icf: EMPTY_SLOT,
@@ -227,7 +228,10 @@ export function PlaygroundPage() {
       });
       return review;
     },
-    onSuccess: (review) => setActiveReviewId(review.id),
+    onSuccess: (review) => {
+      setActiveReviewId(review.id);
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+    },
   });
 
   const loadSample = useMutation({
@@ -266,6 +270,8 @@ export function PlaygroundPage() {
         path: `/v1/reviews/${review.id}`,
         response: summarize(review),
       });
+      // history chips: Processing → Completed
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reviewStatus]);
@@ -306,17 +312,93 @@ export function PlaygroundPage() {
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-[300px_1fr_360px]">
-        {/* LEFT — review configuration: ruleset, documents, run. One
-            screen, no scrolling — everything else belongs to the SDK. */}
-        <div className="flex flex-col gap-4 overflow-y-auto border-r border-stone-200 bg-sidebar p-4">
-          <RulesetSelector value={ruleset} onChange={setRuleset} />
+      <div className="grid min-h-0 flex-1 grid-cols-[280px_1fr_360px]">
+        {/* LEFT — review history, chat-style: every session, newest
+            first. The composer for a new review lives in the center. */}
+        <div className="flex min-h-0 flex-col border-r border-stone-200 bg-sidebar">
+          <div className="p-3 pb-2">
+            <button
+              onClick={() => setActiveReviewId(null)}
+              className="w-full rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-blue-700"
+            >
+              + New Review
+            </button>
+          </div>
+          <div className="px-4 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+            History
+          </div>
+          <ul className="mt-1.5 min-h-0 flex-1 space-y-1 overflow-y-auto px-3 pb-3">
+            {(reviews.data ?? []).map((r) => (
+              <SessionRow
+                key={r.id}
+                review={r}
+                active={r.id === activeReviewId}
+                onOpen={() => setActiveReviewId(r.id)}
+                onDeleted={() => {
+                  if (activeReviewId === r.id) setActiveReviewId(null);
+                }}
+              />
+            ))}
+            {(reviews.data ?? []).length === 0 && (
+              <li className="px-1 py-2 text-[11px] text-stone-400">
+                No reviews yet — start your first one.
+              </li>
+            )}
+          </ul>
+        </div>
 
-          <div key={docsNonce} className={docsNonce > 0 ? "evidence-pulse rounded-xl" : ""}>
+        {/* CENTER — the active session, or the new-review composer */}
+        <div className="overflow-y-auto p-5">
+          {review ? (
+            <ReviewResults
+              review={review}
+              running={running}
+              rulesetVersion={selectedRuleset?.version ?? review.ruleset_version}
+              onExportLogged={() =>
+                pushLog({
+                  operation: "client.reports.export()",
+                  method: "GET",
+                  path: `/v1/reviews/${review.id}/report`,
+                })
+              }
+            />
+          ) : (
+            <div className="mx-auto max-w-xl pb-8">
+              <FlaskConical aria-hidden className="mx-auto mt-4 h-8 w-8 text-stone-300" />
+              <p className="mt-3 text-center text-sm leading-6 text-stone-600">
+                Load a built-in sample study — each selects its ruleset
+                automatically, no uploads required — or configure a review
+                from your own documents.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {SAMPLE_STUDIES.map((study) => (
+                  <button
+                    key={study.base}
+                    onClick={() => loadSample.mutate(study)}
+                    disabled={loadSample.isPending}
+                    className="rounded-xl border border-stone-200 bg-white p-3 text-left transition-colors hover:border-blue-600 disabled:opacity-40"
+                  >
+                    <study.Icon aria-hidden className="h-4 w-4 text-blue-600" />
+                    <div className="mt-1.5 text-xs font-semibold text-stone-800">
+                      {study.title}
+                    </div>
+                    <div className="text-[10px] text-stone-400">{study.detail}</div>
+                  </button>
+                ))}
+              </div>
+
+              <div className="my-5 flex items-center gap-3 text-[10px] font-semibold uppercase tracking-widest text-stone-400">
+                <span className="h-px flex-1 bg-stone-200" /> or your own study
+                <span className="h-px flex-1 bg-stone-200" />
+              </div>
+
+              <RulesetSelector value={ruleset} onChange={setRuleset} />
+
+          <div className="mt-4">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
               Documents
             </div>
-            <div className="mt-1.5 space-y-2">
+            <div className="mt-1.5 grid grid-cols-2 gap-2">
               <DropZone kind="protocol" title="Study Protocol" slot={slots.protocol} onFile={upload} />
               <DropZone kind="icf" title="Informed Consent Form" slot={slots.icf} onFile={upload} />
             </div>
@@ -337,7 +419,7 @@ export function PlaygroundPage() {
             }
           />
 
-          <div>
+          <div className="mt-4">
             <div className="text-[10px] font-semibold uppercase tracking-widest text-stone-400">
               Review Configuration
             </div>
@@ -380,7 +462,7 @@ export function PlaygroundPage() {
             </p>
           </div>
 
-          <div className="mt-auto">
+          <div className="mt-5">
             <button
               disabled={!canRun}
               onClick={() => startReview.mutate()}
@@ -413,30 +495,7 @@ export function PlaygroundPage() {
                 </p>
               ))}
           </div>
-        </div>
-
-        {/* CENTER — Interactive Review */}
-        <div className="overflow-y-auto p-5">
-          {review ? (
-            <ReviewResults
-              review={review}
-              running={running}
-              rulesetVersion={selectedRuleset?.version ?? review.ruleset_version}
-              onExportLogged={() =>
-                pushLog({
-                  operation: "client.reports.export()",
-                  method: "GET",
-                  path: `/v1/reviews/${review.id}/report`,
-                })
-              }
-            />
-          ) : (
-            <EmptyState
-              onUpload={() => setDocsNonce((n) => n + 1)}
-              onLoadSample={(study) => loadSample.mutate(study)}
-              loading={loadSample.isPending || slots.protocol.state === "uploading"}
-              sessions={(reviews.data ?? []).slice(0, 4)}
-            />
+            </div>
           )}
         </div>
 
@@ -780,66 +839,20 @@ function Metric({
   );
 }
 
-function EmptyState({
-  onUpload,
-  onLoadSample,
-  loading,
-  sessions,
+/** One review session in the history rail — chat-style: click opens it
+ *  in the center pane; hover actions rename, delete, or jump to the full
+ *  Finding Dossier. */
+function SessionRow({
+  review,
+  active,
+  onOpen,
+  onDeleted,
 }: {
-  onUpload: () => void;
-  onLoadSample: (study: SampleStudy) => void;
-  loading: boolean;
-  sessions: ReviewSummary[];
+  review: ReviewSummary;
+  active: boolean;
+  onOpen: () => void;
+  onDeleted: () => void;
 }) {
-  return (
-    <div className="mx-auto max-w-md pt-14 text-center">
-      <FlaskConical aria-hidden className="mx-auto h-8 w-8 text-stone-300" />
-      <p className="mt-3 text-sm leading-6 text-stone-600">
-        Upload a Study Protocol and an Informed Consent Form — or load a
-        built-in sample study. Each sample selects its ruleset
-        automatically; no uploads required.
-      </p>
-      <div className="mt-4 grid grid-cols-2 gap-2 text-left">
-        {SAMPLE_STUDIES.map((study) => (
-          <button
-            key={study.base}
-            onClick={() => onLoadSample(study)}
-            disabled={loading}
-            className="rounded-xl border border-stone-200 bg-white p-3 transition-colors hover:border-blue-600 disabled:opacity-40"
-          >
-            <study.Icon aria-hidden className="h-4 w-4 text-blue-600" />
-            <div className="mt-1.5 text-xs font-semibold text-stone-800">
-              {study.title}
-            </div>
-            <div className="text-[10px] text-stone-400">{study.detail}</div>
-          </button>
-        ))}
-      </div>
-      <div className="mt-3">
-        <button
-          onClick={onUpload}
-          className="rounded-lg border border-stone-300 px-4 py-2 text-xs font-semibold text-stone-700 hover:bg-stone-50"
-        >
-          {loading ? "Loading sample…" : "Upload Documents"}
-        </button>
-      </div>
-      {sessions.length > 0 && (
-        <div className="mt-10 text-left">
-          <div className="text-[10px] font-medium uppercase tracking-wide text-stone-400">
-            Recent sessions
-          </div>
-          <ul className="mt-2 space-y-1">
-            {sessions.map((r) => (
-              <SessionRow key={r.id} review={r} />
-            ))}
-          </ul>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function SessionRow({ review }: { review: ReviewSummary }) {
   const queryClient = useQueryClient();
   const refresh = () => queryClient.invalidateQueries({ queryKey: ["reviews"] });
 
@@ -850,6 +863,7 @@ function SessionRow({ review }: { review: ReviewSummary }) {
   });
   const remove = useMutation({
     mutationFn: () => apiDelete(`/reviews/${review.id}`),
+    onSuccess: onDeleted,
     onSettled: refresh,
   });
 
@@ -870,56 +884,72 @@ function SessionRow({ review }: { review: ReviewSummary }) {
   };
 
   return (
-    <li className="group flex items-center gap-2 rounded-lg border border-stone-200 bg-white px-3 py-2 text-xs hover:bg-stone-50">
-      <Link
-        to={`/playground/reviews/${review.id}`}
-        className="flex min-w-0 flex-1 items-center gap-2"
-      >
-        <span className="truncate text-stone-700">
-          {review.title ?? displayName(review.document_filename)}
-        </span>
-        {review.approved ? (
-          <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-green-200 bg-green-50 px-1.5 py-0.5 text-[10px] font-medium text-green-700">
-            <BadgeCheck aria-hidden className="h-3 w-3" /> Verified
+    <li
+      className={`group rounded-lg border text-xs transition-colors ${
+        active
+          ? "border-blue-300 bg-blue-50/70"
+          : "border-stone-200 bg-white hover:bg-stone-50"
+      }`}
+    >
+      <div className="flex items-center gap-1 px-2.5 py-2">
+        <button
+          onClick={onOpen}
+          className="flex min-w-0 flex-1 flex-col gap-0.5 text-left"
+        >
+          <span className="w-full truncate font-medium text-stone-700">
+            {review.title ?? displayName(review.document_filename)}
           </span>
-        ) : (
-          <span
-            className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 text-[10px] font-medium ${REVIEW_STATUS_CHIP[review.status] ?? ""}`}
+          <span className="flex w-full items-center gap-1.5 text-[10px] text-stone-400">
+            {review.approved ? (
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-green-200 bg-green-50 px-1.5 py-0.5 font-medium text-green-700">
+                <BadgeCheck aria-hidden className="h-3 w-3" /> Verified
+              </span>
+            ) : (
+              <span
+                className={`inline-flex shrink-0 items-center rounded-full border px-1.5 py-0.5 font-medium ${REVIEW_STATUS_CHIP[review.status] ?? ""}`}
+              >
+                {REVIEW_STATUS_LABEL[review.status] ?? review.status}
+              </span>
+            )}
+            <span className="ml-auto shrink-0">{timeAgo(review.created_at)}</span>
+          </span>
+        </button>
+        <span className="flex shrink-0 flex-col items-center gap-0.5 opacity-0 transition-opacity group-hover:opacity-100">
+          <Link
+            to={`/playground/reviews/${review.id}`}
+            title="Open Finding Dossier"
+            aria-label="Open Finding Dossier"
+            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
           >
-            {REVIEW_STATUS_LABEL[review.status] ?? review.status}
-          </span>
-        )}
-        <span className="ml-auto shrink-0 text-stone-400">
-          {timeAgo(review.created_at)}
+            <ExternalLink aria-hidden className="h-3 w-3" />
+          </Link>
+          <button
+            onClick={onRename}
+            title="Rename review"
+            aria-label="Rename review"
+            className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
+          >
+            <Pencil aria-hidden className="h-3 w-3" />
+          </button>
+          <button
+            onClick={onDelete}
+            disabled={remove.isPending}
+            title={
+              review.approved
+                ? "Verified reviews cannot be deleted"
+                : "Delete review"
+            }
+            aria-label="Delete review"
+            className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
+          >
+            <Trash2 aria-hidden className="h-3 w-3" />
+          </button>
         </span>
-      </Link>
-      <span className="flex shrink-0 items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-        <button
-          onClick={onRename}
-          title="Rename review"
-          aria-label="Rename review"
-          className="rounded p-1 text-stone-400 hover:bg-stone-100 hover:text-stone-700"
-        >
-          <Pencil aria-hidden className="h-3.5 w-3.5" />
-        </button>
-        <button
-          onClick={onDelete}
-          disabled={remove.isPending}
-          title={
-            review.approved
-              ? "Verified reviews cannot be deleted"
-              : "Delete review"
-          }
-          aria-label="Delete review"
-          className="rounded p-1 text-stone-400 hover:bg-red-50 hover:text-red-600 disabled:opacity-40"
-        >
-          <Trash2 aria-hidden className="h-3.5 w-3.5" />
-        </button>
-      </span>
+      </div>
       {remove.isError && (
-        <span className="text-[10px] text-red-600">
+        <p className="px-2.5 pb-1.5 text-[10px] text-red-600">
           {String((remove.error as Error).message ?? "delete failed")}
-        </span>
+        </p>
       )}
     </li>
   );
